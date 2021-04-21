@@ -7,8 +7,14 @@ const mongoose = require("mongoose");
 // define product schema
 const productSchema = mongoose.Schema({
 	_id: mongoose.Schema.Types.ObjectId,
-	name: String,
-	price: Number,
+	name: {
+		type: String,
+		required: true,
+	},
+	price: {
+		type: Number,
+		required: true,
+	},
 });
 
 // Export model
