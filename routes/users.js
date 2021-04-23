@@ -4,8 +4,50 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/users");
+
+// Handling /User(login)
+router.post("/login", (req, res, next) => {
+	// Validated that the user was not registered before
+	User.find({ email: req.body.email })
+		.exec()
+		.then((user) => {
+			if (user.length < 1) {
+				// 401 Unauthorized
+				return res.status(401).send({
+					Message: "Auth Failed",
+				});
+			}
+
+			// Validated password .
+			bcrypt.compare(
+				req.body.password,
+				user[0].password,
+				function (err, result) {
+					if (err) {
+						// 401 Unauthorized
+						return res.status(401).send({
+							Message: "Auth Failed",
+						});
+					}
+
+					if (result) {
+						const token = generateAccessToken(user[0]);
+						console.log(token);
+						return res.status(200).send({
+							token: token,
+							Message: "Auth Sucessfull",
+						});
+					}
+					return res.status(401).send({
+						Message: "Auth Failed",
+					});
+				},
+			);
+		});
+});
 
 // Handling Post Request to /User
 router.post("/signup", (req, res, next) => {
@@ -72,5 +114,17 @@ router.delete("/:userId", (req, res, next) => {
 			});
 		});
 });
+
+// function for Generating Token
+const generateAccessToken = (user) => {
+	console.log(user);
+	const payload = {
+		id: user.password,
+		email: user.email,
+	};
+
+	// expires 1 hours
+	return jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: "1hr" });
+};
 
 module.exports = router;

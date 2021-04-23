@@ -20,6 +20,6 @@ const userSchema = mongoose.Schema({
 	},
 });
 
-// Export model
+// Export Model
 // Compile model from userSchema
 module.exports = mongoose.model("User", userSchema);
