@@ -50,6 +50,10 @@ app.use(cors());
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
 
+// Public file
+// Serve all static files inside public directory.
+app.use("/uploads", express.static("uploads"));
+
 // Error Handling
 // Handle error if the routes not found or there's any problem in DB connection
 app.use((req, res, next) => {

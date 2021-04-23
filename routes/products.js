@@ -6,11 +6,53 @@ const mongoose = require("mongoose");
 
 const Product = require("../models/products");
 
+// Import multer from node_modules
+const multer = require("multer");
+
+// Set Storage Engine
+// Configuring and validating the upload
+const storage = multer.diskStorage({
+	destination: (req, file, cb) => {
+		cb(null, "uploads");
+	},
+
+	// By default, multer removes file extensions so let's add them back
+	filename: (req, file, cb) => {
+		cb(
+			null,
+			`${file.fieldname}-${Date.now()}${getImageExtension(file.mimetype)}`,
+		);
+	},
+});
+
+// Check Image Extension
+const getImageExtension = (mimetype) => {
+	switch (mimetype) {
+		case "image/png":
+			return ".png";
+		case "image/PNG":
+			return ".PNG";
+		case "image/jpg":
+			return ".jpg";
+		case "image/JPG":
+			return ".JPG";
+		case "image/JPEG":
+			return ".JPEG";
+		case "image/jpeg":
+			return ".jpeg";
+		case "image/webp":
+			return ".webp";
+	}
+};
+
+// Initialize upload variable
+const upload = multer({ storage: storage });
+
 // Handling Get Request to /product
 router.get("/", (req, res, next) => {
 	// find all the product
 	Product.find()
-		.select("name price _id")
+		.select("name price _id productImage")
 		.exec() // .exec() method return promise
 		.then((docs) => {
 			// pass more information  with response
@@ -18,9 +60,11 @@ router.get("/", (req, res, next) => {
 				count: docs.length,
 				products: docs.map((doc) => {
 					return {
+						productImage: doc.productImage,
 						name: doc.name,
 						price: doc.price,
 						_id: doc._id,
+
 						request: {
 							type: "Get",
 							description: "Get one product with the id",
@@ -46,11 +90,13 @@ router.get("/", (req, res, next) => {
 });
 
 // Handling Post Request to /product
-router.post("/", (req, res, next) => {
+router.post("/", upload.single("productImage"), (req, res) => {
+	const image = req.file;
 	const product = new Product({
 		_id: new mongoose.Types.ObjectId(),
 		name: req.body.name,
 		price: req.body.price,
+		productImage: `uploads/${req.file.filename}`,
 	});
 
 	product
@@ -63,6 +109,7 @@ router.post("/", (req, res, next) => {
 				CreatedProduct: {
 					name: result.name,
 					price: result.price,
+					productImage: result.productImage,
 					_id: result._id,
 					request: {
 						type: "Get",
@@ -87,13 +134,14 @@ router.get("/:productId", (req, res, next) => {
 	const id = req.params.productId;
 
 	Product.findById(id)
-		.select("name price _id")
+		.select("name price _id productImage")
 		.exec() // .exec() method return promise
 		.then((docs) => {
 			if (docs) {
 				res.status(200).send({
 					message: "Successfully Found the product",
 					products: {
+						productImage: docs.productImage,
 						name: docs.name,
 						price: docs.price,
 						_id: docs._id,
