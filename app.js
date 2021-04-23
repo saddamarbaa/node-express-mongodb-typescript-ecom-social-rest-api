@@ -15,6 +15,7 @@ dotenv.config();
 
 const productRoutes = require("./routes/products");
 const orderRoutes = require("./routes/orders");
+const userRoutes = require("./routes/users");
 
 // Access Environment variables
 const MONGO_USER = process.env.MONGO_USER;
@@ -49,6 +50,7 @@ app.use(cors());
 // Routes which Should handle the requests
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
+app.use("/users", userRoutes);
 
 // Public file
 // Serve all static files inside public directory.
