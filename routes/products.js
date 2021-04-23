@@ -6,6 +6,9 @@ const mongoose = require("mongoose");
 
 const Product = require("../models/products");
 
+// Import Middleware function to authenticate token From different file
+const authenticateToken = require("../auths/auth");
+
 // Import multer from node_modules
 const multer = require("multer");
 
@@ -90,44 +93,49 @@ router.get("/", (req, res, next) => {
 });
 
 // Handling Post Request to /product
-router.post("/", upload.single("productImage"), (req, res) => {
-	const image = req.file;
-	const product = new Product({
-		_id: new mongoose.Types.ObjectId(),
-		name: req.body.name,
-		price: req.body.price,
-		productImage: `uploads/${req.file.filename}`,
-	});
-
-	product
-		.save()
-		.then((result) => {
-			// HTTP Status 201 indicates that as a result of HTTP POST  request,
-			//  one or more new resources have been successfully created on server
-			res.status(201).send({
-				message: "Created Product Successfully",
-				CreatedProduct: {
-					name: result.name,
-					price: result.price,
-					productImage: result.productImage,
-					_id: result._id,
-					request: {
-						type: "Get",
-						description: "Get one product with the id",
-						url: "http://localhost:3000/products/" + result._id,
-					},
-				},
-			});
-		})
-		.catch((error) => {
-			console.log(error);
-			// 500 Internal Server Error
-			res.status(500).send({
-				message: "unable to save to database",
-				error: error,
-			});
+router.post(
+	"/",
+	authenticateToken,
+	upload.single("productImage"),
+	(req, res) => {
+		const image = req.file;
+		const product = new Product({
+			_id: new mongoose.Types.ObjectId(),
+			name: req.body.name,
+			price: req.body.price,
+			productImage: `uploads/${req.file.filename}`,
 		});
-});
+
+		product
+			.save()
+			.then((result) => {
+				// HTTP Status 201 indicates that as a result of HTTP POST  request,
+				//  one or more new resources have been successfully created on server
+				res.status(201).send({
+					message: "Created Product Successfully",
+					CreatedProduct: {
+						name: result.name,
+						price: result.price,
+						productImage: result.productImage,
+						_id: result._id,
+						request: {
+							type: "Get",
+							description: "Get one product with the id",
+							url: "http://localhost:3000/products/" + result._id,
+						},
+					},
+				});
+			})
+			.catch((error) => {
+				console.log(error);
+				// 500 Internal Server Error
+				res.status(500).send({
+					message: "unable to save to database",
+					error: error,
+				});
+			});
+	},
+);
 
 // Handling individual Request to /product
 router.get("/:productId", (req, res, next) => {
@@ -170,7 +178,7 @@ router.get("/:productId", (req, res, next) => {
 });
 
 // Handling updating individual product
-router.patch("/:productId", (req, res, next) => {
+router.patch("/:productId", authenticateToken, (req, res, next) => {
 	const id = req.params.productId;
 	const updateOperation = {};
 
@@ -212,7 +220,7 @@ router.patch("/:productId", (req, res, next) => {
 });
 
 // Handling deleting individual product
-router.delete("/:productId", (req, res, next) => {
+router.delete("/:productId", authenticateToken, (req, res, next) => {
 	const id = req.params.productId;
 	// also we can use remove
 	Product.deleteOne({ _id: id })

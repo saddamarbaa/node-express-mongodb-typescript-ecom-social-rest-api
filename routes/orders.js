@@ -7,8 +7,11 @@ const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Product = require("../models/products");
 
+// Import Middleware function to authenticate token From different file
+const authenticateToken = require("../auths/auth");
+
 // Handling Get Request to /orders
-router.get("/", (req, res, next) => {
+router.get("/", authenticateToken, (req, res, next) => {
 	// find all the orders
 	Order.find()
 		.populate("product")
@@ -47,7 +50,7 @@ router.get("/", (req, res, next) => {
 });
 
 // Handling Post Request to /order
-router.post("/", (req, res, next) => {
+router.post("/", authenticateToken, (req, res, next) => {
 	// Validated the product in DB first
 	Product.findById(req.body.productId)
 		.exec()
@@ -102,7 +105,7 @@ router.post("/", (req, res, next) => {
 });
 
 // Handling individual Request to /orders
-router.get("/:orderId", (req, res, next) => {
+router.get("/:orderId", authenticateToken, (req, res, next) => {
 	const id = req.params.orderId;
 
 	Order.findById(id)
@@ -142,7 +145,7 @@ router.get("/:orderId", (req, res, next) => {
 });
 
 // Handling deleting individual order
-router.delete("/:orderId", (req, res, next) => {
+router.delete("/:orderId", authenticateToken, (req, res, next) => {
 	const id = req.params.orderId;
 	// also we can use remove
 	Order.deleteOne({ _id: id })

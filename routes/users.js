@@ -8,6 +8,9 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/users");
 
+// Import generateAccessToken function to generate Token for the user
+const generateAccessToken = require("../auths/getToken");
+
 // Handling /User(login)
 router.post("/login", (req, res, next) => {
 	// Validated that the user was not registered before
@@ -114,17 +117,5 @@ router.delete("/:userId", (req, res, next) => {
 			});
 		});
 });
-
-// function for Generating Token
-const generateAccessToken = (user) => {
-	console.log(user);
-	const payload = {
-		id: user.password,
-		email: user.email,
-	};
-
-	// expires 1 hours
-	return jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: "1hr" });
-};
 
 module.exports = router;
