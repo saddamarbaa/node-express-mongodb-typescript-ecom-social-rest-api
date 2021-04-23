@@ -113,10 +113,9 @@ router.get("/:productId", (req, res, next) => {
 			}
 		})
 		.catch((error) => {
-			console.log(error);
 			// 500 Internal Server Error
 			res.status(500).send({
-				message: "Internal Server Error(invalid id",
+				message: "Internal Server Error(invalid id)",
 				error: error,
 			});
 		});

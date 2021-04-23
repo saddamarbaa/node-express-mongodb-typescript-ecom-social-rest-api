@@ -13,8 +13,8 @@ const morgan = require("morgan");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const productRoutes = require("./api/routes/products");
-const orderRoutes = require("./api/routes/orders");
+const productRoutes = require("./routes/products");
+const orderRoutes = require("./routes/orders");
 
 // Access Environment variables
 const MONGO_USER = process.env.MONGO_USER;
@@ -48,7 +48,7 @@ app.use(cors());
 
 // Routes which Should handle the requests
 app.use("/products", productRoutes);
-app.use("/order", orderRoutes);
+app.use("/orders", orderRoutes);
 
 // Error Handling
 // Handle error if the routes not found or there's any problem in DB connection
