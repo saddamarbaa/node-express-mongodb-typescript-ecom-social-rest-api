@@ -2,55 +2,39 @@
 
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 
 // Import Middleware function to authenticate token From different file
-const authenticateToken = require("../auths/auth");
+const authenticateToken = require("../middleware/auth/check-auth");
 
-const productsController = require("../controllers/products");
-
-// Import multer from node_modules
-const multer = require("multer");
+const getImageExtension = require("../lib/getImageExtension");
+const productsController = require("../controllers/products.controller");
 
 // Set Storage Engine
 // Configuring and validating the upload
 const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		cb(null, "uploads");
+	destination: (req, file, callbackFunction) => {
+		callbackFunction(null, "public/uploads");
 	},
 
 	// By default, multer removes file extensions so let's add them back
-	filename: (req, file, cb) => {
-		cb(
+	filename: (req, file, callbackFunction) => {
+		callbackFunction(
 			null,
 			`${file.fieldname}-${Date.now()}${getImageExtension(file.mimetype)}`,
 		);
 	},
 });
 
-// Check Image Extension
-const getImageExtension = (mimetype) => {
-	switch (mimetype) {
-		case "image/png":
-			return ".png";
-		case "image/PNG":
-			return ".PNG";
-		case "image/jpg":
-			return ".jpg";
-		case "image/JPG":
-			return ".JPG";
-		case "image/JPEG":
-			return ".JPEG";
-		case "image/jpeg":
-			return ".jpeg";
-		case "image/webp":
-			return ".webp";
-	}
-};
-
 // Initialize upload variable
-const upload = multer({ storage: storage });
+const upload = multer({
+	storage: storage,
+	limits: {
+		fileSize: 1024 * 1024 * 10, // accept files up 10 mgb
+	},
+});
 
-// Handling Post Request to /product
+// Handling Post Request to /api/v1/products
 router.post(
 	"/",
 	authenticateToken,
@@ -58,17 +42,13 @@ router.post(
 	productsController.products_create_product,
 );
 
-// Handling Get Request to /product
+// Handling Get Request to /api/v1/products
 router.get("/", productsController.products_get_all_product);
 
-// Handling individual Request to /product
-router.get(
-	"/:productId",
-	authenticateToken,
-	productsController.products_get_one_product,
-);
+// Handling individual Request to /api/v1/products
+router.get("/:productId", productsController.products_get_one_product);
 
-// Handling updating individual product
+// Handling updating individual /api/v1/products
 router.patch(
 	"/:productId",
 	authenticateToken,

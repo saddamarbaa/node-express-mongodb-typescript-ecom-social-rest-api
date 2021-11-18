@@ -3,18 +3,20 @@
 const express = require("express");
 const router = express.Router();
 
-const userController = require("../controllers/users");
+const userController = require("../controllers/users.controller");
 
 // Import Middleware function to authenticate token From different file
-const authenticateToken = require("../auths/auth");
+const authenticateToken = require("../middleware/auth/check-auth");
 
-// Handling /User(login)
+// API Endpoint for Handling Post Request to /api/v1/users/login
 router.post("/login", userController.user_login);
 
-// Handling Post Request to /User
+// API Endpoint for Handling Post Request to /api/v1/users/signup
 router.post("/signup", userController.user_signup);
 
-// Handling delete Request to delete user
+// API Endpoint for Handling delete Request to  /api/v1/users/delete
+// Call (authenticateToken) Middleware function first
+// This is now a protected route
 router.delete("/:userId", authenticateToken, userController.user_delete);
 
 module.exports = router;
