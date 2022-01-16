@@ -18,6 +18,9 @@ const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
 
 // Access Environment variables
+// Access Environment variables
+const { MONGODB_CONNECTION_STRING, PORT } = require("./lib/config");
+
 const MONGODB_URI = process.env.MONGODB_URI;
 const port = process.env.PORT || 5000;
 
@@ -64,11 +67,11 @@ app.use((error, req, res, next) => {
 // Connecting to MongoDB and Starting Server
 const start = async () => {
 	try {
-		await connectDB(MONGODB_URI);
+		await connectDB(MONGODB_CONNECTION_STRING);
 		console.log("MongoDB database connection established successfully ...");
 
-		app.listen(port, () =>
-			console.log(`Server is listening on port ${port}...`),
+		app.listen(PORT, () =>
+			console.log(`Server is listening on port ${PORT}...`),
 		);
 	} catch (error) {
 		console.log("MongoDB connection error:", error);
