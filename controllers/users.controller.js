@@ -3,6 +3,7 @@
 const mongoose = require("mongoose");
 
 const User = require("../models/users.model");
+const sendEmail = require("../lib/sendEmail");
 
 // Handling Post Request to /api/v1/users/signup
 exports.user_signup = async (req, res) => {
@@ -35,7 +36,7 @@ exports.user_signup = async (req, res) => {
 		// send back only the user and token (not password been send)
 		const token = user.createJWT();
 
-		return res.status(201).send({
+		res.status(201).send({
 			message: "Registered Successfully",
 			success: true,
 			status: 201,
@@ -52,6 +53,9 @@ exports.user_signup = async (req, res) => {
 			},
 			token: token,
 		});
+
+		// send mail
+		sendEmail(user?.email);
 	} catch (error) {
 		if (error?.code === 11000) {
 			// also we can send  422(422 Unprocessable Entity)

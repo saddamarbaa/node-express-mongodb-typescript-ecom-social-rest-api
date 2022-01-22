@@ -1,5 +1,9 @@
 /** @format */
 
+// https://stackoverflow.com/questions/58067672/how-to-implement-role-based-authentification-with-nodejs
+
+// https://www.bezkoder.com/node-js-mongodb-auth-jwt/
+
 const express = require("express");
 const router = express.Router();
 

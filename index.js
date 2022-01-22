@@ -18,7 +18,6 @@ const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
 
 // Access Environment variables
-// Access Environment variables
 const { MONGODB_CONNECTION_STRING, PORT } = require("./lib/config");
 
 const MONGODB_URI = process.env.MONGODB_URI;
