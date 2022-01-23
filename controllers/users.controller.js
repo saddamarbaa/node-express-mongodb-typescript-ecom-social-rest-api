@@ -16,6 +16,7 @@ exports.user_signup = async (req, res) => {
 		gender,
 		cart,
 		confirmPassword,
+		role,
 	} = req.body;
 
 	const newUser = new User({
@@ -28,6 +29,7 @@ exports.user_signup = async (req, res) => {
 		dateOfBirth,
 		gender,
 		cart,
+		role
 	});
 
 	try {
@@ -50,6 +52,7 @@ exports.user_signup = async (req, res) => {
 				cart: user.cart,
 				createdAt: user?.createdAt,
 				updatedAt: user?.updatedAt,
+				role: user?.role,
 			},
 			token: token,
 		});

@@ -16,6 +16,7 @@ const connectDB = require("./db/connect");
 const productRoutes = require("./routes/products");
 const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
+const adminRoutes = require("./routes/admin");
 
 // Access Environment variables
 const { MONGODB_CONNECTION_STRING, PORT } = require("./lib/config");
@@ -41,6 +42,7 @@ app.use("/static", express.static("public"));
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Error Handling
 // Handle error if the routes not found or there's any problem in DB connection
