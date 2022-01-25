@@ -136,6 +136,7 @@ exports.user_login = async (req, res, next) => {
 
 // Handling delete Request to /api/v1/users/userId
 exports.user_delete = async (req, res, next) => {
+  
   const toBeDeletedUser = await User.findByIdAndRemove({
     _id: req.params.userId,
   });

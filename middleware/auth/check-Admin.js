@@ -1,21 +1,29 @@
-// Access Environment variables
-const TOKEN_SECRET = process.env.TOKEN_SECRET;
+const { ADMIN_ROLE, ADMIN_EMAIL } = require('../../lib/config');
+const User = require('../../models/users.model');
 
-const isAdmin = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const isAdmin = authHeader && authHeader.split(' ')[1];
+// Middleware function to check admin role
+const isAdmin = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ email: req?.user.email });
 
-  // HTTP Status 401 mean Unauthorized
-  if (!isAdmin) {
-    return res.status(401).send({
-      status: 401,
+    const adminUser = user && user.role === ADMIN_ROLE && user.email === ADMIN_EMAIL;
+
+    if (!adminUser) {
+      return res.status(403).send({
+        status: 403,
+        success: false,
+        message: `Auth Failed (Unauthorized)`,
+      });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).send({
       success: false,
-      message: `Unauthorized `,
+      message: `DB Error`,
+      status: 500,
+      error: error,
     });
   }
-
-  // if we did success go to the next middleware
-  next();
 };
 
 module.exports = isAdmin;
