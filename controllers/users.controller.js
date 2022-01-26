@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { validationResult } = require('express-validator');
 
 const User = require('../models/users.model');
 const sendEmail = require('../lib/sendEmail');
@@ -6,6 +7,21 @@ const sendEmail = require('../lib/sendEmail');
 // Handling Post Request to /api/v1/users/signup
 exports.user_signup = async (req, res) => {
   const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword, role } = req.body;
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).send({
+      message: errors.array()[0].msg,
+      success: false,
+      status: 422,
+      oldInput: {
+        email: email,
+        password: password,
+      },
+      validationErrors: errors.array(),
+    });
+  }
 
   const newUser = new User({
     _id: new mongoose.Types.ObjectId(),
@@ -73,11 +89,18 @@ exports.user_signup = async (req, res) => {
 exports.user_login = async (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).send({
-      message: 'Please provide email and password',
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).send({
+      message: errors.array()[0].msg,
       success: false,
-      status: 400,
+      status: 422,
+      oldInput: {
+        email: email,
+        password: password,
+      },
+      validationErrors: errors.array(),
     });
   }
 
@@ -136,7 +159,6 @@ exports.user_login = async (req, res, next) => {
 
 // Handling delete Request to /api/v1/users/userId
 exports.user_delete = async (req, res, next) => {
-  
   const toBeDeletedUser = await User.findByIdAndRemove({
     _id: req.params.userId,
   });
