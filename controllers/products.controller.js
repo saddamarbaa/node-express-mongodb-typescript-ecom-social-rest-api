@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const Product = require('../models/products.model');
-const getImageExtension = require('../lib/getImageExtension');
+const getImageExtension = require('../utils/getImageExtension');
 
 // Handling Get Request to /product
 exports.products_get_all_product = (req, res, next) => {

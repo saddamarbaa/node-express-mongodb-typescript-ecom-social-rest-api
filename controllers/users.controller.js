@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 
 const User = require('../models/users.model');
-const sendEmail = require('../lib/sendEmail');
+const sendEmail = require('../utils/sendEmail');
 
 // Handling Post Request to /api/v1/users/signup
 exports.user_signup = async (req, res) => {

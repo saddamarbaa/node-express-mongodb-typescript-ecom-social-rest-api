@@ -1,7 +1,7 @@
-var nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 const sendGridTransport = require('nodemailer-sendgrid-transport');
 
-const { SEND_GRID_API_KEY, ADMIN_SEND_GRID_EMAIL } = require('./config');
+const { SEND_GRID_API_KEY, ADMIN_SEND_GRID_EMAIL } = require('../configs/environment.config');
 
 const transporter = nodemailer.createTransport(
   sendGridTransport({

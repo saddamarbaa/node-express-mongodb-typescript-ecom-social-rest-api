@@ -8,11 +8,11 @@ const dotenv = require('dotenv').config();
 const app = express();
 
 // Import DB
-const connectDB = require('./db/connect');
+const connectDB = require('./configs/db.config');
 
 //  Import Middlewares
-const notFoundMiddleware = require('./middleware/errors/not-found');
-const errorHandlerMiddleware = require('./middleware/errors/error-handler');
+const notFoundMiddleware = require('./middlewares/errors/not-found');
+const errorHandlerMiddleware = require('./middlewares/errors/error-handler');
 
 // Import Routes
 const productRoutes = require('./routes/products');
@@ -21,7 +21,7 @@ const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 
 // Access Environment variables
-const { MONGODB_CONNECTION_STRING, PORT } = require('./lib/config');
+const { MONGODB_CONNECTION_STRING, PORT } = require('./configs/environment.config');
 
 // Middlewares
 

@@ -3,9 +3,9 @@ const router = express.Router();
 const multer = require('multer');
 
 // Import Middleware function to authenticate token From different file
-const authenticateToken = require('../middleware/auth/check-auth');
+const authenticateToken = require('../middlewares/auth/check-auth');
 
-const getImageExtension = require('../lib/getImageExtension');
+const getImageExtension = require('../utils/getImageExtension');
 const productsController = require('../controllers/products.controller');
 
 // Set Storage Engine
