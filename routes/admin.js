@@ -6,11 +6,12 @@ const userController = require('../controllers/users.controller');
 const isAuth = require('../middlewares/auth/check-auth');
 const User = require('../models/users.model');
 const isAdmin = require('../middlewares/auth/check-admin');
+const paginationMiddleware = require('../middlewares/pagination/pagination.middleware');
 
 const router = express.Router();
 
 // API Endpoint for Handling Get Request to /api/admin/users
-router.get('/users', isAuth, isAdmin, adminController.admin_get_all_user);
+router.get('/users', isAuth, isAdmin, paginationMiddleware(User), adminController.admin_get_all_user);
 
 // API Endpoint for Handling Post Request to /api/admin/users
 router.post(

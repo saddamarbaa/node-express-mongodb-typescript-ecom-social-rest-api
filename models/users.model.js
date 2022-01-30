@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Access Environment variables
+const { TOKEN_SECRET, JWT_EXPIRE_TIME } = require('../configs/environment.config');
+
 // Defining a Model and Creating a Database Schema
 // define user schema
 const userSchema = mongoose.Schema(
@@ -12,12 +15,16 @@ const userSchema = mongoose.Schema(
       required: [true, 'Please provide first name'],
       maxLength: 10,
       minlength: 3,
+      trim: true,
+      lowercase: true,
     },
     lastName: {
       type: String,
       required: [true, 'Please provide last name'],
       maxLength: 10,
       minlength: 3,
+      trim: true,
+      lowercase: true,
     },
     email: {
       type: String,
@@ -29,27 +36,32 @@ const userSchema = mongoose.Schema(
       ],
       unique: true,
       trim: true,
+      lowercase: true,
     },
     password: {
       type: String,
       required: [true, 'Please provide password'],
       minlength: 6,
       maxLength: 40,
+      trim: true,
     },
     confirmPassword: {
       type: String,
       required: [true, 'Please provide confirmed Password'],
       minlength: 6,
       maxLength: 40,
+      trim: true,
     },
     dateOfBirth: {
       type: String,
       maxLength: 15,
+      trim: true,
     },
-    gender: { type: String },
+    gender: { type: String, trim: true, lowercase: true },
     joinedDate: {
       type: Date,
       default: new Date(),
+      trim: true,
     },
     cart: {
       items: [
@@ -70,6 +82,8 @@ const userSchema = mongoose.Schema(
       type: String,
       enum: ['user', 'guide', 'admin'],
       default: 'user',
+      trim: true,
+      lowercase: true,
     },
   },
   {
@@ -97,8 +111,8 @@ userSchema.methods.createJWT = function () {
     email: this.email,
   };
 
-  return jwt.sign(payload, process.env.TOKEN_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE_TIME,
+  return jwt.sign(payload, TOKEN_SECRET, {
+    expiresIn: JWT_EXPIRE_TIME,
   });
 };
 

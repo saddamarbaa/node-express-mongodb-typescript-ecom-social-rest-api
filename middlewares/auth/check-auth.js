@@ -2,7 +2,7 @@
 const jwt = require('jsonwebtoken');
 
 // Access Environment variables
-const TOKEN_SECRET = process.env.TOKEN_SECRET;
+const { TOKEN_SECRET } = require('../../configs/environment.config');
 
 // Middleware function to authenticate token
 // Check to make sure header is not undefined, if so, return Forbidden (403)
@@ -21,6 +21,7 @@ const authenticateToken = (req, res, next) => {
     });
   }
 
+ 
   // if there is token then verify using the same Secret Key
   const decodedToken = jwt.verify(token, TOKEN_SECRET, (err, user) => {
     // HTTP Status 403 mean Forbidden

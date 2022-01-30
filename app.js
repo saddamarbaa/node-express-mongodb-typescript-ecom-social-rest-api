@@ -1,8 +1,8 @@
 // Import all the dependencies
 const express = require('express');
+const expressAyncErrors = require('express-async-errors');
 const cors = require('cors');
 const morgan = require('morgan');
-const dotenv = require('dotenv').config();
 
 // Initialize app with express
 const app = express();
@@ -14,6 +14,9 @@ const connectDB = require('./configs/db.config');
 const notFoundMiddleware = require('./middlewares/errors/not-found');
 const errorHandlerMiddleware = require('./middlewares/errors/error-handler');
 
+//  Import logger
+const logger = require('./logger/index');
+
 // Import Routes
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
@@ -21,7 +24,7 @@ const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 
 // Access Environment variables
-const { MONGODB_CONNECTION_STRING, PORT } = require('./configs/environment.config');
+const { MONGODB_CONNECTION_STRING, PORT, NODE_ENV } = require('./configs/environment.config');
 
 // Middlewares
 
@@ -51,10 +54,16 @@ const start = async () => {
   try {
     await connectDB(MONGODB_CONNECTION_STRING);
     console.log('MongoDB database connection established successfully ...');
-
     app.listen(PORT, () => console.log(`Server is listening on port ${PORT}...`));
+
+    // logger.error({
+    //   message: `MongoDB database connection established successfully ...`,
+    // });
   } catch (error) {
     console.log('MongoDB connection error:', error);
+    logger.error({
+      message: `MongoDB connection error: ${error}`,
+    });
   }
 };
 

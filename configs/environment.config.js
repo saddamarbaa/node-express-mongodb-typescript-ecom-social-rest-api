@@ -11,4 +11,5 @@ module.exports = {
   ADMIN_SEND_GRID_EMAIL: process.env.ADMIN_SEND_GRID_EMAIL,
   ADMIN_ROLE: process.env.ADMIN_ROLE,
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  NODE_ENV: process.env.NODE_ENV || 'development',
 };

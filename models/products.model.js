@@ -8,14 +8,18 @@ const productSchema = mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Please provide name'],
+    trim: true,
+    lowercase: true,
   },
   price: {
     type: Number,
     required: [true, 'Please provide price'],
+    trim: true,
   },
   productImage: {
     type: String,
     required: [true, 'Please provide product image'],
+    trim: true,
   },
   addedDate: {
     type: Date,
