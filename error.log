@@ -1,0 +1,2 @@
+{"level":"error","message":"MongoDB connection error: MongoError: bad auth : Authentication failed.","service":"user-service","timestamp":"2022-01-27 08:52:19"}
+{"level":"error","message":"MongoDB database connection established successfully ...","service":"user-service","timestamp":"2022-01-27 08:53:40"}
