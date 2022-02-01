@@ -37,5 +37,10 @@
     "passport": "^0.4.1",
     "winston": "^3.4.0",
     "winston-mongodb": "^5.0.7"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^4.2.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "prettier": "1.17.1"
   }
 }

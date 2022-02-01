@@ -2,7 +2,6 @@ const User = require('../models/users.model');
 
 // Handling Get Request to /api/v1/admin/users
 exports.admin_get_all_user = (req, res) => {
-  console.log("ok")
   const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
 
   const responseObject = {

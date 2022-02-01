@@ -21,7 +21,7 @@ const authenticateToken = (req, res, next) => {
     });
   }
 
- 
+
   // if there is token then verify using the same Secret Key
   const decodedToken = jwt.verify(token, TOKEN_SECRET, (err, user) => {
     // HTTP Status 403 mean Forbidden

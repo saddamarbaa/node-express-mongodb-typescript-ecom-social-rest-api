@@ -1,3 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 
@@ -62,7 +77,7 @@ exports.user_signup = async (req, res) => {
     });
 
     // send mail
-    sendEmail(user?.email);
+    // sendEmail(user?.email);
   } catch (error) {
     if (error?.code === 11000) {
       // also we can send  422(422 Unprocessable Entity)
@@ -241,4 +256,54 @@ exports.user_update = async (req, res, next) => {
         });
       });
   });
+};
+
+   
+
+
+
+
+
+
+
+// Handling Post Request to /api/v1/users/signup
+exports.user_signup_Script = async (req, res) => {
+
+  // program to generate random strings
+
+// declare all characters
+const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+function generateString(length) {
+    let result = ' ';
+    const charactersLength = characters.length;
+    for ( let i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+
+    return result;
+}
+
+
+
+  for (let i = 0; i < 1000; i++) {
+  const newUser = new User({
+    _id: new mongoose.Types.ObjectId(),
+    firstName:"test",
+    lastName:"test",
+    email:`${generateString(5)}nh@gmail.com`,
+    password:"123456",
+    confirmPassword:"123456",
+    dateOfBirth:"02-12-1994",
+    gender:"male"
+  });
+
+    try {
+      const user = await newUser.save();
+      console.log(i)
+    } catch (error) {
+      console.log("errrrrrr")
+     }
+  } 
+  
 };
