@@ -16,7 +16,7 @@ const userSchema = mongoose.Schema(
       maxLength: 10,
       minlength: 3,
       trim: true,
-      lowercase: true,
+      lowercase: true
     },
     lastName: {
       type: String,
@@ -24,7 +24,7 @@ const userSchema = mongoose.Schema(
       maxLength: 10,
       minlength: 3,
       trim: true,
-      lowercase: true,
+      lowercase: true
     },
     email: {
       type: String,
@@ -32,36 +32,36 @@ const userSchema = mongoose.Schema(
       // a regular expression to validate an email address(stackoverflow)
       match: [
         /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-        'Please provide a valid email',
+        'Please provide a valid email'
       ],
       unique: true,
       trim: true,
-      lowercase: true,
+      lowercase: true
     },
     password: {
       type: String,
       required: [true, 'Please provide password'],
       minlength: 6,
       maxLength: 40,
-      trim: true,
+      trim: true
     },
     confirmPassword: {
       type: String,
       required: [true, 'Please provide confirmed Password'],
       minlength: 6,
       maxLength: 40,
-      trim: true,
+      trim: true
     },
     dateOfBirth: {
       type: String,
       maxLength: 15,
-      trim: true,
+      trim: true
     },
     gender: { type: String, trim: true, lowercase: true },
     joinedDate: {
       type: Date,
       default: new Date(),
-      trim: true,
+      trim: true
     },
     cart: {
       items: [
@@ -69,32 +69,32 @@ const userSchema = mongoose.Schema(
           productId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product', // add relationship
-            required: [true, 'Please provide Product'],
+            required: [true, 'Please provide Product']
           },
           quantity: {
             type: Number,
-            required: [true, 'Please provide quantity'],
-          },
-        },
-      ],
+            required: [true, 'Please provide quantity']
+          }
+        }
+      ]
     },
     role: {
       type: String,
       enum: ['user', 'guide', 'admin'],
       default: 'user',
       trim: true,
-      lowercase: true,
-    },
+      lowercase: true
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
 //  Mongoose Schema Instance Methods
 
 // Pre Save Hook. Generate hashed password
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function(next) {
   // Check if this is new account or password is modfied
   if (!this.isModified('password')) {
     // if the password is not modfied then continue
@@ -105,26 +105,26 @@ userSchema.pre('save', async function (next) {
 });
 
 // Create JWT token for the user
-userSchema.methods.createJWT = function () {
+userSchema.methods.createJWT = function() {
   const payload = {
     userId: this._id,
-    email: this.email,
+    email: this.email
   };
 
   return jwt.sign(payload, TOKEN_SECRET, {
-    expiresIn: JWT_EXPIRE_TIME,
+    expiresIn: JWT_EXPIRE_TIME
   });
 };
 
 // Compare passwords
-userSchema.methods.comparePassword = async function (canditatePassword) {
+userSchema.methods.comparePassword = async function(canditatePassword) {
   const isMatch = await bcrypt.compare(canditatePassword, this.password);
   return isMatch;
 };
 
 // add to cart
-userSchema.methods.addToCart = function (product) {
-  const cartProductIndex = this.cart.items.findIndex((cp) => {
+userSchema.methods.addToCart = function(product) {
+  const cartProductIndex = this.cart.items.findIndex(cp => {
     return cp.productId.toString() === product._id.toString();
   });
   let newQuantity = 1;
@@ -136,11 +136,11 @@ userSchema.methods.addToCart = function (product) {
   } else {
     updatedCartItems.push({
       productId: product._id,
-      quantity: newQuantity,
+      quantity: newQuantity
     });
   }
   const updatedCart = {
-    items: updatedCartItems,
+    items: updatedCartItems
   };
   this.cart = updatedCart;
   return this.save();

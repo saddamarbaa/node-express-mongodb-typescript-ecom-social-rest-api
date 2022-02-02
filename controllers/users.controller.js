@@ -1,18 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 
@@ -32,9 +17,9 @@ exports.user_signup = async (req, res) => {
       status: 422,
       oldInput: {
         email: email,
-        password: password,
+        password: password
       },
-      validationErrors: errors.array(),
+      validationErrors: errors.array()
     });
   }
 
@@ -48,7 +33,7 @@ exports.user_signup = async (req, res) => {
     dateOfBirth,
     gender,
     cart,
-    role,
+    role
   });
 
   try {
@@ -71,9 +56,9 @@ exports.user_signup = async (req, res) => {
         cart: user.cart,
         createdAt: user?.createdAt,
         updatedAt: user?.updatedAt,
-        role: user?.role,
+        role: user?.role
       },
-      token: token,
+      token: token
     });
 
     // send mail
@@ -86,7 +71,7 @@ exports.user_signup = async (req, res) => {
         success: false,
         message: 'Unable to save user to database',
         status: 409,
-        error: `Email address ${newUser.email} is already taken`,
+        error: `Email address ${newUser.email} is already taken`
       });
     }
 
@@ -95,7 +80,7 @@ exports.user_signup = async (req, res) => {
       success: false,
       message: 'Unable to save to user to database',
       status: 500,
-      error: error,
+      error: error
     });
   }
 };
@@ -113,9 +98,9 @@ exports.user_login = async (req, res, next) => {
       status: 422,
       oldInput: {
         email: email,
-        password: password,
+        password: password
       },
-      validationErrors: errors.array(),
+      validationErrors: errors.array()
     });
   }
 
@@ -127,7 +112,7 @@ exports.user_login = async (req, res, next) => {
       return res.status(401).send({
         Status: 'Auth Failed (Invalid Credentials)',
         success: false,
-        status: 401,
+        status: 401
       });
     }
 
@@ -138,7 +123,7 @@ exports.user_login = async (req, res, next) => {
       return res.status(401).send({
         Status: 'Auth Failed (Invalid Credentials)',
         success: false,
-        status: 401,
+        status: 401
       });
     }
 
@@ -157,9 +142,9 @@ exports.user_login = async (req, res, next) => {
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
         createdAt: user?.createdAt,
-        updatedAt: user?.updatedAt,
+        updatedAt: user?.updatedAt
       },
-      token: token,
+      token: token
     });
   } catch (error) {
     // 500 Internal Server Error
@@ -167,7 +152,7 @@ exports.user_login = async (req, res, next) => {
       message: 'Internal Server Error(invalid id)',
       success: false,
       status: 500,
-      error: error,
+      error: error
     });
   }
 };
@@ -175,21 +160,21 @@ exports.user_login = async (req, res, next) => {
 // Handling delete Request to /api/v1/users/userId
 exports.user_delete = async (req, res, next) => {
   const toBeDeletedUser = await User.findByIdAndRemove({
-    _id: req.params.userId,
+    _id: req.params.userId
   });
 
   if (!toBeDeletedUser) {
     res.status(400).send({
       success: false,
       message: `Failed to delete user by given ID`,
-      status: 400,
+      status: 400
     });
   }
 
   res.status(200).send({
     message: 'Successfully deleted user by given id',
     success: true,
-    status: 200,
+    status: 200
   });
 };
 
@@ -199,12 +184,12 @@ exports.user_update = async (req, res, next) => {
 
   const userId = req.params.userId;
 
-  User.findById(userId).then((user) => {
+  User.findById(userId).then(user => {
     if (!user) {
       return res.status(400).send({
         success: false,
         message: `Database Update Failure `,
-        status: 400,
+        status: 400
       });
     }
 
@@ -219,7 +204,7 @@ exports.user_update = async (req, res, next) => {
 
     user
       .save()
-      .then((updatedUser) => {
+      .then(updatedUser => {
         return res.status(200).send({
           message: 'Successfully updated user by given id',
           success: true,
@@ -233,17 +218,17 @@ exports.user_update = async (req, res, next) => {
             gender: updatedUser.gender,
             cart: updatedUser.cart,
             createdAt: updatedUser?.createdAt,
-            updatedAt: updatedUser?.updatedAt,
-          },
+            updatedAt: updatedUser?.updatedAt
+          }
         });
       })
-      .catch((error) => {
+      .catch(error => {
         if (error?.code === 11000) {
           return res.status(409).send({
             success: false,
             message: 'Unable to update user in database',
             status: 409,
-            error: `Email address ${email} is already taken`,
+            error: `Email address ${email} is already taken`
           });
         }
 
@@ -252,58 +237,46 @@ exports.user_update = async (req, res, next) => {
           success: false,
           message: 'Unable to update user in database',
           status: 500,
-          error: error,
+          error: error
         });
       });
   });
 };
 
-   
-
-
-
-
-
-
-
 // Handling Post Request to /api/v1/users/signup
 exports.user_signup_Script = async (req, res) => {
-
   // program to generate random strings
 
-// declare all characters
-const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // declare all characters
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-function generateString(length) {
+  function generateString(length) {
     let result = ' ';
     const charactersLength = characters.length;
-    for ( let i = 0; i < length; i++ ) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
 
     return result;
-}
-
-
+  }
 
   for (let i = 0; i < 1000; i++) {
-  const newUser = new User({
-    _id: new mongoose.Types.ObjectId(),
-    firstName:"test",
-    lastName:"test",
-    email:`${generateString(5)}nh@gmail.com`,
-    password:"123456",
-    confirmPassword:"123456",
-    dateOfBirth:"02-12-1994",
-    gender:"male"
-  });
+    const newUser = new User({
+      _id: new mongoose.Types.ObjectId(),
+      firstName: 'test',
+      lastName: 'test',
+      email: `${generateString(5)}nh@gmail.com`,
+      password: '123456',
+      confirmPassword: '123456',
+      dateOfBirth: '02-12-1994',
+      gender: 'male'
+    });
 
     try {
       const user = await newUser.save();
-      console.log(i)
+      console.log(i);
     } catch (error) {
-      console.log("errrrrrr")
-     }
-  } 
-  
+      console.log('errrrrrr');
+    }
+  }
 };
