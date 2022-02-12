@@ -1,54 +1,80 @@
 const express = require('express');
-const { check, body } = require('express-validator');
 
+const UserModel = require('../models/users.model');
 const adminController = require('../controllers/admin.controller');
 const userController = require('../controllers/users.controller');
+
 const isAuth = require('../middlewares/auth/check-auth');
-const User = require('../models/users.model');
 const isAdmin = require('../middlewares/auth/check-admin');
-const paginationMiddleware = require('../middlewares/pagination/pagination.middleware');
+const paginationMiddleware = require('../middlewares/sort-filter-pagination/features.middleware');
+const { signupValidation, userIdValidation } = require('../middlewares/validate-request-schema/user.validation');
 
 const router = express.Router();
 
-// API Endpoint for Handling Get Request to /api/admin/users
-router.get('/users', isAuth, isAdmin, paginationMiddleware(User), adminController.admin_get_all_user);
+/**
+ * @api {get}  /api/admin/users
+ * @apiName Get users
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiSuccess (200) {Object} mixed `Users` object
+ */
 
-// API Endpoint for Handling Post Request to /api/admin/users
-router.post(
-  '/users',
-  isAuth,
-  isAdmin,
-  [
-    check('email')
-      .isEmail()
-      .withMessage('Please provide a valid email.')
-      .custom((value, { req }) => {
-        return User.findOne({ email: value }).then((userDoc) => {
-          if (userDoc) {
-            return Promise.reject(`E-Mail address ${value} is already exists, please pick a different one.`);
-          }
-        });
-      })
-      .normalizeEmail(),
-    body('password', 'Please provide password with only numbers and text and must be at least 6 characters.')
-      .isLength({ min: 6, max: 40 })
-      .isAlphanumeric()
-      .trim(),
-    body('confirmPassword')
-      .trim()
-      .custom((value, { req }) => {
-        if (value !== req.body.password) {
-          throw new Error('Passwords have to match!');
-        }
-        return true;
-      }),
-  ],
-  userController.user_signup
-);
+router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminController.admin_get_all_user);
 
+/**
+ * @api {post}  /api/admin/users
+ * @apiName Create new user
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiParam  {String} [firstName] FirstName
+ * @apiParam  {String} [lastName]  LastName
+ * @apiParam  {String} [email] Email
+ * @apiParam  {String} password]  Password
+ * @apiParam  {String} [confirmPassword] ConfirmPassword
+ * @apiParam  {String} [ dateOfBirth]  DateOfBirth
+ * @apiParam  {String} [  role]   role
+ * @apiParam  {String} [gender] Gender
+ *
+ * @apiSuccess (201) {Object} mixed `User` object
+ */
 
+router.post('/users', isAuth, isAdmin, signupValidation(), userController.user_signup);
 
-// API Endpoint for Handling delete Request to /api/v1/admin/users/userId (Protected route)
-router.delete('/users/:userId',  isAuth, isAdmin,  userController.user_delete);
+/**
+ * @api {get}  /api/v1/admin/users/userId
+ * @apiName Get user
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiSuccess (200) {Object} mixed `User` object
+ */
+
+router.get('/users/:userId', userIdValidation(), isAuth, isAdmin, userController.user_get_one_user);
+
+/**
+ * @api {patch}   /api/v1/admin/users/userId
+ * @apiName Update user
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiParam  {String} [userId] userId
+ * @apiSuccess (200) {Object} mixed `User` object
+ */
+
+router.patch('/users/:userId', userIdValidation(), isAuth, isAdmin, userController.user_update);
+
+/**
+ * @api {delete}  /api/v1/admin/users/userId
+ * @apiName Delete user
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiParam  {String} [userId] userId
+ * @apiSuccess (200) {Object} mixed `User` object
+ */
+
+router.delete('/users/:userId', userIdValidation(), isAuth, isAdmin, userController.user_delete);
 
 module.exports = router;

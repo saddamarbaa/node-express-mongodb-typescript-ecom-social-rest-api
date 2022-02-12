@@ -3,24 +3,37 @@ const { validationResult } = require('express-validator');
 
 const User = require('../models/users.model');
 const sendEmail = require('../utils/sendEmail');
+const Response = require('../utils/response');
+const { WEBSITE_URL, API_VERSION } = require('../configs/environment.config');
 
-// Handling Post Request to /api/v1/users/signup
-exports.user_signup = async (req, res) => {
+/**
+ * @desc    Register new user
+ * @route   POST /api/v1/users/signup
+ * @access  Public
+ */
+
+exports.user_signup = async (req, res, next) => {
+  let responseObject = {};
   const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword, role } = req.body;
 
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return res.status(422).send({
-      message: errors.array()[0].msg,
-      success: false,
-      status: 422,
-      oldInput: {
-        email: email,
-        password: password
-      },
-      validationErrors: errors.array()
-    });
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+      dateOfBirth,
+      gender
+    };
+
+    responseObject.validationErrors = errors.array();
+
+    return res.status(422).send(responseObject);
   }
 
   const newUser = new User({
@@ -42,10 +55,7 @@ exports.user_signup = async (req, res) => {
     // send back only the user and token (not password been send)
     const token = user.createJWT();
 
-    res.status(201).send({
-      message: 'Registered Successfully',
-      success: true,
-      status: 201,
+    const data = {
       user: {
         _id: user._id,
         firstName: user.firstName,
@@ -56,10 +66,13 @@ exports.user_signup = async (req, res) => {
         cart: user.cart,
         createdAt: user?.createdAt,
         updatedAt: user?.updatedAt,
-        role: user?.role
-      },
-      token: token
-    });
+        role: user?.role,
+        token: token
+      }
+    };
+
+    responseObject = Response(data, true, false, 'Registered Successfully', 201);
+    return res.status(200).send(responseObject);
 
     // send mail
     // sendEmail(user?.email);
@@ -67,41 +80,47 @@ exports.user_signup = async (req, res) => {
     if (error?.code === 11000) {
       // also we can send  422(422 Unprocessable Entity)
       // 409 Conflict
-      return res.status(409).send({
-        success: false,
-        message: 'Unable to save user to database',
-        status: 409,
-        error: `Email address ${newUser.email} is already taken`
-      });
+      return res
+        .status(409)
+        .send(
+          Response(
+            {},
+            false,
+            true,
+            `E-Mail address  ${newUser.email} is already exists, please pick a different one.`,
+            409
+          )
+        );
     }
 
     // 500 Internal Server Error
-    return res.status(500).send({
-      success: false,
-      message: 'Unable to save to user to database',
-      status: 500,
-      error: error
-    });
+    return next(error);
   }
 };
 
-// Handling Post Request to /api/v1/users/login
+/**
+ * @desc    Authenticate a user
+ * @route   POST /api/v1/users/login
+ * @access  Public
+ */
+
 exports.user_login = async (req, res, next) => {
+  let responseObject = {};
   const { email, password } = req.body;
 
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return res.status(422).send({
-      message: errors.array()[0].msg,
-      success: false,
-      status: 422,
-      oldInput: {
-        email: email,
-        password: password
-      },
-      validationErrors: errors.array()
-    });
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      email: email,
+      password: password
+    };
+
+    responseObject.validationErrors = errors.array();
+
+    return res.status(422).send(responseObject);
   }
 
   try {
@@ -109,31 +128,20 @@ exports.user_login = async (req, res, next) => {
 
     // 401 Unauthorized
     if (!user) {
-      return res.status(401).send({
-        Status: 'Auth Failed (Invalid Credentials)',
-        success: false,
-        status: 401
-      });
+      return res.status(401).send(Response({}, false, true, 'Auth Failed (Invalid Credentials)', 401));
     }
 
     // Compare password
     const isPasswordCorrect = await user.comparePassword(password);
 
     if (!isPasswordCorrect) {
-      return res.status(401).send({
-        Status: 'Auth Failed (Invalid Credentials)',
-        success: false,
-        status: 401
-      });
+      return res.status(401).send(Response({}, false, true, 'Auth Failed (Invalid Credentials)', 401));
     }
 
     // Send back only the user and token (dont send the password)
     const token = user.createJWT();
 
-    return res.status(200).send({
-      message: 'Auth successful',
-      success: true,
-      status: 200,
+    const data = {
       user: {
         _id: user._id,
         firstName: user.firstName,
@@ -142,55 +150,85 @@ exports.user_login = async (req, res, next) => {
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
         createdAt: user?.createdAt,
-        updatedAt: user?.updatedAt
-      },
-      token: token
-    });
+        updatedAt: user?.updatedAt,
+        role: user?.role,
+        token: token
+      }
+    };
+
+    responseObject = Response(data, true, false, 'Auth successful', 200);
+    return res.status(200).send(responseObject);
   } catch (error) {
-    // 500 Internal Server Error
-    return res.status(500).send({
-      message: 'Internal Server Error(invalid id)',
-      success: false,
-      status: 500,
-      error: error
-    });
+    return next(error);
   }
 };
 
-// Handling delete Request to /api/v1/users/userId
+/**
+ * @desc     Delete user
+ * @route    DELETE /api/v1/users/userId or/api/v1/admin/users/userId
+ * @access   Private
+ */
+
 exports.user_delete = async (req, res, next) => {
-  const toBeDeletedUser = await User.findByIdAndRemove({
-    _id: req.params.userId
-  });
+  let responseObject = {};
+  const errors = validationResult(req);
 
-  if (!toBeDeletedUser) {
-    res.status(400).send({
-      success: false,
-      message: `Failed to delete user by given ID`,
-      status: 400
-    });
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      userId: req.params.userId
+    };
+
+    responseObject.validationErrors = errors.array();
+    return res.status(422).send(responseObject);
   }
 
-  res.status(200).send({
-    message: 'Successfully deleted user by given id',
-    success: true,
-    status: 200
-  });
+  try {
+    const toBeDeletedUser = await User.findByIdAndRemove({
+      _id: req.params.userId
+    });
+
+    if (!toBeDeletedUser) {
+      return res
+        .status(400)
+        .send(Response([], false, true, `Failed to delete user by given ID ${req.params.userId}`, 400));
+    }
+
+    return res.status(200).send(Response([], true, false, `Successfully deleted user by ID ${req.params.userId}`, 200));
+  } catch (error) {
+    return next(error);
+  }
 };
 
-// Handling patch Request to /api/v1/users/userId
+/**
+ * @desc     Update user
+ * @route    PATCH /api/v1/users/userId or/api/v1/admin/users/userId
+ * @access   Private
+ */
+
 exports.user_update = async (req, res, next) => {
+  let responseObject = {};
+
   const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword } = req.body;
-
   const userId = req.params.userId;
+  const errors = validationResult(req);
 
-  User.findById(userId).then(user => {
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      userId: userId
+    };
+
+    responseObject.validationErrors = errors.array();
+    return res.status(422).send(responseObject);
+  }
+
+  try {
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(400).send({
-        success: false,
-        message: `Database Update Failure `,
-        status: 400
-      });
+      return res.status(400).send(Response([], false, true, `Database Update Failure`, 400));
     }
 
     user.firstName = firstName || user.firstName;
@@ -202,45 +240,97 @@ exports.user_update = async (req, res, next) => {
     user.dateOfBirth = dateOfBirth || user.dateOfBirth;
     user.cart = cart || user.cart;
 
-    user
-      .save()
-      .then(updatedUser => {
-        return res.status(200).send({
-          message: 'Successfully updated user by given id',
-          success: true,
-          status: 201,
-          user: {
-            _id: updatedUser._id,
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            email: updatedUser.email,
-            dateOfBirth: updatedUser.dateOfBirth,
-            gender: updatedUser.gender,
-            cart: updatedUser.cart,
-            createdAt: updatedUser?.createdAt,
-            updatedAt: updatedUser?.updatedAt
-          }
-        });
-      })
-      .catch(error => {
-        if (error?.code === 11000) {
-          return res.status(409).send({
-            success: false,
-            message: 'Unable to update user in database',
-            status: 409,
-            error: `Email address ${email} is already taken`
-          });
-        }
+    const updatedUser = await user.save();
+    const data = {
+      user: {
+        _id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        dateOfBirth: updatedUser.dateOfBirth,
+        gender: updatedUser.gender,
+        cart: updatedUser.cart,
+        createdAt: updatedUser?.createdAt,
+        updatedAt: updatedUser?.updatedAt,
+        role: updatedUser?.role
+      },
+      request: {
+        type: 'Get',
+        description: 'Get all the user',
+        url: `${process.env.WEBSITE_URL}/api/${process.env.API_VERSION}/admin/users`
+      }
+    };
 
-        // 500 Internal Server Error
-        return res.status(500).send({
-          success: false,
-          message: 'Unable to update user in database',
-          status: 500,
-          error: error
-        });
-      });
-  });
+    return res.status(201).send(Response(data, true, false, `Successfully updated user by ID: ${userId}`, 201));
+  } catch (error) {
+    if (error?.code === 11000) {
+      // also we can send  422(422 Unprocessable Entity)
+      // 409 Conflict
+      return res
+        .status(409)
+        .send(
+          Response({}, false, true, `E-Mail address  ${email} is already exists, please pick a different one.`, 409)
+        );
+    }
+
+    // 500 Internal Server Error
+    return next(error);
+  }
+};
+
+/**
+ * @desc      Get user
+ * @route    GET /api/v1/users/userId or/api/v1/admin/users/userId
+ * @access   Private
+ */
+
+exports.user_get_one_user = async (req, res, next) => {
+  let responseObject = {};
+
+  const userId = req.params.userId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      userId: userId
+    };
+
+    responseObject.validationErrors = errors.array();
+    return res.status(422).send(responseObject);
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send(Response([], false, true, `Failed to delete user by given ID ${userId}`, 400));
+    }
+
+    const data = {
+      user: {
+        _id: user._id,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        email: user?.email,
+        dateOfBirth: user?.dateOfBirth,
+        gender: user?.gender,
+        cart: user?.cart,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt,
+        role: user?.role,
+        request: {
+          type: 'Get',
+          description: 'Get all the user',
+          url: `${process.env.WEBSITE_URL}/api/${process.env.API_VERSION}/admin/users`
+        }
+      }
+    };
+
+    return res.status(200).send(Response(data, true, false, `Successfully find user by ID: ${userId}`, 200));
+  } catch (error) {
+    return next(error);
+  }
 };
 
 // Handling Post Request to /api/v1/users/signup
@@ -280,3 +370,7 @@ exports.user_signup_Script = async (req, res) => {
     }
   }
 };
+
+// https://github.com/fsbahman/apidoc-swagger
+// https://swagger.io/
+// https://apiblueprint.org/
