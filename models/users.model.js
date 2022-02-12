@@ -13,7 +13,7 @@ const userSchema = mongoose.Schema(
     firstName: {
       type: String,
       required: [true, 'Please provide first name'],
-      maxLength: 10,
+      maxLength: 15,
       minlength: 3,
       trim: true,
       lowercase: true
@@ -21,7 +21,7 @@ const userSchema = mongoose.Schema(
     lastName: {
       type: String,
       required: [true, 'Please provide last name'],
-      maxLength: 10,
+      maxLength: 15,
       minlength: 3,
       trim: true,
       lowercase: true
@@ -101,6 +101,7 @@ userSchema.pre('save', async function(next) {
   } else {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
+    this.confirmPassword = await bcrypt.hash(this.confirmPassword, salt);
   }
 });
 
