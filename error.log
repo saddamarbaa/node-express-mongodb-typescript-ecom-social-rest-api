@@ -1,2 +1,10 @@
 {"level":"error","message":"MongoDB connection error: MongoError: bad auth : Authentication failed.","service":"user-service","timestamp":"2022-01-27 08:52:19"}
 {"level":"error","message":"MongoDB database connection established successfully ...","service":"user-service","timestamp":"2022-01-27 08:53:40"}
+{"level":"error","message":"MongoDB connection error: ReferenceError: conn is not defined","service":"user-service","timestamp":"2022-02-09 08:34:40"}
+{"level":"error","message":"MongoDB connection error: TypeError: Cannot read properties of undefined (reading 'underline')","service":"user-service","timestamp":"2022-02-09 08:36:50"}
+{"level":"error","message":"MongoDB connection error: TypeError: Cannot read properties of undefined (reading 'underline')","service":"user-service","timestamp":"2022-02-09 08:42:38"}
+{"level":"error","message":"MongoDB connection error: TypeError: Cannot read properties of undefined (reading 'underline')","service":"user-service","timestamp":"2022-02-09 08:43:31"}
+{"level":"error","message":"MongoDB connection error: TypeError: Cannot read properties of undefined (reading 'underline')","service":"user-service","timestamp":"2022-02-09 08:43:53"}
+{"level":"error","message":"MongoDB connection error: TypeError: Cannot read properties of undefined (reading 'underline')","service":"user-service","timestamp":"2022-02-09 08:44:53"}
+{"level":"error","message":"MongoDB connection error: TypeError: Cannot read properties of undefined (reading 'underline')","service":"user-service","timestamp":"2022-02-09 08:45:22"}
+{"level":"error","message":"MongoDB connection error: Error: querySrv ECONNREFUSED _mongodb._tcp.cluster0.qupxt.mongodb.net","service":"user-service","timestamp":"2022-02-12 08:57:36"}
