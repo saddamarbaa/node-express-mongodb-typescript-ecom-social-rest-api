@@ -109,7 +109,13 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.createJWT = function() {
   const payload = {
     userId: this._id,
-    email: this.email
+    email: this.email,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    email: this.email,
+    dateOfBirth: this.dateOfBirth,
+    gender: this.gender,
+    role: this.role
   };
 
   return jwt.sign(payload, TOKEN_SECRET, {

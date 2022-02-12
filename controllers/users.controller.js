@@ -333,6 +333,19 @@ exports.user_get_one_user = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get user data
+ * @route   GET /api/v1/users/me
+ * @access  Private
+ */
+
+exports.user_get_me = async (req, res, next) => {
+  const data = {
+    user: req.user
+  };
+  return res.status(200).send(Response(data, true, false, `Successfully found user profile`, 200));
+};
+
 // Handling Post Request to /api/v1/users/signup
 exports.user_signup_Script = async (req, res) => {
   // program to generate random strings
