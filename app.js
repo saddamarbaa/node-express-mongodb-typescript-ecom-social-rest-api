@@ -4,6 +4,7 @@ const expressAyncErrors = require('express-async-errors');
 const cors = require('cors');
 const morgan = require('morgan');
 const colors = require('colors');
+const cookieParser = require('cookie-parser');
 
 // Initialize app with express
 const app = express();
@@ -15,14 +16,14 @@ const connectDB = require('./configs/db.config');
 const notFoundMiddleware = require('./middlewares/errors/not-found');
 const errorHandlerMiddleware = require('./middlewares/errors/error-handler');
 
-//  Import logger
+//  Import custom logger
 const logger = require('./logger/index');
 
 // Import Routes
-const productRoutes = require('./routes/products');
-const orderRoutes = require('./routes/orders');
-const userRoutes = require('./routes/users');
-const adminRoutes = require('./routes/admin');
+const productRoutes = require('./routes/products.route');
+const orderRoutes = require('./routes/orders.route');
+const userRoutes = require('./routes/users.route');
+const adminRoutes = require('./routes/admin.route');
 
 // Access Environment variables
 const { MONGODB_CONNECTION_STRING, PORT, NODE_ENV } = require('./configs/environment.config');
@@ -37,6 +38,9 @@ app.use(cors());
 
 // Parses incoming requests with JSON payloads
 app.use(express.json());
+
+// Middleware for cookies
+app.use(cookieParser());
 
 // Serve all static files inside public directory.
 app.use('/static', express.static('public'));
@@ -63,12 +67,11 @@ const start = async () => {
     //   message: `MongoDB database connection established successfully ...`,
     // });
   } catch (error) {
-    console.log('MongoDB connection error:', error);
+    console.log('MongoDB connection error. Please make sure MongoDB is running: ', error?.message);
     logger.error({
-      message: `MongoDB connection error: ${error}`
+      message: `MongoDB connection error. Please make sure MongoDB is running: ${error?.message}`
     });
   }
-  // process.exit(1);
 };
 
 start();
