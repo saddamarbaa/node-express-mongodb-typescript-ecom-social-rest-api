@@ -1,4 +1,4 @@
-const { check, body } = require('express-validator');
+const { check, body, params } = require('express-validator');
 
 const User = require('../../models/users.model');
 
@@ -10,6 +10,7 @@ exports.loginValidation = () => {
       .normalizeEmail(),
     body('password', 'Please provide password with only numbers and text and must be at least 6 characters.')
       .isLength({ min: 6, max: 40 })
+      .isAlphanumeric()
       .trim()
   ];
 };
@@ -62,5 +63,18 @@ exports.forgetPasswordValidation = () => {
     check('email')
       .isEmail()
       .withMessage('Please provide a valid email.')
+  ];
+};
+
+exports.resetPasswordValidation = () => {
+  return [
+    check('userId', 'Please provide vaild user id')
+      .exists()
+      .isLength({ min: 1 })
+      .trim(),
+    check('token', 'Please provide vaild user token')
+      .exists()
+      .isLength({ min: 1 })
+      .trim()
   ];
 };
