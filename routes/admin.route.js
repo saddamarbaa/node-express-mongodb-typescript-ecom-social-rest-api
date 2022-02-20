@@ -4,8 +4,8 @@ const UserModel = require('../models/users.model');
 const adminController = require('../controllers/admin.controller');
 const userController = require('../controllers/users.controller');
 
-const isAuth = require('../middlewares/auth/check-auth');
-const isAdmin = require('../middlewares/auth/check-admin');
+const { isAuth } = require('../middlewares/auth/checkIsAuth');
+const isAdmin = require('../middlewares/auth/checkIsAdmin');
 const paginationMiddleware = require('../middlewares/sort-filter-pagination/features.middleware');
 const { signupValidation, userIdValidation } = require('../middlewares/validate-request-schema/user.validation');
 

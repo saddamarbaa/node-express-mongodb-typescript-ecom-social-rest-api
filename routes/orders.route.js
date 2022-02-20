@@ -2,20 +2,20 @@ const express = require('express');
 const router = express.Router();
 
 // Import Middleware function to authenticate token From different file
-const authenticateToken = require('../middlewares/auth/check-auth');
+const { isAuth } = require('../middlewares/auth/checkIsAuth');
 
 const ordersController = require('../controllers/orders.controller');
 
 // Handling Get Request to /api/v1/orders
-router.get('/', authenticateToken, ordersController.orders_get_all);
+router.get('/', isAuth, ordersController.orders_get_all);
 
 // Handling Post Request to /api/v1/orders
-router.post('/', authenticateToken, ordersController.orders_create_order);
+router.post('/', isAuth, ordersController.orders_create_order);
 
 // Handling individual Request to /api/v1/orders
-router.get('/:orderId', authenticateToken, ordersController.orders_get_one_order);
+router.get('/:orderId', isAuth, ordersController.orders_get_one_order);
 
 // Handling deleting individual /api/v1/orders
-router.delete('/:orderId', authenticateToken, ordersController.orders_delete_order);
+router.delete('/:orderId', isAuth, ordersController.orders_delete_order);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // Access Environment variables
 const { TOKEN_SECRET, JWT_EXPIRE_TIME } = require('../configs/environment.config');
@@ -26,6 +27,16 @@ const userSchema = mongoose.Schema(
       trim: true,
       lowercase: true
     },
+    surname: {
+      type: String,
+      required: [false, 'Please provide unique username'],
+      unique: true,
+      maxLength: 15,
+      minlength: 3,
+      trim: true,
+      index: true,
+      sparse: true
+    },
     email: {
       type: String,
       required: [true, 'Please provide email'],
@@ -42,14 +53,12 @@ const userSchema = mongoose.Schema(
       type: String,
       required: [true, 'Please provide password'],
       minlength: 6,
-      maxLength: 40,
       trim: true
     },
     confirmPassword: {
       type: String,
       required: [true, 'Please provide confirmed Password'],
       minlength: 6,
-      maxLength: 40,
       trim: true
     },
     dateOfBirth: {
@@ -84,6 +93,25 @@ const userSchema = mongoose.Schema(
       default: 'user',
       trim: true,
       lowercase: true
+    },
+    profileImage: {
+      type: String,
+      required: false
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+
+    resetPasswordToken: {
+      type: String,
+      required: false
+    },
+
+    resetPasswordExpires: {
+      type: Date,
+      required: false
     }
   },
   {
@@ -95,14 +123,39 @@ const userSchema = mongoose.Schema(
 
 // Pre Save Hook. Generate hashed password
 userSchema.pre('save', async function(next) {
+  const user = this;
+
   // Check if this is new account or password is modfied
-  if (!this.isModified('password')) {
+  if (!user.isModified('password')) {
+    return next();
     // if the password is not modfied then continue
   } else {
     const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    this.confirmPassword = await bcrypt.hash(this.confirmPassword, salt);
+    user.password = await bcrypt.hash(user.password, salt);
+    user.confirmPassword = await bcrypt.hash(user.confirmPassword, salt);
   }
+
+  // commented code blow will do the same
+  /*
+    Here first checking if the document is new by using a helper of mongoose .isNew, therefore, this.isNew is true if document is new else false, and we only want to hash the password if its a new document, else  it will again hash the password if you save the document again by making some changes in other fields incase your document contains other fields.
+    */
+
+  //   try {
+  //     if (this.isNew) {
+  //       const salt = await bcrypt.genSalt(12);
+  //       user.password = await bcrypt.hash(user.password, salt);
+  //       user.confirmPassword = await bcrypt.hash(user.confirmPassword, salt);
+  //     }
+  //     next();
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // });
+});
+
+// After Save Hook.
+userSchema.post('save', function(doc) {
+  console.log('User is been Save ', this);
 });
 
 // Create JWT token for the user
@@ -120,6 +173,19 @@ userSchema.methods.createJWT = function() {
 
   return jwt.sign(payload, TOKEN_SECRET, {
     expiresIn: JWT_EXPIRE_TIME
+  });
+};
+
+// Generate Password Reset
+userSchema.methods.generatePasswordReset = function() {
+  crypto.randomBytes(32, (err, buffer) => {
+    if (err) {
+      console.log(err);
+    }
+    
+    const token = buffer.toString('hex');
+    this.resetPasswordToken = token;
+    this.resetPasswordExpires = Date.now() + 3600000; //expires in an hour
   });
 };
 
@@ -153,5 +219,6 @@ userSchema.methods.addToCart = function(product) {
   return this.save();
 };
 
+mongoose.set('useFindAndModify', false);
 // Compile model from schema and Exported
 module.exports = mongoose.models.User || mongoose.model('User', userSchema);
