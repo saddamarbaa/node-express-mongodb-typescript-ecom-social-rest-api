@@ -2,12 +2,11 @@ const express = require('express');
 
 const UserModel = require('../models/users.model');
 const adminController = require('../controllers/admin.controller');
-const userController = require('../controllers/users.controller');
 
 const { isAuth } = require('../middlewares/auth/checkIsAuth');
 const isAdmin = require('../middlewares/auth/checkIsAdmin');
 const paginationMiddleware = require('../middlewares/sort-filter-pagination/features.middleware');
-const { signupValidation, userIdValidation } = require('../middlewares/validate-request-schema/user.validation');
+const adminValidation = require('../middlewares/validate-request-schema/auth.validation');
 
 const router = express.Router();
 
@@ -20,7 +19,7 @@ const router = express.Router();
  * @apiSuccess (200) {Object} mixed `Users` object
  */
 
-router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminController.admin_get_all_user);
+router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminController.getUsersController);
 
 /**
  * @api {post}  /api/admin/users
@@ -40,7 +39,7 @@ router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminCont
  * @apiSuccess (201) {Object} mixed `User` object
  */
 
-router.post('/users', isAuth, isAdmin, signupValidation(), userController.user_signup);
+router.post('/users', isAuth, isAdmin, adminValidation.signupValidation(), adminController.addUserController);
 
 /**
  * @api {get}  /api/v1/admin/users/userId
@@ -51,7 +50,7 @@ router.post('/users', isAuth, isAdmin, signupValidation(), userController.user_s
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.get('/users/:userId', userIdValidation(), isAuth, isAdmin, userController.user_get_one_user);
+router.get('/users/:userId', adminValidation.userIdValidation(), isAuth, isAdmin, adminController.getUserController);
 
 /**
  * @api {patch}   /api/v1/admin/users/userId
@@ -63,7 +62,13 @@ router.get('/users/:userId', userIdValidation(), isAuth, isAdmin, userController
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.patch('/users/:userId', userIdValidation(), isAuth, isAdmin, userController.user_update);
+router.patch(
+  '/users/:userId',
+  adminValidation.userIdValidation(),
+  isAuth,
+  isAdmin,
+  adminController.updateUserController
+);
 
 /**
  * @api {delete}  /api/v1/admin/users/userId
@@ -75,6 +80,12 @@ router.patch('/users/:userId', userIdValidation(), isAuth, isAdmin, userControll
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.delete('/users/:userId', userIdValidation(), isAuth, isAdmin, userController.user_delete);
+router.delete(
+  '/users/:userId',
+  adminValidation.userIdValidation(),
+  isAuth,
+  isAdmin,
+  adminController.deleteUserController
+);
 
 module.exports = router;

@@ -583,19 +583,6 @@ exports.user_signup_Script = async (req, res) => {
   }
 };
 
-// passwordReset.js
 // https://github.com/fsbahman/apidoc-swagger
 // https://swagger.io/
 // https://apiblueprint.org/
-
-// koookie
-// https://dev.to/franciscomendes10866/using-cookies-with-jwt-in-node-js-8fn
-
-// koookie
-// https://keikaavousi.medium.com/nodejs-authentication-with-jwt-and-cookies-3fb1c8c739ba
-
-// koooie
-// https://livecodestream.dev/post/a-practical-guide-to-jwt-authentication-with-nodejs/
-
-// Come back for this
-// https://github.com/ezesundayeze/forgotpassword

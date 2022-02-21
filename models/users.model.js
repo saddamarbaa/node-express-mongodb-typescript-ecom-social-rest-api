@@ -101,7 +101,21 @@ const userSchema = mongoose.Schema(
 
     isVerified: {
       type: Boolean,
-      default: false
+      default: false,
+      required: false
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'active'],
+      default: 'pending',
+      required: false,
+      trim: true,
+      lowercase: true
+    },
+    confirmationCode: {
+      type: String,
+      unique: true,
+      required: false
     },
 
     resetPasswordToken: {
@@ -173,19 +187,6 @@ userSchema.methods.createJWT = function() {
 
   return jwt.sign(payload, TOKEN_SECRET, {
     expiresIn: JWT_EXPIRE_TIME
-  });
-};
-
-// Generate Password Reset
-userSchema.methods.generatePasswordReset = function() {
-  crypto.randomBytes(32, (err, buffer) => {
-    if (err) {
-      console.log(err);
-    }
-    
-    const token = buffer.toString('hex');
-    this.resetPasswordToken = token;
-    this.resetPasswordExpires = Date.now() + 3600000; //expires in an hour
   });
 };
 

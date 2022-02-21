@@ -53,7 +53,7 @@ exports.userIdValidation = () => {
   return [
     check('userId', 'Please provide vaild user id')
       .exists()
-      .isLength({ min: 1 })
+      .isLength({ min: 3 })
       .trim()
   ];
 };
@@ -66,15 +66,15 @@ exports.forgetPasswordValidation = () => {
   ];
 };
 
-exports.resetPasswordValidation = () => {
+exports.verifyValidation = () => {
   return [
     check('userId', 'Please provide vaild user id')
       .exists()
-      .isLength({ min: 1 })
+      .isLength({ min: 3 })
       .trim(),
     check('token', 'Please provide vaild user token')
       .exists()
-      .isLength({ min: 1 })
+      .isLength({ min: 5 })
       .trim()
   ];
 };

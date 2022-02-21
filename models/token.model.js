@@ -15,8 +15,17 @@ const tokenSchema = new mongoose.Schema(
     resetPasswordExpires: {
       type: Date,
       required: false
+    },
+    emailVerificationToken: {
+      type: String,
+      required: false
+    },
+    emailVerificationExpiresToken: {
+      type: Date,
+      required: false
     }
   },
+
   { timestamps: true }
 );
 
@@ -24,6 +33,12 @@ const tokenSchema = new mongoose.Schema(
 tokenSchema.methods.generatePasswordReset = function() {
   this.resetPasswordToken = crypto.randomBytes(32).toString('hex');
   this.resetPasswordExpires = Date.now() + 3600000; //expires in an hour
+};
+
+// Generate email verification token
+tokenSchema.methods.generateEmailVerificationToken = function() {
+  this.emailVerificationToken = crypto.randomBytes(32).toString('hex');
+  this.emailVerificationExpiresToken = Date.now() + 3600000; //expires in an hour
 };
 
 // Compile model from schema and Exported

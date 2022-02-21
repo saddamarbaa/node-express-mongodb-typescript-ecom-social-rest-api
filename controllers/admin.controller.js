@@ -1,43 +1,43 @@
-const User = require('../models/users.model');
+const adminServices = require('../services/admin.service');
+const authServices = require('../services/auth.service');
 
-// Handling Get Request to /api/v1/admin/users
-exports.admin_get_all_user = (req, res) => {
-  const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
-
-  const responseObject = {
-    totalDocs: totalDocs || 0,
-    totalPages: totalPages || 0,
-    lastPage: lastPage || 0,
-    count: results?.length || 0,
-    currentPage: currentPage || 0,
-  };
-
-  if (next) {
-    responseObject.nextPage = next;
+exports.getUsersController = async (req, res, next) => {
+  try {
+    const getUsersService = await adminServices.getUsers(req, res, next);
+    return res.status(getUsersService.status).send(getUsersService);
+  } catch (error) {
+    return next(error);
   }
-  if (previous) {
-    responseObject.prevPage = previous;
-  }
+};
 
-  (responseObject.users = results.map((user) => {
-    return {
-      _id: user._id,
-      firstName: user?.firstName,
-      lastName: user?.lastName,
-      email: user?.email,
-      dateOfBirth: user?.dateOfBirth,
-      gender: user?.gender,
-      cart: user?.cart,
-      createdAt: user?.createdAt,
-      updatedAt: user?.updatedAt,
-      role: user?.role,
-    };
-  })),
-    res.status(200).send({
-      success: true,
-      error: false,
-      message: 'Successful Found users',
-      status: 200,
-      data: responseObject,
-    });
+exports.addUserController = async (req, res, next) => {
+  const signupService = await authServices.signup(req, res, next);
+  return res.status(signupService.status).send(signupService);
+};
+
+exports.getUserController = async (req, res, next) => {
+  try {
+    const userService = await adminServices.getUser(req, res, next);
+    return res.status(userService.status).send(userService);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateUserController = async (req, res, next) => {
+  try {
+    const updateUserService = await adminServices.updateUser(req, res, next);
+    return res.status(updateUserService.status).send(updateUserService);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.deleteUserController = async (req, res, next) => {
+  try {
+    const deleteUserService = await adminServices.deleteUser(req, res, next);
+    return res.status(deleteUserService.status).send(deleteUserService);
+  } catch (error) {
+    return next(error);
+  }
 };

@@ -11,6 +11,7 @@ module.exports = {
   isAuth: (req, res, next) => {
     // get jwt Token from the request header or cookie
     const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+
     const token = (authHeader && authHeader.split(' ')[1]) || req.cookies.authToken || '';
 
     // if there is no token
