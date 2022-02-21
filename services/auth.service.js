@@ -52,22 +52,33 @@ exports.signup = async (req, res, next) => {
 
   try {
     const user = await newUser.save();
+    let token = await new Token({ userId: user._id });
+
+    // Generate and set verify email token
+    token.generateEmailVerificationToken();
+
+    // Save the updated token object
+    token = await token.save();
+
+    const link = `${CLIENT_URL}/verify-email/token=${token.emailVerificationToken}&id=${token.userId}`;
+
+    // send mail for email verification
+    emailTemplate.sendEmailVerificationEmail(email, firstName, link);
 
     // Send back refreshToken and accessToken
-    const token = user.createJWT();
-    const accessToken = await signAccessToken(user._id);
-    const refreshToken = await signRefreshToken(user._id);
+    // const token = user.createJWT();
+    // const accessToken = await signAccessToken(user._id);
+    // const refreshToken = await signRefreshToken(user._id);
 
     const data = {
-      token: token,
-      accessToken: accessToken,
-      refreshToken: refreshToken
+      emailVerificationLinkToken: link
+      // token: token,
+      // accessToken: accessToken,
+      // refreshToken: refreshToken
     };
 
-    return Response(data, true, false, 'Registered Successfully', 201);
-
-    // send mail
-    // emailTemplate.sendEmail(user?.email);
+    const message = `Registered Successfully An Email with Verification link has been sent to your account ${email} please verify`;
+    return Response(data, true, false, message, 201);
   } catch (error) {
     if (error?.code === 11000) {
       // also we can send  422(422 Unprocessable Entity)
@@ -124,10 +135,43 @@ exports.login = async (req, res, next) => {
       return Response({}, false, true, 'Auth Failed (Invalid Credentials)', 401);
     }
 
+    // check user is verified or not
+    if (!user.isVerified || user.status !== 'active') {
+      // Again send verification email
+      let token = await Token.findOne({ userId: user._id });
+      if (!token) {
+        token = await new Token({ userId: user._id });
+
+        // Generate and set verify email token
+        token.generateEmailVerificationToken();
+
+        // Save the updated token object
+        token = await token.save();
+      }
+
+      const link = `${CLIENT_URL}/verify-email/token=${token.emailVerificationToken}&id=${token.userId}`;
+
+      // send mail for email verification
+      emailTemplate.sendEmailVerificationEmail(email, user.firstName, link);
+
+      const data = {
+        emailVerificationLinkToken: link
+      };
+
+      return Response(
+        data,
+        false,
+        true,
+        `Your Email has not been verified. An Email with Verification link has been sent to your account ${user.email} Please Verify Your Email first`,
+        401
+      );
+    }
+
     // Send back only the user, refreshToken and accessToken (dont send the password)
     const token = user.createJWT();
     const accessToken = await signAccessToken(user._id);
     const refreshToken = await signRefreshToken(user._id);
+    console.log(token);
 
     // Response data
     const data = {
@@ -141,6 +185,7 @@ exports.login = async (req, res, next) => {
         createdAt: user?.createdAt,
         updatedAt: user?.updatedAt,
         role: user?.role,
+        isVerified: user?.isVerified,
         token: token,
         accessToken: accessToken,
         refreshToken: refreshToken
@@ -167,7 +212,65 @@ exports.login = async (req, res, next) => {
       secure: process.env.NODE_ENV === 'production'
     });
 
-    return Response(data, true, false, 'Auth successful', 200);
+    return Response(data, true, false, 'Auth logged in successful.', 200);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * @desc    Verify user account
+ * @route   POST /api/v1/auth/login
+ * @access  Public
+ */
+
+exports.verifyEmail = async (req, res, next) => {
+  let responseObject = {};
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      userId: req.params?.userId,
+      token: req.params?.token
+    };
+
+    responseObject.validationErrors = errors.array();
+    return responseObject;
+  }
+
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user)
+      return Response(
+        {},
+        false,
+        true,
+        `Email verification token is invalid or has expired. Please click on resend for verify your Email.`,
+        400
+      );
+
+    // user is already verified
+    if (user.isVerified && user.status === 'active') {
+      return Response({}, false, true, ` User has been already verified. Please Login.`, 200);
+    }
+
+    const emailVerificationToken = await Token.findOne({
+      userId: user._id,
+      emailVerificationToken: req.params.token
+    });
+
+    if (!emailVerificationToken)
+      return Response({}, false, true, `Email verification token is invalid or has expired.`, 400);
+
+    // Verfiy the user
+    user.isVerified = true;
+    user.status = 'active';
+    await user.save();
+    await emailVerificationToken.delete();
+
+    return Response({}, true, false, `Your account has been successfully verified . Please Login. `, 200);
   } catch (error) {
     return next(error);
   }
@@ -241,7 +344,7 @@ exports.requestPasswordReset = async (req, res, next) => {
 
 /**
  * @desc  Reset Password - Validate password reset token
- * @route   POST /api/v1/auth/reset-password
+ * @route   POST /api/v1/auth/verify-email/:userId/:token
  * @access  Public
  */
 
@@ -290,7 +393,7 @@ exports.resetPassword = async (req, res, next) => {
 /**
  * @desc  Logout the user - Validate refreshToken and clear refreshToken and accessToken and all auth cookies
  * @route   POST /api/v1/auth/refreshToken
- * @access  Public
+ * @access   Private
  */
 
 exports.logout = async (req, res, next) => {
@@ -306,7 +409,7 @@ exports.logout = async (req, res, next) => {
     if (!user) {
       return Response([], false, true, `Unauthenticated`, 400);
     }
-s
+    s;
     // clear tokens
     // TODO JWT LOGOUT
     // const token = user.createJWT();
@@ -322,3 +425,198 @@ s
     return next(error);
   }
 };
+
+/**
+ * @desc     Update user
+ * @route    PATCH /api/v1/auth/userId
+ * @access   Private
+ */
+
+exports.updateUser = async (req, res, next) => {
+  let responseObject = {};
+
+  const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword } = req.body;
+  const userId = req.params.userId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      userId: userId
+    };
+
+    responseObject.validationErrors = errors.array();
+    return responseObject;
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return Response([], false, true, `Database Update Failure`, 400);
+    }
+
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+    user.password = password || user.password;
+    user.confirmPassword = confirmPassword || user.confirmPassword;
+    user.gender = gender || user.gender;
+    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
+    user.cart = cart || user.cart;
+
+    const updatedUser = await user.save();
+    const data = {
+      user: {
+        _id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        dateOfBirth: updatedUser.dateOfBirth,
+        gender: updatedUser.gender,
+        cart: updatedUser.cart,
+        createdAt: updatedUser?.createdAt,
+        updatedAt: updatedUser?.updatedAt,
+        role: updatedUser?.role
+      },
+      request: {
+        type: 'Get',
+        description: 'Get all the user',
+        url: `${process.env.WEBSITE_URL}/api/${process.env.API_VERSION}/admin/users`
+      }
+    };
+
+    return Response(data, true, false, `Successfully updated user by ID: ${userId}`, 201);
+  } catch (error) {
+    if (error?.code === 11000) {
+      // also we can send  422(422 Unprocessable Entity)
+      // 409 Conflict
+      return Response({}, false, true, `E-Mail address  ${email} is already exists, please pick a different one.`, 409);
+    }
+
+    // 500 Internal Server Error
+    return next(error);
+  }
+};
+
+/**
+ * @desc     Delete user
+ * @route    DELETE /api/v1/auth/userId
+ * @access   Private
+ */
+
+exports.deleteUser = async (req, res, next) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg;
+    const responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      userId: req.params.userId
+    };
+
+    responseObject.validationErrors = errors.array();
+    return responseObject;
+  }
+
+  try {
+    const toBeDeletedUser = await User.findByIdAndRemove({
+      _id: req.params.userId
+    });
+
+    if (!toBeDeletedUser) {
+      return Response([], false, true, `Failed to delete user by given ID ${req.params.userId}`, 400);
+    }
+
+    return Response([], true, false, `Successfully deleted user by ID ${req.params.userId}`, 200);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * @desc  Get new refreshToken - Validate refreshToken and send new refreshToken and accessToken
+ * @route   POST /api/v1/users/refreshToken
+ * @access  Public
+ */
+
+exports.requestRefreshToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return Response({}, false, true, `Bad Request Please provide a valid  refreshToken.`, 422);
+
+    // verify the Token
+    const userId = await verifyRefreshToken(refreshToken);
+
+    // verify the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send(Response([], false, true, `Unauthenticated`, 400));
+    }
+
+    // Generate new access and refresh token
+    const token = user.createJWT();
+    const accessToken = await signAccessToken(userId);
+    const refreshTokenRf = await signRefreshToken(userId);
+
+    const data = {
+      token: token,
+      accessToken: accessToken,
+      refreshToken: refreshTokenRf
+    };
+
+    responseObject = Response(data, true, false, 'Success', 201);
+    return responseObject;
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * @desc    generate random uses
+ * @route   POST /api/v1/auth/userId
+ * @access  Private
+ */
+
+// Handling Post Request to /api/v1/users/signup
+exports.generateRandomUser = async (req, res) => {
+  // program to generate random strings
+
+  // declare all characters
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  function generateString(length) {
+    let result = ' ';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+
+    return result;
+  }
+
+  for (let i = 0; i < 1000; i++) {
+    const newUser = new User({
+      _id: new mongoose.Types.ObjectId(),
+      firstName: 'test',
+      lastName: 'test',
+      email: `${generateString(5)}nh@gmail.com`,
+      password: '123456',
+      confirmPassword: '123456',
+      dateOfBirth: '02-12-1994',
+      gender: 'male'
+    });
+
+    try {
+      const user = await newUser.save();
+      console.log(i);
+    } catch (error) {
+      console.log('error');
+    }
+  }
+};
+
+// TODO
+// https://github.com/fsbahman/apidoc-swagger
+// https://swagger.io/
+// https://apiblueprint.org/

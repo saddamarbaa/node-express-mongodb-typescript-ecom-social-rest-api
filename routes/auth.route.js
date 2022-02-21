@@ -77,7 +77,7 @@ router.get('/me', isAuth, authController.userProfileController);
 router.post('/forget-password', authValidation.forgetPasswordValidation(), authController.forgetPasswordController);
 
 /**
- * @api {post}  /api/v1/auth/reset-password/:token
+ * @api {post}  /api/v1/auth/reset-password/:userId/:token
  * @apiName Update Password
  * @apiPermission Public
  * @apiGroup User
@@ -90,8 +90,57 @@ router.post('/forget-password', authValidation.forgetPasswordValidation(), authC
 
 router.post(
   '/reset-password/:userId/:token',
-  authValidation.resetPasswordValidation(),
+  authValidation.verifyValidation(),
   authController.resetPasswordController
 );
+
+/**
+ * @api {get}  /api/v1/auth/verify-email/:userId/:token
+ * @apiName verfiy email
+ * @apiPermission Public
+ * @apiGroup User
+ *
+ *
+ * @apiSuccess (200) {Object} mixed  object
+ */
+
+router.get('/verify-email/:userId/:token', authValidation.verifyValidation(), authController.verifyEmailController);
+
+/**
+ * @api {patch}  /api/v1/auth/userId
+ * @apiName update user
+ * @apiPermission Protected route or admin
+ * @apiGroup Protected & admin
+ *
+ * @apiParam  {String} [userId] userId
+ * @apiSuccess (200) {Object} mixed `User` object
+ */
+
+router.patch('/:userId', authValidation.userIdValidation(), isAuth, authController.updateUserController);
+
+/**
+ * @api {delete}  /api/v1/auth/userId
+ * @apiName delete user
+ * @apiPermission Protected route or admin
+ * @apiGroup Protected & admin
+ *
+ * @apiParam  {String} [userId] userId
+ * @apiSuccess (200) {Object} mixed  object
+ */
+
+router.delete('/:userId', authValidation.userIdValidation(), isAuth, authController.deleteUserController);
+
+/**
+ * @api  {post}  /api/v1/auth/refreshToken
+ * @apiName  Get new  refreshToken
+ * @apiPermission Public
+ * @apiGroup User
+ *
+ * @apiParam  {String}  [refreshToken]   refreshToken
+ *
+ * @apiSuccess (200) {Object}   accessToken and refreshToken
+ */
+
+router.post('/refreshToken', authController.requestRefreshTokenController);
 
 module.exports = router;
