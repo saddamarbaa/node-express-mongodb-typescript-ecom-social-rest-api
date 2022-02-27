@@ -1,6 +1,8 @@
 const adminServices = require('../services/admin.service');
 const authServices = require('../services/auth.service');
 
+// Admin Users
+
 exports.getUsersController = async (req, res, next) => {
   try {
     const getUsersService = await adminServices.getUsers(req, res, next);
@@ -37,6 +39,17 @@ exports.deleteUserController = async (req, res, next) => {
   try {
     const deleteUserService = await adminServices.deleteUser(req, res, next);
     return res.status(deleteUserService.status).send(deleteUserService);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Admin Products
+
+exports.addProductController = async (req, res, next) => {
+  try {
+    const addProductService = await adminServices.addProduct(req, res, next);
+    return res.status(addProductService.status).send(addProductService);
   } catch (error) {
     return next(error);
   }

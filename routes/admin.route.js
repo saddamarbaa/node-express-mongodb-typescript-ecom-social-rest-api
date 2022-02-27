@@ -7,11 +7,13 @@ const { isAuth } = require('../middlewares/auth/checkIsAuth');
 const isAdmin = require('../middlewares/auth/checkIsAdmin');
 const paginationMiddleware = require('../middlewares/sort-filter-pagination/features.middleware');
 const adminValidation = require('../middlewares/validate-request-schema/auth.validation');
+const productValidation = require('../middlewares/validate-request-schema/product.validation');
+const { uploadImage } = require('../middlewares/file-upload/uploadImage.middleware');
 
 const router = express.Router();
 
 /**
- * @api {get}  /api/admin/users
+ * @api {get}  /api/v1/admin/users
  * @apiName Get users
  * @apiPermission Protected(only admin)
  * @apiGroup Admin
@@ -22,7 +24,7 @@ const router = express.Router();
 router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminController.getUsersController);
 
 /**
- * @api {post}  /api/admin/users
+ * @api {post}  /api/v1/admin/users
  * @apiName Create new user
  * @apiPermission Protected(only admin)
  * @apiGroup Admin
@@ -30,7 +32,7 @@ router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminCont
  * @apiParam  {String} [firstName] FirstName
  * @apiParam  {String} [lastName]  LastName
  * @apiParam  {String} [email] Email
- * @apiParam  {String} password]  Password
+ * @apiParam  {String} [password]  Password
  * @apiParam  {String} [confirmPassword] ConfirmPassword
  * @apiParam  {String} [ dateOfBirth]  DateOfBirth
  * @apiParam  {String} [  role]   role
@@ -86,6 +88,29 @@ router.delete(
   isAuth,
   isAdmin,
   adminController.deleteUserController
+);
+
+/**
+ * @api {post} /api/v1/admin/products
+ * @apiName add new product
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiParam  {String} [name]  Name
+ * @apiParam  {number} [price] Price
+ * @apiParam  {String} [description] Description
+ * @apiParam  {String} [postImage]  Image
+ *
+ * @apiSuccess (201) {Object} mixed `Product` object
+ */
+
+router.post(
+  '/products',
+  uploadImage.single('productImage'),
+  isAuth,
+  isAdmin,
+  productValidation,
+  adminController.addProductController
 );
 
 module.exports = router;

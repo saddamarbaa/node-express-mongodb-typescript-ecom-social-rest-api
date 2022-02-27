@@ -3,9 +3,16 @@ const { validationResult } = require('express-validator');
 
 const User = require('../models/users.model');
 const Token = require('../models/token.model');
+const Product = require('../models/products.model');
 
 const Response = require('../utils/response');
-const { WEBSITE_URL, API_VERSION, CLIENT_URL } = require('../configs/environment.config');
+const { WEBSITE_URL, API_VERSION } = require('../configs/environment.config');
+
+/**
+ * @desc    Get all users
+ * @route   GET /api/v1/admin/users
+ * @access  Private
+ */
 
 exports.getUsers = (req, res) => {
   const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
@@ -203,6 +210,61 @@ exports.deleteUser = async (req, res, next) => {
     }
 
     return Response([], true, false, `Successfully deleted user by ID ${req.params.userId}`, 200);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * @desc    add new product
+ * @route   POST /api/v1/admin/products
+ * @access  Public
+ */
+
+exports.addProduct = async (req, res, next) => {
+  const givenProduct = new Product({
+    _id: new mongoose.Types.ObjectId(),
+    name: req.body.name,
+    price: req.body.price,
+    description: req.body.description,
+    productImage: `/static/uploads/${req.file.filename}`,
+    addedDate: `${Date.now()}`,
+    userId: req.user.userId
+  });
+
+  try {
+    const createdAndReturnedProduct = await Product.create(givenProduct);
+
+    const data = {
+      product: {
+        name: createdAndReturnedProduct.name,
+        price: createdAndReturnedProduct.price,
+        productImage: createdAndReturnedProduct.productImage,
+        _id: createdAndReturnedProduct._id,
+        addedDate: createdAndReturnedProduct.addedDate,
+        user: {
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          email: req.user.email,
+          dateOfBirth: req.user.dateOfBirth,
+          gender: req.user.gender,
+          joinedDate: req.user.joinedDate,
+          cart: req.user.cart,
+          createdAt: req.user?.createdAt,
+          updatedAt: req.user?.updatedAt,
+          role: req.user?.role
+        },
+        request: {
+          type: 'Get',
+          description: 'Get  all products',
+          url: `${WEBSITE_URL}/api/${API_VERSION}/products`
+        }
+      }
+    };
+
+    // HTTP Status 201 indicates that as a result of HTTP POST  request,
+    //  one or more new resources have been successfully created on server
+    return Response(data, true, false, `Successfully Created new Product`, 201);
   } catch (error) {
     return next(error);
   }

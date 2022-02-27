@@ -66,6 +66,11 @@ const userSchema = mongoose.Schema(
       maxLength: 15,
       trim: true
     },
+    mobileNumber: {
+      type: String,
+      maxLength: 10,
+      required: false
+    },
     gender: { type: String, trim: true, lowercase: true },
     joinedDate: {
       type: Date,

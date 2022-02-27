@@ -578,10 +578,7 @@ exports.requestRefreshToken = async (req, res, next) => {
  * @access  Private
  */
 
-// Handling Post Request to /api/v1/users/signup
 exports.generateRandomUser = async (req, res) => {
-  // program to generate random strings
-
   // declare all characters
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
