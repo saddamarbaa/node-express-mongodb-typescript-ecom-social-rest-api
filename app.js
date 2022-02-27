@@ -12,24 +12,23 @@ const app = express();
 // Import DB
 const connectDB = require('./configs/db.config');
 
-//  Import Middlewares
+// Import Middlewares
 const notFoundMiddleware = require('./middlewares/errors/not-found');
 const errorHandlerMiddleware = require('./middlewares/errors/error-handler');
 
-//  Import custom logger
+// Import custom logger
 const logger = require('./logger/index');
 
 // Import Routes
 const productRoutes = require('./routes/products.route');
 const orderRoutes = require('./routes/orders.route');
-const userRoutes = require('./routes/users.route');
 const adminRoutes = require('./routes/admin.route');
 const authRoutes = require('./routes/auth.route');
 
 // Access Environment variables
 const { MONGODB_CONNECTION_STRING, PORT, NODE_ENV } = require('./configs/environment.config');
 
-// Middlewares
+// Load App Middlewares
 
 // Log the request
 app.use(morgan('dev'));
@@ -49,7 +48,6 @@ app.use('/static', express.static('public'));
 // Routes which Should handle the requests
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/orders', orderRoutes);
-app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/auth', authRoutes);
 
@@ -76,4 +74,5 @@ const start = async () => {
   }
 };
 
+// establish http server connection
 start();
