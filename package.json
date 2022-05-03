@@ -1,25 +1,28 @@
 {
-  "name": "express-session-authentication",
+  "name": "node-express-rest-api",
   "version": "1.0.0",
   "description": "node js api",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "mathTest": "mocha ./__tests__/math/math.test.js",
+    "test": "mocha __tests__/e2e/**/*"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saddamarbaa/express-session-authentication.git"
+    "url": "https://github.com/saddamarbaa/node-express-rest-api.git"
   },
   "keywords": [],
   "author": "Saddam Arbaa",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/saddamarbaa/express-session-authentication/issues"
+    "url": "https://github.com/saddamarbaa/node-express-rest-api/issues"
   },
-  "homepage": "https://github.com/saddamarbaa/express-session-authentication#readme",
+  "homepage": "https://github.com/saddamarbaa/node-express-rest-api#readme",
   "dependencies": {
+    "axios": "^0.27.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "chai": "^4.3.6",
     "colors": "^1.4.0",
     "connect-mongo": "^4.4.1",
     "cookie-parser": "^1.4.6",
@@ -37,7 +40,6 @@
     "multer": "^1.4.2",
     "nodemailer": "^4.6.8",
     "nodemailer-sendgrid-transport": "^0.2.0",
-    "nodemon": "^2.0.7",
     "passport": "^0.4.1",
     "uuid": "^8.3.2",
     "winston": "^3.4.0",
@@ -46,6 +48,7 @@
   "devDependencies": {
     "eslint-config-prettier": "^4.2.0",
     "eslint-plugin-prettier": "^3.1.2",
+    "mocha": "^9.2.2",
     "prettier": "^1.17.1"
   }
 }
