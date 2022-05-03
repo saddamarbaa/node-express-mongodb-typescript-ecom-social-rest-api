@@ -1,8 +1,4 @@
-const mongoose = require('mongoose');
-
 const Response = require('../utils/response');
-
-const Product = require('../models/products.model');
 const { WEBSITE_URL, API_VERSION } = require('../configs/environment.config');
 
 /**
@@ -11,40 +7,49 @@ const { WEBSITE_URL, API_VERSION } = require('../configs/environment.config');
  * @access  Public
  */
 
-exports.getProducts = (req, res, next) => {
-  Product.find()
-    .select('name price _id productImage addedDate')
-    .populate('userId', 'lastName lastName email dateOfBirth gender joinedDate cart') // populate return merge result
-    .sort({ addedDate: -1 }) // sorted the product
-    .exec() // .exec() method return promise
-    .then(docs => {
-      // pass more information  with response
-      const data = {
-        count: docs.length,
-        products: docs.map(doc => {
-          return {
-            productImage: doc?.productImage,
-            name: doc?.name,
-            price: doc?.price,
-            _id: doc?._id,
-            addedDate: doc?.addedDate,
-            user: doc?.userId,
-            createdAt: doc?.createdAt,
-            updatedAt: doc?.updatedAt,
-            request: {
-              type: 'Get',
-              description: 'Get one product with the id',
-              url: `${WEBSITE_URL}/api/${API_VERSION}/products/${doc._id}`
-            }
-          };
-        })
-      };
+exports.getProducts = (req, res) => {
+  const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
 
-      return Response(data, true, false, `Successful Found all products`, 200);
-    })
-    .catch(error => {
-      return next(error);
-    });
+  const responseObject = {
+    totalDocs: totalDocs || 0,
+    totalPages: totalPages || 0,
+    lastPage: lastPage || 0,
+    count: results?.length || 0,
+    currentPage: currentPage || 0
+  };
+
+  if (next) {
+    responseObject.nextPage = next;
+  }
+  if (previous) {
+    responseObject.prevPage = previous;
+  }
+
+  responseObject.products = results.map(doc => {
+    // Pass more information  with response
+    return {
+      name: doc?.name,
+      price: doc?.price,
+      _id: doc?._id,
+      description: doc?.description,
+      category: doc?.category,
+      productImage: doc?.productImage,
+      count: doc?.count,
+      rating: doc?.rating,
+      stock: doc?.stock,
+      addedDate: doc?.addedDate,
+      createdAt: doc?.createdAt,
+      updatedAt: doc?.updatedAt,
+      user: doc?.userId,
+      request: {
+        type: 'Get',
+        description: 'Get one product with the id',
+        url: `${WEBSITE_URL}/api/${API_VERSION}/products/${doc._id}`
+      }
+    };
+  });
+
+  return Response(responseObject, true, false, 'Successful Found products', 200);
 };
 
 // // Handling Post Request to /product
@@ -213,36 +218,4 @@ exports.getProducts = (req, res, next) => {
 //       error: error
 //     });
 //   }
-// };
-
-// // Handling deleting individual product
-// exports.products_delete_product = (req, res, next) => {
-//   const id = req.params.productId;
-//   // also we can use remove
-//   Product.deleteOne({ _id: id })
-//     .exec() // .exec() method return promise
-//     .then(docs => {
-//       if (docs) {
-//         res.status(200).send({
-//           message: 'Successfully deleted product by given id',
-//           success: true,
-//           status: 200,
-//           request: {
-//             type: 'Post',
-//             description: 'You can post new Product',
-//             url: `${process.env.WEBSITE_URL}/api/${process.env.API_VERSION}/products`,
-//             data: { name: 'string', price: 'Number' }
-//           }
-//         });
-//       }
-//     })
-//     .catch(error => {
-//       // 500 Internal Server Error
-//       res.status(500).send({
-//         message: 'Internal Server Error(invalid id)',
-//         success: false,
-//         status: 500,
-//         error: error
-//       });
-//     });
 // };

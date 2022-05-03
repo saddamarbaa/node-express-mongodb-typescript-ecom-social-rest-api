@@ -5,8 +5,9 @@ const adminController = require('../controllers/admin.controller');
 
 const { isAuth } = require('../middlewares/auth/checkIsAuth');
 const isAdmin = require('../middlewares/auth/checkIsAdmin');
-const paginationMiddleware = require('../middlewares/sort-filter-pagination/features.middleware');
+const paginationMiddleware = require('../middlewares/sort-filter-pagination/usersFeatures.middleware');
 const adminValidation = require('../middlewares/validate-request-schema/auth.validation');
+
 const productValidation = require('../middlewares/validate-request-schema/product.validation');
 const { uploadImage } = require('../middlewares/file-upload/uploadImage.middleware');
 
@@ -52,7 +53,7 @@ router.post('/users', isAuth, isAdmin, adminValidation.signupValidation(), admin
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.get('/users/:userId', adminValidation.userIdValidation(), isAuth, isAdmin, adminController.getUserController);
+router.get('/users/:userId', isAuth, isAdmin, adminValidation.validateID, adminController.getUserController);
 
 /**
  * @api {patch}   /api/v1/admin/users/userId
@@ -64,13 +65,7 @@ router.get('/users/:userId', adminValidation.userIdValidation(), isAuth, isAdmin
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.patch(
-  '/users/:userId',
-  adminValidation.userIdValidation(),
-  isAuth,
-  isAdmin,
-  adminController.updateUserController
-);
+router.patch('/users/:userId', isAuth, isAdmin, adminValidation.validateID, adminController.updateUserController);
 
 /**
  * @api {delete}  /api/v1/admin/users/userId
@@ -82,13 +77,7 @@ router.patch(
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.delete(
-  '/users/:userId',
-  adminValidation.userIdValidation(),
-  isAuth,
-  isAdmin,
-  adminController.deleteUserController
-);
+router.delete('/users/:userId', isAuth, isAdmin, adminValidation.validateID, adminController.deleteUserController);
 
 /**
  * @api {post} /api/v1/admin/products
@@ -111,6 +100,24 @@ router.post(
   isAdmin,
   productValidation,
   adminController.addProductController
+);
+
+/**
+ * @api {delete}  /api/v1/admin/products/productId
+ * @apiName Delete product
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiParam  {String} [product] product
+ * @apiSuccess (200) {Object} mixed `product` object
+ */
+
+router.delete(
+  '/products/:productId',
+  isAuth,
+  isAdmin,
+  adminValidation.validateID,
+  adminController.deleteProductController
 );
 
 module.exports = router;

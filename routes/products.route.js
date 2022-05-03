@@ -1,7 +1,11 @@
 const express = require('express');
-const router = express.Router();
 
+const ProductModel = require('../models/products.model');
 const productController = require('../controllers/products.controller');
+
+const paginationMiddleware = require('../middlewares/sort-filter-pagination/productsFeatures.middleware');
+
+const router = express.Router();
 
 /**
  * @api {get}  /api/v1/products
@@ -12,7 +16,7 @@ const productController = require('../controllers/products.controller');
  * @apiSuccess (200) {Object} mixed `Products` object
  */
 
-router.get('/', productController.getProductsController);
+router.get('/', paginationMiddleware(ProductModel), productController.getProductsController);
 
 // // Handling individual Request to /api/v1/products
 // router.get('/:productId', productsController.products_get_one_product);

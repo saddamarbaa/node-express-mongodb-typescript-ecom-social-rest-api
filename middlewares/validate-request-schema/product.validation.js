@@ -7,9 +7,8 @@ const isValidObjectId = require('../../utils/isValidMongooseObjectId');
 const validation = joi.object({
   name: joi
     .string()
-    .alphanum()
     .min(3)
-    .max(50)
+    .max(100)
     .trim(true)
     .required(),
   price: joi
@@ -21,6 +20,14 @@ const validation = joi.object({
     .min(15)
     .max(500)
     .trim(true)
+    .required(),
+  category: joi
+    .string()
+    .trim(true)
+    .required(),
+  count: joi
+    .string()
+    .pattern(/^[0-9]+$/)
     .required()
 });
 
@@ -48,7 +55,9 @@ const productValidation = async (req, res, next) => {
   const payload = {
     name: req.body?.name,
     price: req.body?.price,
-    description: req.body?.description
+    description: req.body?.description,
+    category: req.body?.category,
+    count: req.body?.count
   };
 
   const { error } = validation.validate(payload);

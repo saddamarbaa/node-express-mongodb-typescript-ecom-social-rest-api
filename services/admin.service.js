@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 
 const User = require('../models/users.model');
-const Token = require('../models/token.model');
 const Product = require('../models/products.model');
 
 const Response = require('../utils/response');
@@ -45,7 +44,18 @@ exports.getUsers = (req, res) => {
       updatedAt: user?.updatedAt,
       role: user?.role,
       isVerified: user?.isVerified,
-      status: user?.status
+      status: user?.status,
+      joinedDate: user?.joinedDate,
+      profileImage: user?.profileImage,
+      mobileNumber: user?.mobileNumber,
+      companyName: user?.companyName,
+      acceptTerms: user?.acceptTerms,
+      nationality: user?.nationality,
+      favoriteAnimal: user?.favoriteAnimal,
+      address: user?.address,
+      bio: user?.bio,
+      jobTitle: user?.jobTitle,
+      familyName: user?.familyName
     };
   });
 
@@ -71,7 +81,6 @@ exports.getUser = async (req, res, next) => {
     };
 
     responseObject.validationErrors = errors.array();
-
     return responseObject;
   }
 
@@ -93,6 +102,19 @@ exports.getUser = async (req, res, next) => {
         createdAt: user?.createdAt,
         updatedAt: user?.updatedAt,
         role: user?.role,
+        isVerified: user?.isVerified,
+        status: user?.status,
+        joinedDate: user?.joinedDate,
+        profileImage: user?.profileImage,
+        mobileNumber: user?.mobileNumber,
+        companyName: user?.companyName,
+        acceptTerms: user?.acceptTerms,
+        nationality: user?.nationality,
+        favoriteAnimal: user?.favoriteAnimal,
+        address: user?.address,
+        familyName: user?.familyName,
+        bio: user?.bio,
+        jobTitle: user?.jobTitle,
         request: {
           type: 'Get',
           description: 'Get all the user',
@@ -115,8 +137,29 @@ exports.getUser = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   let responseObject = {};
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    dateOfBirth,
+    gender,
+    cart,
+    confirmPassword,
+    familyName,
+    mobileNumber,
+    isDeleted,
+    status,
+    isVerified,
+    role,
+    bio,
+    acceptTerms,
+    companyName,
+    nationality,
+    address,
+    favoriteAnimal
+  } = req.body;
 
-  const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword } = req.body;
   const userId = req.params.userId;
   const errors = validationResult(req);
 
@@ -144,7 +187,21 @@ exports.updateUser = async (req, res, next) => {
     user.confirmPassword = confirmPassword || user.confirmPassword;
     user.gender = gender || user.gender;
     user.dateOfBirth = dateOfBirth || user.dateOfBirth;
+    user.familyName = familyName || user.familyName;
+    user.mobileNumber = mobileNumber || user.mobileNumber;
+    user.isDeleted = isDeleted || user.isDeleted;
+    user.status = status || user.status;
     user.cart = cart || user.cart;
+    user.isVerified = isVerified || user.isVerified;
+    user.role = role || user.role;
+    user.acceptTerms = acceptTerms || user.acceptTerms;
+    user.bio = bio || user.bio;
+    user.familyName = familyName || user.familyName;
+    user.acceptTerms = acceptTerms || user.acceptTerms;
+    user.companyName = companyName || user.companyName;
+    user.nationality = nationality || user.nationality;
+    user.address = address || user.address;
+    user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
 
     const updatedUser = await user.save();
     const data = {
@@ -158,8 +215,21 @@ exports.updateUser = async (req, res, next) => {
         cart: updatedUser.cart,
         createdAt: updatedUser?.createdAt,
         updatedAt: updatedUser?.updatedAt,
-        role: updatedUser?.role
+        role: updatedUser?.role,
+        status: updatedUser.status,
+        mobileNumber: updatedUser?.mobileNumber,
+        familyName: updatedUser?.familyName,
+        profileImage: updatedUser?.profileImage,
+        isVerified: updatedUser?.isVerified,
+        acceptTerms: updatedUser?.acceptTerms,
+        bio: updatedUser.bio,
+        acceptTerms: updatedUser.acceptTerms,
+        companyName: updatedUser.companyName,
+        nationality: updatedUser.nationality,
+        address: updatedUser.address,
+        favoriteAnimal: updatedUser.favoriteAnimal
       },
+
       request: {
         type: 'Get',
         description: 'Get all the user',
@@ -229,6 +299,9 @@ exports.addProduct = async (req, res, next) => {
     description: req.body.description,
     productImage: `/static/uploads/${req.file.filename}`,
     addedDate: `${Date.now()}`,
+    count: req.body.count,
+    rating: req.body?.rating,
+    stock: req.body?.stock,
     userId: req.user.userId
   });
 
@@ -265,6 +338,41 @@ exports.addProduct = async (req, res, next) => {
     // HTTP Status 201 indicates that as a result of HTTP POST  request,
     //  one or more new resources have been successfully created on server
     return Response(data, true, false, `Successfully Created new Product`, 201);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * @desc     Delete product
+ * @route    DELETE /api/v1/admin/products/productId
+ * @access   Private
+ */
+
+exports.deleteProduct = async (req, res, next) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const message = errors.array()[0].msg;
+    const responseObject = Response({}, false, true, message, 422);
+    responseObject.oldInput = {
+      productId: req.params.productId
+    };
+
+    responseObject.validationErrors = errors.array();
+    return responseObject;
+  }
+
+  try {
+    const toBeDeletedProduct = await Product.findByIdAndRemove({
+      _id: req.params.productId
+    });
+
+    if (!toBeDeletedProduct) {
+      return Response([], false, true, `Failed to delete product by given ID ${req.params.productId}`, 400);
+    }
+
+    return Response([], true, false, `Successfully deleted product by ID ${req.params.productId}`, 200);
   } catch (error) {
     return next(error);
   }

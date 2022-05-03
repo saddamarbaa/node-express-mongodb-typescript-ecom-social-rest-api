@@ -54,3 +54,12 @@ exports.addProductController = async (req, res, next) => {
     return next(error);
   }
 };
+
+exports.deleteProductController = async (req, res, next) => {
+  try {
+    const deleteProductService = await adminServices.deleteProduct(req, res, next);
+    return res.status(deleteProductService.status).send(deleteProductService);
+  } catch (error) {
+    return next(error);
+  }
+};

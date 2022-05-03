@@ -116,7 +116,7 @@ router.get('/verify-email/:userId/:token', authValidation.verifyValidation(), au
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.patch('/:userId', authValidation.userIdValidation(), isAuth, authController.updateUserController);
+router.patch('/:userId', authValidation.validateID, isAuth, authController.updateUserController);
 
 /**
  * @api {delete}  /api/v1/auth/userId
@@ -128,7 +128,7 @@ router.patch('/:userId', authValidation.userIdValidation(), isAuth, authControll
  * @apiSuccess (200) {Object} mixed  object
  */
 
-router.delete('/:userId', authValidation.userIdValidation(), isAuth, authController.deleteUserController);
+router.delete('/:userId', authValidation.validateID, isAuth, authController.deleteUserController);
 
 /**
  * @api  {post}  /api/v1/auth/refreshToken

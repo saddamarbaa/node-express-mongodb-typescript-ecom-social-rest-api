@@ -70,11 +70,14 @@ exports.signup = async (req, res, next) => {
     // const accessToken = await signAccessToken(user._id);
     // const refreshToken = await signRefreshToken(user._id);
 
+    // Response data
     const data = {
-      emailVerificationLinkToken: link
-      // token: token,
-      // accessToken: accessToken,
-      // refreshToken: refreshToken
+      user: {
+        emailVerificationLinkToken: link
+        // token: token,
+        // accessToken: accessToken,
+        // refreshToken: refreshToken
+      }
     };
 
     const message = `Registered Successfully An Email with Verification link has been sent to your account ${email} please verify`;
@@ -171,7 +174,6 @@ exports.login = async (req, res, next) => {
     const token = user.createJWT();
     const accessToken = await signAccessToken(user._id);
     const refreshToken = await signRefreshToken(user._id);
-    console.log(token);
 
     // Response data
     const data = {
@@ -188,7 +190,19 @@ exports.login = async (req, res, next) => {
         isVerified: user?.isVerified,
         token: token,
         accessToken: accessToken,
-        refreshToken: refreshToken
+        refreshToken: refreshToken,
+        mobileNumber: user?.mobileNumber,
+        isDeleted: user?.isDeleted,
+        status: user?.status,
+        isVerified: user?.isVerified,
+        role: user?.role,
+        bio: user?.bio,
+        acceptTerms: user?.acceptTerms,
+        companyName: user?.companyName,
+        nationality: user?.nationality,
+        address: user?.address,
+        favoriteAnimal: user?.favoriteAnimal,
+        profileImage: user?.profileImage
       }
     };
 

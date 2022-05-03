@@ -74,5 +74,5 @@ const start = async () => {
   }
 };
 
-// establish http server connection
+// Establish http server connection
 start();

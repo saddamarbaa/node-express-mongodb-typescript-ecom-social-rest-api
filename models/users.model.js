@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 
 // Access Environment variables
 const { TOKEN_SECRET, JWT_EXPIRE_TIME } = require('../configs/environment.config');
@@ -13,11 +12,11 @@ const userSchema = mongoose.Schema(
     _id: mongoose.Schema.Types.ObjectId,
     firstName: {
       type: String,
-      required: [true, 'Please provide first name'],
-      maxLength: 15,
-      minlength: 3,
       trim: true,
-      lowercase: true
+      lowercase: true,
+      required: [true, 'Please provide first name'],
+      maxLength: [3, "Name can't be smaller than 2 characters"],
+      maxLength: [15, "Name can't be greater than 64 characters"]
     },
     lastName: {
       type: String,
@@ -27,15 +26,21 @@ const userSchema = mongoose.Schema(
       trim: true,
       lowercase: true
     },
-    surname: {
+    familyName: {
       type: String,
-      required: [false, 'Please provide unique username'],
-      unique: true,
-      maxLength: 15,
-      minlength: 3,
+      required: false,
       trim: true,
-      index: true,
-      sparse: true
+      minlength: [3, "Name can't be smaller than 3 characters"],
+      maxLength: [30, "Name can't be greater than 30 characters"],
+      lowercase: true
+    },
+    companyName: {
+      type: String,
+      required: false,
+      trim: true,
+      minlength: [3, "Company Name can't be smaller than 3 characters"],
+      maxLength: [30, "Company Name can't be greater than 30 characters"],
+      lowercase: true
     },
     email: {
       type: String,
@@ -45,9 +50,11 @@ const userSchema = mongoose.Schema(
         /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
         'Please provide a valid email'
       ],
-      unique: true,
+      unique: false,
       trim: true,
-      lowercase: true
+      lowercase: true,
+      maxLength: [128, "Email can't be greater than 128 characters"],
+      index: false
     },
     password: {
       type: String,
@@ -68,8 +75,11 @@ const userSchema = mongoose.Schema(
     },
     mobileNumber: {
       type: String,
-      maxLength: 10,
-      required: false
+      required: false,
+      unique: true,
+      // maxLength: [50, "mobileNumber can't be greater than 15 characters"],
+      // match: [/^(\+\d{1,3}[- ]?)?\d{10}$/, 'Please provide a valid number'],
+      trim: true
     },
     gender: { type: String, trim: true, lowercase: true },
     joinedDate: {
@@ -101,13 +111,32 @@ const userSchema = mongoose.Schema(
     },
     profileImage: {
       type: String,
-      required: false
+      required: false,
+      default: '/static/uploads/users/temp.png',
+      lowercase: true
     },
-
+    favoriteAnimal: {
+      type: String,
+      required: false,
+      trim: true,
+      minlength: [3, "Favorite Animal can't be smaller than 3 characters"],
+      maxLength: [35, "Favorite Animal can't be greater than 15 characters"],
+      lowercase: true
+    },
+    nationality: {
+      type: String,
+      trim: true,
+      required: false,
+      lowercase: true
+    },
     isVerified: {
       type: Boolean,
       default: false,
       required: false
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
     },
     status: {
       type: String,
@@ -117,17 +146,38 @@ const userSchema = mongoose.Schema(
       trim: true,
       lowercase: true
     },
+    bio: {
+      type: String,
+      required: false,
+      trim: true,
+      minlength: [10, "Bio can't be smaller than 10 characters"],
+      maxLength: [300, "Bio can't be greater than 300 characters"],
+      lowercase: true
+    },
+    jobTitle: {
+      type: String,
+      required: false,
+      trim: true,
+      lowercase: true,
+      minlength: [3, "Job Title can't be smaller than 3 characters"],
+      maxLength: [30, "Job Title can't be greater than 15 characters"],
+    },
+    address: {
+      type: String,
+      required: false,
+      trim: true,
+      lowercase: true
+    },
+    acceptTerms: { type: Boolean, required: false, default: false },
     confirmationCode: {
       type: String,
       unique: true,
       required: false
     },
-
     resetPasswordToken: {
       type: String,
       required: false
     },
-
     resetPasswordExpires: {
       type: Date,
       required: false
@@ -140,7 +190,9 @@ const userSchema = mongoose.Schema(
 
 //  Mongoose Schema Instance Methods
 
-// Pre Save Hook. Generate hashed password
+/**
+ * Pre Save Hook. Generate hashed password
+ */
 userSchema.pre('save', async function(next) {
   const user = this;
 
@@ -177,7 +229,9 @@ userSchema.post('save', function(doc) {
   console.log('User is been Save ', this);
 });
 
-// Create JWT token for the user
+/**
+ * Create JWT token for the user
+ */
 userSchema.methods.createJWT = function() {
   const payload = {
     userId: this._id,
@@ -195,13 +249,17 @@ userSchema.methods.createJWT = function() {
   });
 };
 
-// Compare passwords
+/**
+ * Compare passwords
+ */
 userSchema.methods.comparePassword = async function(canditatePassword) {
   const isMatch = await bcrypt.compare(canditatePassword, this.password);
   return isMatch;
 };
 
-// add to cart
+/**
+ * Add to cart
+ */
 userSchema.methods.addToCart = function(product) {
   const cartProductIndex = this.cart.items.findIndex(cp => {
     return cp.productId.toString() === product._id.toString();
