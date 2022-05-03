@@ -7,8 +7,6 @@ const isAdmin = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req?.user.email });
     const adminUser = user && user.role === ADMIN_ROLE && ADMIN_EMAIL.includes(`${req?.user.email}`);
-
-    // console.log('adminUser', user);
     if (!adminUser) {
       return res.status(403).send(Response({}, false, true, 'Auth Failed (Unauthorized)', 403));
     }

@@ -286,28 +286,30 @@ exports.deleteUser = async (req, res, next) => {
 };
 
 /**
- * @desc    add new product
- * @route   POST /api/v1/admin/products
- * @access  Public
+ * @desc     add new product
+ * @route    POST /api/v1/admin/products
+ * @access   Private
  */
 
 exports.addProduct = async (req, res, next) => {
+  const { name, price, description, count, rating, stock, category } = req.body;
+  const { userId } = req.user;
+
   const givenProduct = new Product({
     _id: new mongoose.Types.ObjectId(),
-    name: req.body.name,
-    price: req.body.price,
-    description: req.body.description,
-    productImage: `/static/uploads/${req.file.filename}`,
-    addedDate: `${Date.now()}`,
-    count: req.body.count,
-    rating: req.body?.rating,
-    stock: req.body?.stock,
-    userId: req.user.userId
+    name,
+    price,
+    description,
+    count,
+    rating,
+    userId,
+    stock,
+    category,
+    productImage: `/static/uploads/${req.file.filename}`
   });
 
   try {
     const createdAndReturnedProduct = await Product.create(givenProduct);
-
     const data = {
       product: {
         name: createdAndReturnedProduct.name,
@@ -335,8 +337,8 @@ exports.addProduct = async (req, res, next) => {
       }
     };
 
-    // HTTP Status 201 indicates that as a result of HTTP POST  request,
-    //  one or more new resources have been successfully created on server
+    //  HTTP Status 201 indicates that as a result of HTTP POST  request,
+    //  One or more new resources have been successfully created on server
     return Response(data, true, false, `Successfully Created new Product`, 201);
   } catch (error) {
     return next(error);
