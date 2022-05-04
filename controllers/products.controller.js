@@ -8,3 +8,12 @@ exports.getProductsController = async (req, res, next) => {
     return next(error);
   }
 };
+
+exports.getProductController = async (req, res, next) => {
+  try {
+    const getProductService = await productServices.getProduct(req, res, next);
+    return res.status(getProductService.status).send(getProductService);
+  } catch (error) {
+    return next(error);
+  }
+};

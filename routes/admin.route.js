@@ -108,7 +108,7 @@ router.post(
  * @apiPermission Protected(only admin)
  * @apiGroup Admin
  *
- * @apiParam  {String} [product] product
+ * @apiParam  {String} [productId] productId
  * @apiSuccess (200) {Object} mixed `product` object
  */
 
@@ -119,5 +119,17 @@ router.delete(
   adminValidation.validateID,
   adminController.deleteProductController
 );
+
+/**
+ * @api {get}  /api/v1/admin/products/productId
+ * @apiName Get product
+ * @apiPermission Protected(only admin)
+ * @apiGroup Admin
+ *
+ * @apiParam  {String} [productId] productId
+ * @apiSuccess (200) {Object} mixed `product` object
+ */
+
+router.get('/products/:productId', isAuth, isAdmin, adminValidation.validateID, adminController.getProductController);
 
 module.exports = router;

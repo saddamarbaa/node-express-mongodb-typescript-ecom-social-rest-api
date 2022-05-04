@@ -2,7 +2,7 @@ const express = require('express');
 
 const ProductModel = require('../models/products.model');
 const productController = require('../controllers/products.controller');
-
+const productValidation = require('../middlewares/validate-request-schema/auth.validation');
 const paginationMiddleware = require('../middlewares/sort-filter-pagination/productsFeatures.middleware');
 
 const router = express.Router();
@@ -18,13 +18,16 @@ const router = express.Router();
 
 router.get('/', paginationMiddleware(ProductModel), productController.getProductsController);
 
-// // Handling individual Request to /api/v1/products
-// router.get('/:productId', productsController.products_get_one_product);
+/**
+ * @api  {get}  /api/v1/products/productId
+ * @apiName Get product
+ * @apiPermission Public
+ * @apiGroup User
+ *
+ * @apiParam  {String} [productId] productId
+ * @apiSuccess (200) {Object} mixed `product` object
+ */
 
-// // Handling updating individual /api/v1/products
-// router.patch('/:productId', isAuth, productsController.products_update_product);
-
-// // Handling deleting individual product
-// router.delete('/:productId', isAuth, productsController.products_delete_product);
+router.get('/:productId', productValidation.validateID, productController.getProductController);
 
 module.exports = router;

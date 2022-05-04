@@ -90,7 +90,7 @@ const paginatedResults = model => {
     try {
       results.results = await model
         .find(filter)
-        .select('name description productImage userId createdAt updatedAt category count  rating  stock')
+        .select('name description productImage userId createdAt updatedAt category count  rating price stock')
         .populate(
           'userId',
           'firstName lastName  surname email dateOfBirth gender joinedDate cart isVerified  profileImage  mobileNumber  status role  companyName   acceptTerms nationality  favoriteAnimal  address  profileImage  bio mobileNumber'
