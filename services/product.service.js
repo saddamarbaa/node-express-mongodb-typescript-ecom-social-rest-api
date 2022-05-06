@@ -77,6 +77,18 @@ exports.getProduct = async (req, res, next) => {
   }
 
   try {
+    // Product.update({}, { $set: { numberOfViewsPerWeek: 0 } }, { multi: true }, function(error, properties) {
+    //   if (error) {
+    //     console.log(error);
+    //   }
+
+    //   if (!properties) {
+    //     console.log('Something went wrong');
+    //   }
+
+    //   console.log('success update view');
+    // });
+
     const doc = await Product.findById(req.params.productId);
     if (!doc) {
       return Response([], false, true, `Failed to find product by given ID ${req.params.productId}`, 400);

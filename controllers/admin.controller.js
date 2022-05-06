@@ -64,10 +64,10 @@ exports.deleteProductController = async (req, res, next) => {
   }
 };
 
-exports.getProductController = async (req, res, next) => {
+exports.updateProductController = async (req, res, next) => {
   try {
-    const getProductService = await adminServices.getProduct(req, res, next);
-    return res.status(getProductService.status).send(getProductService);
+    const updateProductService = await adminServices.updateProduct(req, res, next);
+    return res.status(updateProductService.status).send(updateProductService);
   } catch (error) {
     return next(error);
   }

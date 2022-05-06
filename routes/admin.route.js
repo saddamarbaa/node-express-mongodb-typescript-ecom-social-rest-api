@@ -121,8 +121,8 @@ router.delete(
 );
 
 /**
- * @api {get}  /api/v1/admin/products/productId
- * @apiName Get product
+ * @api {patch}  /api/v1/admin/products/productId
+ * @apiName Update product
  * @apiPermission Protected(only admin)
  * @apiGroup Admin
  *
@@ -130,6 +130,13 @@ router.delete(
  * @apiSuccess (200) {Object} mixed `product` object
  */
 
-router.get('/products/:productId', isAuth, isAdmin, adminValidation.validateID, adminController.getProductController);
+router.patch(
+  '/products/:productId',
+  uploadImage.single('productImage'),
+  isAuth,
+  isAdmin,
+  adminValidation.validateID,
+  adminController.updateProductController
+);
 
 module.exports = router;

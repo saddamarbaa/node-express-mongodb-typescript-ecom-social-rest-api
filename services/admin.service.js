@@ -317,6 +317,10 @@ exports.addProduct = async (req, res, next) => {
         productImage: createdAndReturnedProduct.productImage,
         _id: createdAndReturnedProduct._id,
         addedDate: createdAndReturnedProduct.addedDate,
+        count: createdAndReturnedProduct.count,
+        rating: createdAndReturnedProduct.rating,
+        stock: createdAndReturnedProduct.stock,
+        category: createdAndReturnedProduct.category,
         user: {
           firstName: req.user.firstName,
           lastName: req.user.lastName,
@@ -381,20 +385,23 @@ exports.deleteProduct = async (req, res, next) => {
 };
 
 /**
- * @desc      Get product
- * @route     Get /api/v1/admin/products/productId
+ * @desc       Update product
+ * @route     PATCH /api/v1/admin/products/productId
  * @access    Private
  */
 
-exports.getProduct = async (req, res, next) => {
+exports.updateProduct = async (req, res, next) => {
   let responseObject = {};
+  const { name, price, description, count, rating, stock, category } = req.body;
+
+  const productId = req.params.productId;
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    const message = errors.array()[0].msg;
-    responseObject = Response({}, false, true, message, 422);
+    const message = errors.array()[0].msg,
+      responseObject = Response({}, false, true, message, 422);
     responseObject.oldInput = {
-      productId: req.params.productId
+      productId: productId
     };
 
     responseObject.validationErrors = errors.array();
@@ -402,36 +409,76 @@ exports.getProduct = async (req, res, next) => {
   }
 
   try {
-    const doc = awaitProduct.findById(req.params.productId);
-    if (!doc) {
-      return Response([], false, true, `Failed to find product by given ID ${req.params.productId}`, 400);
+    const product = await Product.findById(productId);
+    if (!product) {
+      return Response(
+        [],
+        false,
+        true,
+        `Database Update Failure (Failed to find product by given ID ${productId})`,
+        400
+      );
     }
+
+    product.name = name || product.name;
+    product.price = price || product.price;
+    product.description = description || product.description;
+    product.rating = rating || product.rating;
+    product.count = count || product.count;
+    product.category = category || product.category;
+    product.stock = stock || product.stock;
+
+    if (req.file.filename) {
+      product.productImage = `/static/uploads/${req.file.filename}`;
+    }
+
+    const updatedProduct = await product.save();
 
     const data = {
       product: {
-        name: doc?.name,
-        price: doc?.price,
-        _id: doc?._id,
-        description: doc?.description,
-        category: doc?.category,
-        productImage: doc?.productImage,
-        count: doc?.count,
-        rating: doc?.rating,
-        stock: doc?.stock,
-        addedDate: doc?.addedDate,
-        createdAt: doc?.createdAt,
-        updatedAt: doc?.updatedAt,
-        user: doc?.userId,
+        name: updatedProduct.name,
+        price: updatedProduct.price,
+        productImage: updatedProduct.productImage,
+        _id: updatedProduct._id,
+        addedDate: updatedProduct.addedDate,
+        count: updatedProduct.count,
+        rating: updatedProduct.rating,
+        stock: updatedProduct.stock,
+        category: updatedProduct.category,
+        user: {
+          _id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          email: req.user.email,
+          dateOfBirth: req.user.dateOfBirth,
+          gender: req.user.gender,
+          cart: req.user.cart,
+          createdAt: req.user?.createdAt,
+          updatedAt: req.user?.updatedAt,
+          role: req.user?.role,
+          status: req.user.status,
+          mobileNumber: req.user?.mobileNumber,
+          familyName: req.user?.familyName,
+          profileImage: req.user?.profileImage,
+          isVerified: req.user?.isVerified,
+          acceptTerms: req.user?.acceptTerms,
+          bio: req.user.bio,
+          companyName: req.user.companyName,
+          nationality: req.user.nationality,
+          address: req.user.address,
+          favoriteAnimal: req.user.favoriteAnimal
+        },
         request: {
           type: 'Get',
-          description: 'Get all the products',
+          description: 'Get  all products',
           url: `${WEBSITE_URL}/api/${API_VERSION}/products`
         }
       }
     };
 
-    return Response(data, true, false, `Successfully Found product by given id: ${req.params.productId}`, 200);
+    return Response(data, true, false, `Successfully updated products by ID: ${productId}`, 201);
   } catch (error) {
+    // 500 Internal Server Error
     return next(error);
   }
 };
