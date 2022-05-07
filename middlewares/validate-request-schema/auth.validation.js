@@ -114,7 +114,7 @@ exports.verifyValidation = () => {
 };
 
 exports.validateID = async (req, res, next) => {
-  const givenId = req.params?.userId || req.params?.productId;
+  const givenId = req.params?.userId || req.params?.productId || req.body.productId;
   if (!givenId || !givenId?.trim()) {
     return res.status(402).send(Response({}, false, true, 'Id is required', 402));
   } else if (!isValidObjectId(givenId)) {

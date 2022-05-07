@@ -105,8 +105,7 @@ const paginatedResults = model => {
       res.paginatedResults = results;
       next();
     } catch (error) {
-      console.log(error.message);
-      next(error);
+      return next(error);
     }
   };
 };

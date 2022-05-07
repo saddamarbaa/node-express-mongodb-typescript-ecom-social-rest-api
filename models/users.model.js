@@ -160,7 +160,7 @@ const userSchema = mongoose.Schema(
       trim: true,
       lowercase: true,
       minlength: [3, "Job Title can't be smaller than 3 characters"],
-      maxLength: [30, "Job Title can't be greater than 15 characters"],
+      maxLength: [30, "Job Title can't be greater than 15 characters"]
     },
     address: {
       type: String,
@@ -260,26 +260,62 @@ userSchema.methods.comparePassword = async function(canditatePassword) {
 /**
  * Add to cart
  */
-userSchema.methods.addToCart = function(product) {
-  const cartProductIndex = this.cart.items.findIndex(cp => {
-    return cp.productId.toString() === product._id.toString();
-  });
-  let newQuantity = 1;
-  const updatedCartItems = [...this.cart.items];
+userSchema.methods.addToCart = function(prodId, doDecrease) {
+  let cartProductIndex = -1;
+  let updatedCartItems = [];
 
+  if (this.cart.items) {
+    cartProductIndex = this.cart.items.findIndex(cp => {
+      return cp.productId.toString() === prodId.toString();
+    });
+    updatedCartItems = [...this.cart.items];
+  }
+
+  let newQuantity = 1;
   if (cartProductIndex >= 0) {
-    newQuantity = this.cart.items[cartProductIndex].quantity + 1;
+    let newQuantity;
+    if (doDecrease) {
+      newQuantity = this.cart.items[cartProductIndex].quantity - 1;
+      if (newQuantity <= 0) {
+        return this.removeFromCart(prodId);
+      }
+    } else {
+      newQuantity = this.cart.items[cartProductIndex].quantity + 1;
+    }
     updatedCartItems[cartProductIndex].quantity = newQuantity;
   } else {
     updatedCartItems.push({
-      productId: product._id,
+      productId: prodId,
       quantity: newQuantity
     });
   }
+
   const updatedCart = {
     items: updatedCartItems
   };
+
   this.cart = updatedCart;
+  return this.save();
+};
+
+/**
+ * Remove Items From Cart
+ */
+
+userSchema.methods.removeFromCart = function(productId) {
+  const updatedCartItems = this.cart.items.filter(item => {
+    return item.productId.toString() !== productId.toString();
+  });
+  this.cart.items = updatedCartItems;
+  return this.save();
+};
+
+/**
+ * clear all Cart
+ */
+
+userSchema.methods.clearCart = function() {
+  this.cart = { items: [] };
   return this.save();
 };
 

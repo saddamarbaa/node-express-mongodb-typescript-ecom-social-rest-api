@@ -39,3 +39,11 @@
 {"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: querySrv ECONNREFUSED _mongodb._tcp.cluster0.qupxt.mongodb.net","service":"user-service","timestamp":"2022-02-28 11:19:18"}
 {"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: querySrv ECONNREFUSED _mongodb._tcp.cluster0.qupxt.mongodb.net","service":"user-service","timestamp":"2022-02-28 11:20:36"}
 {"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-03 12:03:34"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-06 11:50:01"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-06 12:33:44"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-06 12:47:28"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-06 12:49:25"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection <monitor> to 100.24.194.145:27017 timed out","service":"user-service","timestamp":"2022-05-06 13:04:35"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-06 13:06:43"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection timed out","service":"user-service","timestamp":"2022-05-06 13:14:14"}
+{"level":"error","message":"MongoDB connection error. Please make sure MongoDB is running: connection <monitor> to 100.24.194.145:27017 timed out","service":"user-service","timestamp":"2022-05-06 14:31:09"}
