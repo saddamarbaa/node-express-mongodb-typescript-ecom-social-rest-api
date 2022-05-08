@@ -42,7 +42,14 @@ router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminCont
  * @apiSuccess (201) {Object} mixed `User` object
  */
 
-router.post('/users', isAuth, isAdmin, adminValidation.signupValidation(), adminController.addUserController);
+router.post(
+  '/users',
+  uploadImage.single('profileImage'),
+  isAuth,
+  isAdmin,
+  adminValidation.signupValidation(),
+  adminController.addUserController
+);
 
 /**
  * @api {get}  /api/v1/admin/users/userId
@@ -65,7 +72,14 @@ router.get('/users/:userId', isAuth, isAdmin, adminValidation.validateID, adminC
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.patch('/users/:userId', isAuth, isAdmin, adminValidation.validateID, adminController.updateUserController);
+router.patch(
+  '/users/:userId',
+  uploadImage.single('profileImage'),
+  isAuth,
+  isAdmin,
+  adminValidation.validateID,
+  adminController.updateUserController
+);
 
 /**
  * @api {delete}  /api/v1/admin/users/userId

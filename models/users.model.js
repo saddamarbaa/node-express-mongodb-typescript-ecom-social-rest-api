@@ -104,10 +104,10 @@ const userSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'guide', 'admin'],
-      default: 'user',
       trim: true,
-      lowercase: true
+      lowercase: true,
+      enum: ['user', 'guide', 'admin'],
+      default: 'user'
     },
     profileImage: {
       type: String,

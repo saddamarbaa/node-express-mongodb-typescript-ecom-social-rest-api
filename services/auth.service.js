@@ -16,7 +16,18 @@ const { WEBSITE_URL, API_VERSION, CLIENT_URL } = require('../configs/environment
  */
 
 exports.signup = async (req, res, next) => {
-  const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword, role } = req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    dateOfBirth,
+    gender,
+    cart,
+    confirmPassword,
+    role,
+    acceptTerms
+  } = req.body;
 
   const errors = validationResult(req);
 
@@ -47,7 +58,9 @@ exports.signup = async (req, res, next) => {
     dateOfBirth,
     gender,
     cart,
-    role
+    role,
+    acceptTerms,
+    profileImage: `/static/uploads/${req.file.filename}`
   });
 
   try {
@@ -297,11 +310,20 @@ exports.verifyEmail = async (req, res, next) => {
  */
 
 exports.getMe = async (req, res, next) => {
-  const data = {
-    user: req.user
-  };
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return Response([], false, true, `Auth Failed`, 401);
+    }
 
-  return Response(data, true, false, 'Successfully found user profile', 200);
+    const data = {
+      user: user
+    };
+
+    return Response(data, true, false, `Successfully found user profile`, 200);
+  } catch (error) {
+    return next(error);
+  }
 };
 
 /**
@@ -448,8 +470,29 @@ exports.logout = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   let responseObject = {};
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    dateOfBirth,
+    gender,
+    cart,
+    confirmPassword,
+    familyName,
+    mobileNumber,
+    isDeleted,
+    status,
+    isVerified,
+    role,
+    bio,
+    acceptTerms,
+    companyName,
+    nationality,
+    address,
+    favoriteAnimal
+  } = req.body;
 
-  const { firstName, lastName, email, password, dateOfBirth, gender, cart, confirmPassword } = req.body;
   const userId = req.params.userId;
   const errors = validationResult(req);
 
@@ -477,9 +520,25 @@ exports.updateUser = async (req, res, next) => {
     user.confirmPassword = confirmPassword || user.confirmPassword;
     user.gender = gender || user.gender;
     user.dateOfBirth = dateOfBirth || user.dateOfBirth;
+    user.familyName = familyName || user.familyName;
+    user.mobileNumber = mobileNumber || user.mobileNumber;
+    user.isDeleted = isDeleted || user.isDeleted;
+    user.status = status || user.status;
     user.cart = cart || user.cart;
+    user.isVerified = isVerified || user.isVerified;
+    user.role = role || user.role;
+    user.acceptTerms = acceptTerms || user.acceptTerms;
+    user.bio = bio || user.bio;
+    user.familyName = familyName || user.familyName;
+    user.acceptTerms = acceptTerms || user.acceptTerms;
+    user.companyName = companyName || user.companyName;
+    user.nationality = nationality || user.nationality;
+    user.address = address || user.address;
+    user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
+    user.profileImage = req.file.filename ? `/static/uploads/${req.file.filename}` : user.profileImage;
 
     const updatedUser = await user.save();
+
     const data = {
       user: {
         _id: updatedUser._id,
@@ -491,8 +550,21 @@ exports.updateUser = async (req, res, next) => {
         cart: updatedUser.cart,
         createdAt: updatedUser?.createdAt,
         updatedAt: updatedUser?.updatedAt,
-        role: updatedUser?.role
+        role: updatedUser?.role,
+        status: updatedUser.status,
+        mobileNumber: updatedUser?.mobileNumber,
+        familyName: updatedUser?.familyName,
+        profileImage: updatedUser?.profileImage,
+        isVerified: updatedUser?.isVerified,
+        acceptTerms: updatedUser?.acceptTerms,
+        bio: updatedUser.bio,
+        acceptTerms: updatedUser.acceptTerms,
+        companyName: updatedUser.companyName,
+        nationality: updatedUser.nationality,
+        address: updatedUser.address,
+        favoriteAnimal: updatedUser.favoriteAnimal
       },
+
       request: {
         type: 'Get',
         description: 'Get all the user',
@@ -628,6 +700,8 @@ exports.generateRandomUser = async (req, res) => {
 };
 
 // TODO
+// REST API Design Best Practices
+// https://www.freecodecamp.org/news/rest-api-design-best-practices-build-a-rest-api/
 // https://github.com/fsbahman/apidoc-swagger
 // https://swagger.io/
 // https://apiblueprint.org/

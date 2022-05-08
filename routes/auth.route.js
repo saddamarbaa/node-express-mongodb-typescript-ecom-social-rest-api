@@ -1,5 +1,6 @@
 const express = require('express');
 
+const { uploadImage } = require('../middlewares/file-upload/uploadImage.middleware');
 const authController = require('../controllers/auth.controller');
 const authValidation = require('../middlewares/validate-request-schema/auth.validation');
 const { isAuth, isAuthWithAccessToken } = require('../middlewares/auth/checkIsAuth');
@@ -23,7 +24,12 @@ const router = express.Router();
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.post('/signup', authValidation.signupValidation(), authController.signUpController);
+router.post(
+  '/signup',
+  uploadImage.single('profileImage'),
+  authValidation.signupValidation(),
+  authController.signUpController
+);
 
 /**
  * @api {post}  /api/v1/auth/login
@@ -116,7 +122,13 @@ router.get('/verify-email/:userId/:token', authValidation.verifyValidation(), au
  * @apiSuccess (200) {Object} mixed `User` object
  */
 
-router.patch('/:userId', authValidation.validateID, isAuth, authController.updateUserController);
+router.patch(
+  '/:userId',
+  uploadImage.single('profileImage'),
+  authValidation.validateID,
+  isAuth,
+  authController.updateUserController
+);
 
 /**
  * @api {delete}  /api/v1/auth/userId
