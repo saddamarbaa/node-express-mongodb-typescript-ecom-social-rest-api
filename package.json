@@ -1,9 +1,10 @@
 {
   "name": "node-express-rest-api",
   "version": "1.0.0",
-  "description": "node js api",
+  "description": "Node.js and Express Rest Api",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "mathTest": "mocha ./__tests__/math/math.test.js",
     "test": "mocha __tests__/e2e/**/*"
   },
@@ -11,7 +12,10 @@
     "type": "git",
     "url": "https://github.com/saddamarbaa/node-express-rest-api.git"
   },
-  "keywords": [],
+  "keywords": [
+    "nodejs",
+    "heroku"
+  ],
   "author": "Saddam Arbaa",
   "license": "ISC",
   "bugs": {
@@ -50,5 +54,8 @@
     "eslint-plugin-prettier": "^3.1.2",
     "mocha": "^9.2.2",
     "prettier": "^1.17.1"
+  },
+  "engines": {
+    "node": "v14.15.4"
   }
 }
