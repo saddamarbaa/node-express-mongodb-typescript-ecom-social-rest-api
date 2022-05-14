@@ -24,7 +24,7 @@ module.exports = {
     const decodedToken = jwt.verify(token, TOKEN_SECRET, (err, user) => {
       // HTTP Status 403 mean Forbidden
       if (err) {
-        return res.status(403).send(Response({}, false, true, 'Auth Failed (Unauthorized)', 403));
+        return res.status(403).send(Response({}, false, true, 'Auth Failed (Unauthorized)!', 403));
       }
 
       // console.log('The Authorized User is ', user);
