@@ -1,21 +1,41 @@
 const express = require('express');
-const router = express.Router();
 
-// Import Middleware function to authenticate token From different file
 const { isAuth } = require('../middlewares/auth/checkIsAuth');
 
 const ordersController = require('../controllers/orders.controller');
 
-// Handling Get Request to /api/v1/orders
-router.get('/', isAuth, ordersController.orders_get_all);
+const router = express.Router();
 
-// Handling Post Request to /api/v1/orders
-router.post('/', isAuth, ordersController.orders_create_order);
+/**
+ * @api {get}  /api/v1/orders
+ * @apiName Get Products
+ * @apiPermission Public
+ * @apiGroup User
+ *
+ * @apiSuccess (200) {Object} mixed `Products` object
+ */
 
-// Handling individual Request to /api/v1/orders
-router.get('/:orderId', isAuth, ordersController.orders_get_one_order);
+router.get('/', isAuth, ordersController.getOrdersController);
 
-// Handling deleting individual /api/v1/orders
-router.delete('/:orderId', isAuth, ordersController.orders_delete_order);
+/**
+ * @api  {Post}  /api/v1/orders
+ * @apiName add product to order list
+ * @apiPermission Private
+ * @apiGroup User
+ *
+ * @apiSuccess (200) {Object} mixed `product` object
+ */
+router.post('/', isAuth, ordersController.postOrderController);
+
+/**
+ * @api  {delete}   /api/v1/orders/clear-orders
+ * @apiName  Clear orders list
+ * @apiPermission Private
+ * @apiGroup User
+ *
+ * @apiSuccess (200)
+ */
+
+router.delete('/clear-orders', isAuth, ordersController.clearOrdersController);
 
 module.exports = router;
