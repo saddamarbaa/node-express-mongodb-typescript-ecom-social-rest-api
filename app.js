@@ -20,6 +20,7 @@ const errorHandlerMiddleware = require('./middlewares/errors/error-handler');
 const logger = require('./logger/index');
 
 // Import Routes
+const indexRouter = require('./routes/index');
 const productRoutes = require('./routes/products.route');
 const orderRoutes = require('./routes/orders.route');
 const adminRoutes = require('./routes/admin.route');
@@ -46,6 +47,7 @@ app.use(cookieParser());
 app.use('/static', express.static('public'));
 
 // Routes which Should handle the requests
+app.use('/', indexRouter);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/admin', adminRoutes);
