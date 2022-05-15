@@ -15,7 +15,7 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 -  [Support](#Support)
 -  [Feedback](#Feedback)
 -  [Run Locally](#Run_Locally)
--  [Deployment](#API_Reference)
+-  [API Reference](#API_Reference)
 -  [Screenshots](#Screenshots)
 -  [Environment Variables](#Environment)
 -  [Deployment](#Deployment)
@@ -91,10 +91,12 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 | `OrderBy`  | `string` | default= desc              |
 | `OrderBy`  | `string` | default= desc              |
 
-##### example (Paginate  - Sort  - Filter   - Full-text search  
-> GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=1&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Sports
-> GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Jewelery 
-> GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Books&search=nodejs
+#### example (Paginate  - Sort  - Filter   - Full-text search 
+```http
+  GET https://saddam-rest-api.herokuapp.com/api/v1/products?page=1&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Sports
+  GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Jewelery 
+  GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Books&search=nodejs
+```
 
 #### Get product
 
@@ -105,7 +107,6 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
 | `id`      | `string` | **Required**. Id of product to fetch |
-
 
 
 
