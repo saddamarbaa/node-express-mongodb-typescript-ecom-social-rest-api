@@ -89,7 +89,7 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 | `search`   | `string` | search string              |
 | `sortBy`   | `string` | default= createdAt         |
 | `OrderBy`  | `string` | default= desc              |
-| `OrderBy`  | `string` | default= desc              |
+
 
 #### example (Paginate  - Sort  - Filter   - Full-text search 
 ```http
