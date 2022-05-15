@@ -6,7 +6,13 @@ const getImageExtension = require('../../utils/getImageExtension');
 // Configuring and validating the upload
 const storage = multer.diskStorage({
   destination: (req, file, callbackFunction) => {
-    callbackFunction(null, 'public/uploads');
+    const { isUserImg } = req.body;
+
+    if (file?.fieldname === 'profileImage') {
+      callbackFunction(null, 'public/uploads/users');
+    } else {
+      callbackFunction(null, 'public/uploads');
+    }
   },
 
   // By default, multer removes file extensions so let's add them back

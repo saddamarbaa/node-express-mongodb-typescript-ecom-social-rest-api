@@ -16,6 +16,7 @@ const { WEBSITE_URL, API_VERSION, CLIENT_URL } = require('../configs/environment
  */
 
 exports.signup = async (req, res, next) => {
+  console.log('error');
   const {
     firstName,
     lastName,
@@ -48,6 +49,7 @@ exports.signup = async (req, res, next) => {
     return responseObject;
   }
 
+  // req.file.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
   const newUser = new User({
     _id: new mongoose.Types.ObjectId(),
     firstName,
@@ -60,9 +62,10 @@ exports.signup = async (req, res, next) => {
     cart,
     role,
     acceptTerms,
-    profileImage: `/static/uploads/${req.file.filename}`
+    profileImage: `/static/uploads/users/${req.file.filename}`
   });
 
+  console.log(' newUser', newUser);
   try {
     const user = await newUser.save();
     let token = await new Token({ userId: user._id });
@@ -535,7 +538,7 @@ exports.updateUser = async (req, res, next) => {
     user.nationality = nationality || user.nationality;
     user.address = address || user.address;
     user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
-    user.profileImage = req.file.filename ? `/static/uploads/${req.file.filename}` : user.profileImage;
+    user.profileImage = req.file.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
 
     const updatedUser = await user.save();
 
