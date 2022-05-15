@@ -15,6 +15,7 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 -  [Support](#Support)
 -  [Feedback](#Feedback)
 -  [Run Locally](#Run_Locally)
+-  [Deployment](#API_Reference)
 -  [Screenshots](#Screenshots)
 -  [Environment Variables](#Environment)
 -  [Deployment](#Deployment)
@@ -34,10 +35,10 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 
 
 # Demo
-###  <a href="https://saddam-next-ecommerce.vercel.app/">Live Demo </a>
-###  <a href="https://github.com/saddamarbaa/node-express-rest-api"> Back-End API REPO</a>
-###  <a href="https://saddam-rest-api.herokuapp.com">LIVE API Demo</a>
 
+###  <a href="https://saddam-rest-api.herokuapp.com">LIVE API Demo</a>
+###  <a href="https://github.com/saddamarbaa/Ecommerce-website-next.js-typeScript">Front-End REPO</a>
+###  <a href="https://saddam-next-ecommerce.vercel.app/">LIVE Webside DEMO </a>
 ####   Testing Email:      testverstion@gmail.com
 ####   Testing Password:    12345test
 
@@ -69,6 +70,44 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 -  Update Users 
 -  Delete Users 
 -  Update User Role 
+
+
+ 
+# API_Reference
+
+#### Get all products
+
+```http
+  GET https://saddam-rest-api.herokuapp.com/api/v1/products
+```
+
+| Parameter  | Type     | Description                |
+| :--------  | :------- | :------------------------- |
+| `limit`    | `number` | default= 100               |
+| `category` | `string` | default= All Products      |
+| `page`     | `number` | default= 1                 |
+| `search`   | `string` | search string              |
+| `sortBy`   | `string` | default= createdAt         |
+| `OrderBy`  | `string` | default= desc              |
+| `OrderBy`  | `string` | default= desc              |
+
+##### example (Paginate  - Sort  - Filter   - Full-text search  
+> GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=1&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Sports
+> GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Jewelery 
+> GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Books&search=nodejs
+
+#### Get product
+
+```http
+  GET https://saddam-rest-api.herokuapp.com/api/v1/products/${id}
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`      | `string` | **Required**. Id of product to fetch |
+
+
+
 
 
 # Environment
