@@ -202,7 +202,7 @@ exports.updateUser = async (req, res, next) => {
     user.nationality = nationality || user.nationality;
     user.address = address || user.address;
     user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
-    user.profileImage = req.file.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
+    user.profileImage = req.file.filename ? `/static/uploads/${req.file.filename}` : user.profileImage;
 
     const updatedUser = await user.save();
 
