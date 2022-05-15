@@ -44,7 +44,7 @@ router.get('/users', isAuth, isAdmin, paginationMiddleware(UserModel), adminCont
 
 router.post(
   '/users',
-  uploadImage.single('profileImage'),
+  uploadImage.single('productImage'),
   isAuth,
   isAdmin,
   adminValidation.signupValidation(),
@@ -74,7 +74,7 @@ router.get('/users/:userId', isAuth, isAdmin, adminValidation.validateID, adminC
 
 router.patch(
   '/users/:userId',
-  uploadImage.single('profileImage'),
+  uploadImage.single('productImage'),
   isAuth,
   isAdmin,
   adminValidation.validateID,
