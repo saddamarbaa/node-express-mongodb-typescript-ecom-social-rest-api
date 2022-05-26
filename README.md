@@ -98,7 +98,7 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
   GET   https://saddam-rest-api.herokuapp.com/api/v1/products?page=2&limit=99&sortBy=createdAt&OrderBy=desc&filterBy=category&category=Books&search=nodejs
 ```
 
-#### Get product
+#### Get single product
 
 ```http
   GET https://saddam-rest-api.herokuapp.com/api/v1/products/${id}
@@ -107,6 +107,102 @@ Free Open source REST API built with | Nodejs + Express + Mongodb  ⚡️ Made w
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
 | `id`      | `string` | **Required**. Id of product to fetch |
+
+
+
+#### Add new product (Only admins)
+
+```http
+  POST https://saddam-rest-api.herokuapp.com/api/v1/admin/products
+```
+
+| Parameter         | Type     | Description                       |
+| :--------         | :------- | :-------------------------------- |
+| `name`            | `string` | **Required**. product name|
+| `price`           | `number` | **Required**. product price|
+| `description`     | `string` | **Required**. product description|
+| `productImage`    | `img`    | **Required**. product Image|
+| `category`        | `string` | **Required**. product category|
+| `count`           | `number` | **Optional**.  default value = 1|
+| `stock       `    | `string` | **Optional**.  default value =  'in stock - order soon'|
+
+
+#### Update product (Only admins)
+
+```http
+  PATCH https://saddam-rest-api.herokuapp.com/api/v1/admin/products/${id}
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`      | `string` | **Required**. Id of product to update |
+| `token`   | `string` | **Required**. JWT token pass in headers |
+
+
+#### Delete product (Only admins)
+
+```http
+  DELETE https://saddam-rest-api.herokuapp.com/api/v1/admin/products/${id}
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`      | `string` | **Required**. Id of product to delete |
+| `token`   | `string` | **Required**. JWT token pass in headers |
+
+
+
+
+#### User signup
+
+```http
+  POST https://saddam-rest-api.herokuapp.com/api/v1/auth/signup
+```
+
+| Parameter         | Type     | Description                       |
+| :--------         | :------- | :-------------------------------- |
+| `firstName`       | `string` | **Required**.|
+| `lastName`        | `string` | **Required**.|
+| `familyName`      | `string` | **Optional**.|
+| `email`           | `string` | **Required**.|
+| `password`        | `string` | **Required**.|
+| `confirmPassword` | `string` | **Required**.|
+| `gender`          | `string` | **Optional**.|
+| `dateOfBirth`     | `string` | **Optional**.|
+| `acceptTerms`     | `boolean`| **Required**.|
+| `mobileNumber`    | `number` | **Optional**.|
+| `nationality`     | `string` | **Optional**.|
+| `favoriteAnimal`  | `string` | **Optional**.|
+| `address`         | `string` | **Optional**.|
+| `bio`             | `string` | **Optional**.|
+| `jobTitle`        | `string` | **Optional**.|
+
+```http
+  After signup you will receive email to verify your account
+```
+
+#### User Login
+
+```http
+  POST https://saddam-rest-api.herokuapp.com/api/v1/auth/login
+```
+
+| Parameter         | Type     | Description                       |
+| :--------         | :------- | :-------------------------------- |
+| `email`           | `string` | **Required**.|
+| `password`        | `string` | **Required**.|
+
+
+#### User Verify Email
+
+```http
+  POST https://saddam-rest-api.herokuapp.com/api/v1/auth/verify-email`,
+```
+
+| Parameter         | Type     | Description                       |
+| :--------         | :------- | :-------------------------------- |
+| `userId`          | `string` | **Required**.|
+| `token`           | `string` | **Required**.|
 
 
 
