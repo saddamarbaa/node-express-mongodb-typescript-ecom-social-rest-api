@@ -1,0 +1,3156 @@
+openapi: '3.0.0'
+info:
+  title: Ecommerce Store API - learnCodeWithSaddam
+  description: Free Open source REST API
+  version: 1.0.1
+  contact:
+    name: Saddam Arbaa
+    email: 'saddamarbaas@gmail.com'
+    url: 'https://www.linkedin.com/in/saddamarbaa/'
+  license:
+    name: 'Apache 2.0'
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+
+servers:
+  - url: '{serverUrl}/api/{apiVersion}'
+    variables:
+      apiVersion:
+        default: v1
+        enum:
+          - v1
+          - v2
+          - v3
+      serverUrl:
+        description: Environment -  Production, Staging, Test or Dev
+        default: http://localhost:8000
+        enum:
+          - https://saddam-rest-api.herokuapp.com
+          - https://saddam-rest-api.herokuapp.com
+          - https://saddam-rest-api.herokuapp.com
+          - http://localhost:8000
+
+paths:
+  # Health Check
+
+  /:
+    get:
+      summary: Api health check endpoint
+      tags:
+        - HealthCheck
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/HealthCheckResponse'
+
+  # Health Check
+
+  /healthChecker:
+    get:
+      summary: Api health check endpoint
+      tags:
+        - HealthCheck
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/HealthCheckResponse'
+
+  /test/healthChecker:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - HealthCheck
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  # Products
+
+  /products:
+    get:
+      summary: Returns a list of products
+      tags:
+        - Product
+      description:
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            example: 20
+          description: The numbers of items to return (the default value is 20)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          description: Pagination page number (the default value is 1)
+        - in: query
+          name: filterBy
+          schema:
+            type: string
+            example:
+          description: Filter type (Example - category)
+        - in: query
+          name: category
+          schema:
+            type: string
+            example:
+          description: Category name (Example - books)
+        - in: query
+          name: search
+          schema:
+            type: string
+            example:
+          description: search term (Example - nodejs)
+      responses:
+        '200': # status code
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found products
+                  data:
+                    type: object
+                    properties:
+                      totalDocs:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                      lastPage:
+                        type: integer
+                      count:
+                        type: integer
+                      currentPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      nextPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/ProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /products/{productId}:
+    get:
+      summary: Get product based on request id
+      tags:
+        - Product
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found product by ID ...
+                  data:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        '$ref': '#/components/schemas/ProductResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  # Cart
+
+  /cart:
+    get:
+      summary: Returns user cart
+      security:
+        - Authorization: []
+      tags:
+        - Cart
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found cart
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/CartResponse'
+                      userId:
+                        type: string
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+    post:
+      summary: Add product to user cart
+      security:
+        - Authorization: []
+      tags:
+        - Cart
+      parameters:
+        - in: query
+          name: decrease
+          schema:
+            type: boolean
+            default: false
+      description:
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                  minimum: 1
+                  example: 63a1a5929ef261c4347fadc9
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: 'Successfully added product to cart: 63a1a5929ef261c4347fadc9'
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AuthCartResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /cart/delete-item:
+    post:
+      summary: Delete item from cart
+      security:
+        - Authorization: []
+      tags:
+        - Cart
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                  minimum: 1
+                  example: 63a1a5929ef261c4347fadc9
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: '`Successfully Removed items : 63a1a5929ef261c4347fadc9 from Cart '
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AuthCartResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /cart/clear-cart:
+    delete:
+      security:
+        - Authorization: []
+      summary: Clear user cart
+      tags:
+        - Cart
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully Cleared cart
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  # Orders
+
+  /orders:
+    get:
+      summary: Returns a list of orders
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found all your orders
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            quantity:
+                              type: number
+                            product:
+                              type: object
+                              '$ref': '#/components/schemas/ProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+    post:
+      summary: Process user order
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Thank you, your orders will be shipped in 2-3 business days
+                  data:
+                    type: object
+                    properties:
+                      orderItems:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/ProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+    delete:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  /orders/clear-orders:
+    delete:
+      summary: Clear user order list
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Cleared all orders
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          type: string
+                        maxItems: 0
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /checkout:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Checkout
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  # Post
+
+  /posts:
+    get:
+      summary: Returns a list of posts
+      tags:
+        - Post
+      description:
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+          description: The numbers of items to return (the default value is 10)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          description: Pagination page number (the default value is 1)
+        - in: query
+          name: filterBy
+          schema:
+            type: string
+            example:
+          description: Filter type (Example - category)
+        - in: query
+          name: category
+          schema:
+            type: string
+            example:
+          description: Category name (Example - coding)
+        - in: query
+          name: search
+          schema:
+            type: string
+            example:
+          description: search term (Example - nodejs)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found posts
+                  data:
+                    type: object
+                    properties:
+                      totalDocs:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                      lastPage:
+                        type: integer
+                      count:
+                        type: integer
+                      currentPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      nextPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      posts:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/PostResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /posts/{postId}:
+    get:
+      summary: Return post based on request id
+      tags:
+        - Post
+      description:
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            default: 6358c27dca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description: is success or fail
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully Found post by given id ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        $ref: '#/components/schemas/PostResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  # Auth
+
+  /auth/signup:
+    post:
+      summary: Register new user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Auth Signup is success. An Email with Verification link has been sent to your account ${email} Please Verify Your Email first or use the email verification lik which is been send with the response body to verfiy your email
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: 'string'
+                          emailVerificationLinkToken:
+                            type: string
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Authenticate a user
+      tags:
+        - Auth
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: testverstion@gmail.com
+                password:
+                  type: string
+                  example: 12345test
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Auth logged in successful
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                      refreshToken:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/me:
+    get:
+      security:
+        - Authorization: []
+      summary: Return user profile
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Successfully found user profile 🍀'
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/profile:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Auth
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  /auth/logout:
+    post:
+      summary: Un authenticate a user
+      tags:
+        - Auth
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MzU4YmU5YWNhMzBiOThlMGU2OGQwM2QiLCJpYXQiOjE2NzAxNTUxODEsImV4cCI6MTcwMTcxMjc4MSwiYXVkIjoiNjM1OGJlOWFjYTMwYjk4ZTBlNjhkMDNkIiwiaXNzIjoidGVzdG5kb2Vqcy5jb20ifQ.CIAighkM5LkNMRZ4pnzhZ-sjXurZA8Sd1qKq4VYuZXw
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Auth logout success
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/update/{userId}:
+    patch:
+      security:
+        - Authorization: []
+      summary: Edit user based on request id
+      tags:
+        - Auth
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6358c2odca30b98e0e68d063
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully updated post by ID ...
+                  data:
+                    type: object
+                    '$ref': '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/remove/{userId}:
+    delete:
+      security:
+        - Authorization: []
+      summary: Delete user based on request id
+      tags:
+        - Auth
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6358c2odca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted user by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/verify-email/{userId}/{token}:
+    get:
+      summary: Verify auth email
+      tags:
+        - Auth
+      description:
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6394b75d22f4732bfa7ca6ef
+        - in: path
+          name: token
+          required: true
+          description: Unique token
+          schema:
+            type: string
+            minimum: 1
+            example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Mzk0Yjc1ZDIyZjQ3MzJiZmE3Y2E2ZWYiLCJpYXQiOjE2NzA2OTI5NzgsImV4cCI6MTcwMjI1MDU3OCwiYXVkIjoiNjM5NGI3NWQyMmY0NzMyYmZhN2NhNmVmIiwiaXNzIjoidGVzdG5kb2Vqcy5jb20ifQ.lb-IL1iEI8yIth62i8pwj7N8C-Ce5QVfsKNBIb9Pa7k
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Your account has been successfully verified . Please Login
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/refresh-token:
+    post:
+      summary: Get new access and refresh token
+      tags:
+        - Auth
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  minimum: 1
+                  example: 6358c27dca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Auth logged in successful.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: 'string'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/forget-password:
+    post:
+      summary: Allow user to get new password (send rest password token to user email)
+      tags:
+        - Auth
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  minimum: 1
+                  example: 6358c27dca30b98e0e68d063
+                email:
+                  type: string
+                  example: testverstion@gmail.com
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Auth logged in successful.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: 'string'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /auth/reset-password/{userId}/{token}:
+    post:
+      summary: Endpoint to rest user password using magic link which is been sent to their email
+      tags:
+        - Auth
+      description:
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6358c27dca30b98e0e68d063
+        - in: path
+          name: token
+          required: true
+          description: Unique token
+          schema:
+            type: string
+            minimum: 1
+            example: 6358c27dca30b98e0e68d063
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  minimum: 1
+                  example: 6358c27dca30
+                confirmPassword:
+                  type: string
+                  example: 6358c27dca30
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Your password has been Password Reset Successfully updated please login
+                  data:
+                    type: object
+                    properties:
+                      User:
+                        type: object
+                        properties:
+                          loginLink:
+                            type: string
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  # Admin
+
+  /admin/users/add:
+    post:
+      security:
+        - Authorization: []
+      summary: Admin add new user
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminAddUserRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Auth Signup is success. An Email with Verification link has been sent to your account ${email} Please Verify Your Email first or use the email verification lik which is been send with the response body to verfiy your email
+                  data:
+                    type: object
+                    '$ref': '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+  /admin/users:
+    get:
+      security:
+        - Authorization: []
+      summary: Returns a list of users whose role is (user, admin, manger, moderator)
+      tags:
+        - Admin
+      description: admin only api
+      parameters:
+        - in: header
+          name: authToken
+          description: Admin authorization access token
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            example: 20
+          description: The numbers of items to return (the default value is 20)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          description: Pagination page number (the default value is 1)
+        - in: query
+          name: filterBy
+          schema:
+            type: string
+            example:
+          description: Filter type (Example - role)
+        - in: query
+          name: role
+          schema:
+            type: string
+            example:
+          description: Role name (Example - user')
+        - in: query
+          name: search
+          schema:
+            type: string
+            example:
+          description: search term (Example - Saddam)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Success
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AdminAuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/users/{userId}:
+    get:
+      security:
+        - Authorization: []
+      summary: Get user info based on request id
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6358c2odca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully updated post by ID ...
+                  data:
+                    type: object
+                    '$ref': '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/users/update/{userId}:
+    put:
+      security:
+        - Authorization: []
+      summary: Edit user based on request id
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 639593f33994948bfb0756d0
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminAuthRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully updated post by ID ...
+                  data:
+                    type: object
+                    '$ref': '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/users/remove/{userId}:
+    delete:
+      security:
+        - Authorization: []
+      summary: Delete user based on request id
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6358c2odca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted user by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/products:
+    get:
+      security:
+        - Authorization: []
+      summary: Returns a list of products with info of owner who added
+      tags:
+        - Admin
+      description:
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            example: 20
+          description: The numbers of items to return (the default value is 20)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          description: Pagination page number (the default value is 1)
+        - in: query
+          name: filterBy
+          schema:
+            type: string
+            example:
+          description: Filter type (Example - category)
+        - in: query
+          name: category
+          schema:
+            type: string
+            example:
+          description: Category name (Example - books)
+        - in: query
+          name: search
+          schema:
+            type: string
+            example:
+          description: search term (Example - nodejs)
+      responses:
+        '200': # status code
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found products
+                  data:
+                    type: object
+                    properties:
+                      totalDocs:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                      lastPage:
+                        type: integer
+                      count:
+                        type: integer
+                      currentPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      nextPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AdminProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/products/{productId}:
+    get:
+      security:
+        - Authorization: []
+      summary: Get product based on request id
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found product by ID ...
+                  data:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        '$ref': '#/components/schemas/AdminProductResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/products/add:
+    post:
+      security:
+        - Authorization: []
+      summary: Admin add a new product
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Successfully created new product
+                  data:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        '$ref': '#/components/schemas/AdminProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/products/update:
+    put:
+      security:
+        - Authorization: []
+      summary: Admin update product based on request id
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Auth Signup is success. An Email with Verification link has been sent to your account ${email} Please Verify Your Email first or use the email verification lik which is been send with the response body to verfiy your email
+                  data:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        '$ref': '#/components/schemas/AdminProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/products/delete/{productId}:
+    delete:
+      security:
+        - Authorization: []
+      summary: Delete product based on request id
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted product by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/posts:
+    get:
+      summary: Returns a list of posts
+      tags:
+        - Admin
+      description:
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+          description: The numbers of items to return (the default value is 10)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          description: Pagination page number (the default value is 1)
+        - in: query
+          name: filterBy
+          schema:
+            type: string
+            example:
+          description: Filter type (Example - category)
+        - in: query
+          name: category
+          schema:
+            type: string
+            example:
+          description: Category name (Example - coding)
+        - in: query
+          name: search
+          schema:
+            type: string
+            example:
+          description: search term (Example - nodejs)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found posts
+                  data:
+                    type: object
+                    properties:
+                      totalDocs:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                      lastPage:
+                        type: integer
+                      count:
+                        type: integer
+                      currentPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      nextPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      posts:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AdminPostResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/posts/{postId}:
+    get:
+      security:
+        - Authorization: []
+      summary: Return post based on request id
+      tags:
+        - Admin
+      description:
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            default: 6358c27dca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description: is success or fail
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully Found post by given id ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/AdminPostResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/posts/add:
+    post:
+      security:
+        - Authorization: []
+      summary: Admin add a new post
+      tags:
+        - Admin
+      description:
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description: is success or fail
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Successfully created new post
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/AdminPostResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/posts/update/{postId}:
+    patch:
+      security:
+        - Authorization: []
+      summary: Edit post based on request id
+      tags:
+        - Admin
+      description:
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            default: 6358c27dca30b98e0e68d063
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description: is success or fail
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully updated post by given id ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/AdminPostResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/posts/delete/{postId}:
+    delete:
+      security:
+        - Authorization: []
+      summary: Delete post based on request id
+      tags:
+        - Admin
+      description:
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            default: 6358c27dca30b98e0e68d063
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description: is success or fail
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted post by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  # Manager
+
+  /manager/users:
+    get:
+      security:
+        - Authorization: []
+      summary: Returns a list of users whose role is user
+      tags:
+        - Manager
+      description: admin only api
+      parameters:
+        - in: header
+          name: authToken
+          description: Authorization access token
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Success
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AdminAuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+components:
+  schemas:
+    HealthCheckResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+          description:
+        error:
+          type: boolean
+          example: false
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: 'Welcome to Rest API - 👋🌎🌍🌏'
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    AuthRequest:
+      type: object
+      description: Model containing post request info
+      properties:
+        name:
+          type: string
+          example: test
+        surname:
+          type: string
+          example: test
+        email:
+          type: string
+          example: testverstion@gmail.com
+        password:
+          type: string
+          example: 12345test
+        confirmPassword:
+          type: string
+          example: 12345test
+        acceptTerms:
+          type: boolean
+          default: true
+        dateOfBirth:
+          type: string
+          example: '09/10/1984'
+        gender:
+          type: string
+          example: male
+        mobileNumber:
+          type: string
+          example: '+62213147666'
+        companyName:
+          type: string
+          example: Test company
+        nationality:
+          type: string
+          example: Sudan
+        favoriteAnimal:
+          type: string
+          example: cat
+        address:
+          type: string
+          example: 12345test home Batam Indonesia
+        bio:
+          type: string
+          example: 'Software Engineer experienced in developing full-stack JavaScript/Typescript application primarily with React/Next/Redux and Node/Express server design'
+        jobTitle:
+          type: string
+          example: Software Engineering
+        profileImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+
+    AuthResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          required: true
+        surname:
+          type: string
+        email:
+          type: string
+          required: true
+        dateOfBirth:
+          type: string
+        gender:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        profileImage:
+          type: string
+        mobileNumber:
+          type: string
+        companyName:
+          type: string
+        nationality:
+          type: string
+        favoriteAnimal:
+          type: string
+        address:
+          type: string
+        bio:
+          type: string
+        jobTitle:
+          type: string
+        cart:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                '$ref': '#/components/schemas/AuthCartResponse'
+
+    AdminAuthRequest:
+      type: object
+      description: Model containing admin auth request info
+      properties:
+        role:
+          type: string
+          enum:
+            - 'user'
+            - 'admin'
+            - 'manger'
+            - 'moderator'
+          default: 'user'
+        status:
+          type: string
+          enum:
+            - 'pending'
+            - 'active'
+          default: 'active'
+        name:
+          type: string
+          example: test
+        surname:
+          type: string
+          example: test
+        email:
+          type: string
+          example: testverstion@gmail.com
+        acceptTerms:
+          type: boolean
+          default: true
+        dateOfBirth:
+          type: string
+          example: '09/10/1984'
+        gender:
+          type: string
+          example: male
+        mobileNumber:
+          type: string
+          example: '+62213147666'
+        companyName:
+          type: string
+          example: Test company
+        nationality:
+          type: string
+          example: Sudan
+        favoriteAnimal:
+          type: string
+          example: cat
+        address:
+          type: string
+          example: 12345test home Batam Indonesia
+        bio:
+          type: string
+          example: 'Software Engineer experienced in developing full-stack JavaScript/Typescript application primarily with React/Next/Redux and Node/Express server design'
+        jobTitle:
+          type: string
+          example: Software Engineering
+        profileImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+
+    AdminAddUserRequest:
+      type: object
+      description: Model containing admin auth request info
+      properties:
+        role:
+          type: string
+          enum:
+            - 'user'
+            - 'admin'
+            - 'manger'
+            - 'moderator'
+            - 'guide'
+          default: 'user'
+        status:
+          type: string
+          enum:
+            - 'pending'
+            - 'active'
+          default: 'active'
+        name:
+          type: string
+          example: test
+        surname:
+          type: string
+          example: test
+        email:
+          type: string
+          example: testverstion@gmail.com
+        password:
+          type: string
+          example: 12345test
+        confirmPassword:
+          type: string
+          example: 12345test
+        acceptTerms:
+          type: boolean
+          default: true
+        dateOfBirth:
+          type: string
+          example: '09/10/1984'
+        gender:
+          type: string
+          example: male
+        mobileNumber:
+          type: string
+          example: '+62213147666'
+        companyName:
+          type: string
+          example: Test company
+        nationality:
+          type: string
+          example: Sudan
+        favoriteAnimal:
+          type: string
+          example: cat
+        address:
+          type: string
+          example: 12345test home Batam Indonesia
+        bio:
+          type: string
+          example: 'Software Engineer experienced in developing full-stack JavaScript/Typescript application primarily with React/Next/Redux and Node/Express server design'
+        jobTitle:
+          type: string
+          example: Software Engineering
+        profileImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+
+    AdminAuthResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          required: true
+        surname:
+          type: string
+        email:
+          type: string
+          required: true
+        dateOfBirth:
+          type: string
+        gender:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        isVerified:
+          type: string
+        profileImage:
+          type: string
+        mobileNumber:
+          type: string
+        status:
+          type: string
+        role:
+          type: string
+        companyName:
+          type: string
+        acceptTerms:
+          type: string
+        nationality:
+          type: string
+        favoriteAnimal:
+          type: string
+        address:
+          type: string
+        bio:
+          type: string
+        jobTitle:
+          type: string
+        cart:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                '$ref': '#/components/schemas/AuthCartResponse'
+
+    ServerErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+          description:
+        error:
+          type: boolean
+          example: true
+        status:
+          type: integer
+          example: 500
+        message:
+          type: string
+          example: Internal Server Error (different message based on request)
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    BadRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+          description:
+        error:
+          type: boolean
+          example: true
+        status:
+          type: integer
+          example: between 400 - 500
+        message:
+          type: string
+          example: Bad request (different message based on request)
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    DeprecatedApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+          description:
+        error:
+          type: boolean
+          example: true
+        status:
+          type: integer
+          example: 410
+        message:
+          type: string
+          example: Deprecated API
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    SignUpResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+          description:
+        error:
+          type: boolean
+          example: false
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Auth Signup is success. An Email with Verification link has been sent to your account ${email} Please Verify Your Email first or use the email verification lik which is been send with the response body to verfiy your email
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                refreshToken:
+                  type: 'string'
+                emailVerificationLinkToken:
+                  type: string
+
+    ProductRequest:
+      type: object
+      description: Model containing product request info
+      properties:
+        category:
+          type: string
+          enum:
+            - "Women's clothing"
+            - "Men's clothing"
+            - "Men's Shoes"
+            - "Women's Shoes"
+            - 'Toys'
+            - 'Football'
+            - 'Books'
+            - 'Personal Computers'
+            - 'Jewelery'
+            - 'Electronics'
+            - 'Sports'
+            - 'All Products'
+          default: 'Books'
+        name:
+          type: string
+          example: Clean Architecture
+        description:
+          type: string
+          example: Clean Architecture TypeScript Express API Book
+        brand:
+          type: string
+          example: Rest Api
+        price:
+          type: number
+          example: 99
+        stock:
+          type: string
+          example: 'in stock - order soon'
+        productImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+
+    ProductResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        productImage:
+          type: string
+        stock:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        ratings:
+          type: number
+        numberOfReviews:
+          type: number
+        reviews:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/ReviewsResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    AdminProductResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        productImage:
+          type: string
+        stock:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        ratings:
+          type: number
+        numberOfReviews:
+          type: number
+        reviews:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/ReviewsResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+        user:
+          type: object
+          '$ref': '#/components/schemas/AdminAuthResponse'
+
+    ReviewsResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          '$ref': '#/components/schemas/AdminAuthResponse'
+        name:
+          type: string
+        rating:
+          type: number
+        comment:
+          type: string
+
+    ResponseAdditionalInfo:
+      type: object
+      properties:
+        type:
+          type: string
+          example: 'GET'
+        description:
+          type: string
+        url:
+          type: string
+
+    PostRequest:
+      type: object
+      description: Model containing post request info
+      properties:
+        category:
+          type: string
+          enum:
+            - 'coding'
+            - 'sports'
+            - 'nodejs'
+            - 'typescript'
+            - 'all'
+          default: 'coding'
+        title:
+          type: string
+          example: Clean Architecture Review
+        content:
+          type: string
+          example: Clean Architecture TypeScript Express API Book
+        postImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+    PostResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        productImage:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        author:
+          type: object
+          '$ref': '#/components/schemas/AuthResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    AdminPostResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        productImage:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        author:
+          type: object
+          '$ref': '#/components/schemas/AdminAuthResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    AuthCartResponse:
+      type: object
+      properties:
+        product:
+          type: object
+          '$ref': '#/components/schemas/ProductResponse'
+        quantity:
+          type: number
+        _id:
+          type: string
+    CartResponse:
+      type: object
+      properties:
+        quantity:
+          type: number
+        product:
+          type: object
+          '$ref': '#/components/schemas/ProductResponse'
+  securitySchemes:
+    Authorization:
+      type: http
+      scheme: 'bearer'
+      bearerFormat: 'JWT'
+      value: 'Bearer <JWT token here>'
