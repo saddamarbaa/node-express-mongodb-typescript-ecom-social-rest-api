@@ -9,31 +9,18 @@
     "noImplicitAny": true,
     "strict": true,
     "skipLibCheck": true,
-    "lib": [
-      "dom",
-      "esnext"
-    ],
+    "lib": ["dom", "esnext"],
     "allowJs": true,
     "rootDir": ".",
     "removeComments": true,
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "@src/*": [
-        "src/*"
-      ]
+      "@src/*": ["src/*"]
     },
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage"
-  ],
-  "include": [
-    "src",
-    "__tests__/*",
-    "__mocks__/*",
-  ],
+  "exclude": ["node_modules", "dist", "coverage"],
+  "include": ["src", "__tests__/*", "__mocks__/*"]
 }
