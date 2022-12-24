@@ -9,6 +9,9 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import colors from 'colors';
 
+// handle unhandled rejection error
+import '@src/middlewares/errors/unhandledRejection';
+
 // Import Routes
 import api from '@src/api';
 
