@@ -2,11 +2,11 @@ import { RequestHandler } from 'express';
 import { InternalServerError } from 'http-errors';
 
 import User from '@src/models/User.model';
-import { customResponse } from '@src/utils';
+import { authorizationRoles, customResponse } from '@src/utils';
 
 export const managerGetUsersService: RequestHandler = async (req, res, next) => {
   try {
-    const users = await User.find({ role: 'user' });
+    const users = await User.find({ role: authorizationRoles.user });
 
     const data = {
       user: users || [],
