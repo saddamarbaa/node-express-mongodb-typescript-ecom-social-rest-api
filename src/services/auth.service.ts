@@ -8,6 +8,7 @@ import User from '@src/models/User.model';
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import {
+  authorizationRoles,
   customResponse,
   isValidMongooseObjectId,
   sendConfirmResetPasswordEmail,
@@ -38,7 +39,20 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
     companyName,
   } = req.body;
 
-  const role = environmentConfig?.ADMIN_EMAIL?.includes(`${email}`) ? 'admin' : 'user';
+  let role = authorizationRoles.moderator;
+  if (environmentConfig?.ADMIN_EMAILS?.includes(`${email}`)) {
+    role = authorizationRoles.admin;
+  } else if (environmentConfig?.MANGER_EMAILS?.includes(`${email}`)) {
+    // role = authorizationRoles.manger;
+  } else if (environmentConfig?.MODERATOR_EMAILS?.includes(`${email}`)) {
+    role = authorizationRoles.moderator;
+  } else if (environmentConfig?.SUPERVISOR_EMAILS?.includes(`${email}`)) {
+    role = authorizationRoles.supervisor;
+  } else if (environmentConfig?.GUIDE_EMAILS?.includes(`${email}`)) {
+    role = authorizationRoles.guide;
+  } else if (environmentConfig?.CLIENT_EMAILS?.includes(`${email}`)) {
+    role = authorizationRoles.client;
+  }
 
   const newUser = new User({
     email,
@@ -52,12 +66,12 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
     mobileNumber,
     gender,
     dateOfBirth,
-    role,
     address,
     nationality,
     companyName,
+    role,
     profileImage: req.file?.filename ? `/static/uploads/users/${req.file.filename}` : '/static/uploads/users/temp.png',
-    acceptTerms: acceptTerms || !!environmentConfig?.ADMIN_EMAIL?.includes(`${email}`),
+    acceptTerms: acceptTerms || !!environmentConfig?.ADMIN_EMAILS?.includes(`${email}`),
   });
 
   try {
@@ -397,7 +411,7 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
       return next(new createHttpError.BadRequest());
     }
 
-    if (!req.user?._id.equals(user._id) && req?.user?.role !== 'admin') {
+    if (!req.user?._id.equals(user._id)) {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
@@ -408,14 +422,9 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
       }
     }
 
-    if (req.body?.confirmPassword && req.body?.password && req.user?._id.equals(user._id)) {
+    if (req.body?.confirmPassword && req.body?.password) {
       user.password = req.body.password;
       user.confirmPassword = req.body.confirmPassword;
-    }
-
-    if (req?.user?.role === 'admin') {
-      user.role = req.body.role || user.role;
-      user.status = req.body.status || user.status;
     }
 
     user.name = name || user.name;
@@ -433,7 +442,7 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
     user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
     user.profileImage = req.file?.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
 
-    const updatedUser = await user.save();
+    const updatedUser = await user.save({ validateBeforeSave: false });
 
     if (!updatedUser) {
       return next(createHttpError(422, `Failed to update user by given ID ${req.params.userId}`));
@@ -461,7 +470,7 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
       })
     );
   } catch (error) {
-    return next(InternalServerError);
+    return next(error);
   }
 };
 

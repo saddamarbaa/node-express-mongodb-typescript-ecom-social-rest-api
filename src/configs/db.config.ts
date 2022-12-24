@@ -33,6 +33,8 @@ export const connectDB = (MONGODB_URI: any) => {
         connectTimeoutMS: 3000,
         useNewUrlParser: true,
         useUnifiedTopology: true,
+        useFindAndModify: true,
+        useCreateIndex: true,
       } as ConnectOptions);
     }, 3000);
   });

@@ -1,7 +1,6 @@
 import { NextFunction, Response } from 'express';
 
 import { AuthenticatedRequestBody, IUser } from '@src/interfaces';
-
 import { clearOrdersService, getOrdersService, postOrderService } from '@src/services';
 
 export const getOrdersController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>

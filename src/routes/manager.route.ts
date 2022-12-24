@@ -1,7 +1,7 @@
+import express from 'express';
 import { environmentConfig } from '@src/configs';
 import { managerGetUsersController } from '@src/controllers';
 import { customRoles, isAuth } from '@src/middlewares';
-import express from 'express';
 
 const router = express.Router();
 

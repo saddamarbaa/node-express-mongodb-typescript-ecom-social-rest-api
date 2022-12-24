@@ -12,8 +12,6 @@ export const environmentConfig = {
   PORT: process.env.PORT || 8000,
   SEND_GRID_API_KEY: process.env.SEND_GRID_API_KEY,
   ADMIN_SEND_GRID_EMAIL: process.env.ADMIN_SEND_GRID_EMAIL,
-  ADMIN_ROLE: process.env.ADMIN_ROLE,
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   NODE_ENV: process.env.NODE_ENV || 'development',
   CLIENT_URL: process.env.CLIENT_URL,
   ACCESS_TOKEN_SECRET_KEY: process.env.ACCESS_TOKEN_SECRET_KEY,
@@ -22,6 +20,12 @@ export const environmentConfig = {
   REFRESH_TOKEN_KEY_EXPIRE_TIME: process.env.REFRESH_TOKEN_KEY_EXPIRE_TIME,
   JWT_ISSUER: process.env.JWT_ISSUER,
   REST_PASSWORD_LINK_EXPIRE_TIME: process.env.REST_PASSWORD_LINK_EXPIRE_TIME,
+  ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+  MANGER_EMAILS: process.env.MANGER_EMAILS,
+  MODERATOR_EMAILS: process.env.MODERATOR_EMAILS,
+  SUPERVISOR_EMAILS: process.env.SUPERVISOR_EMAILS,
+  GUIDE_EMAILS: process.env.GUIDE_EMAILS,
+  CLIENT_EMAILS: process.env.CLIENT_EMAILS,
 };
 
 export default environmentConfig;

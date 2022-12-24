@@ -9,7 +9,7 @@ import {
   adminGetUsersService,
   adminUpdateProductService,
   removeAuthService,
-  updateAuthService,
+  adminUpdateAuthService,
 } from '@src/services';
 import { AuthenticatedRequestBody, IUser, ProductT, TPaginationResponse } from '@src/interfaces';
 
@@ -22,7 +22,7 @@ export const adminAddUserController = (req: Request, res: Response, next: NextFu
   adminAddUserService(req, res, next);
 
 export const adminUpdateAuthController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
-  updateAuthService(req, res, next);
+  adminUpdateAuthService(req, res, next);
 
 export const adminRemoveUserController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   removeAuthService(req, res, next);

@@ -8,6 +8,7 @@ import managerRoutes from '@src/routes/manager.route';
 import productsRoutes from '@src/routes/product.route';
 import orderRoutes from '@src/routes/order.route';
 import cartRoutes from '@src/routes/cart.route';
+import moderatorRoutes from '@src/routes/moderator.route';
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.use('/healthChecker', healthCheckRoute);
 router.use('/admin', adminRoutes);
 router.use('/auth', authRoutes);
 router.use('/manager', managerRoutes);
+router.use('/moderator', moderatorRoutes);
 router.use('/products', productsRoutes);
 router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);

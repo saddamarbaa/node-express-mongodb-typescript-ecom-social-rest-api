@@ -4,7 +4,7 @@ const router = express.Router();
 
 type EmojiResponse = string[];
 
-router.get<{}, EmojiResponse>('/', (req, res) => {
+router.get<unknown, EmojiResponse>('/', (req, res) => {
   res.json(['😀', '😳', '🙄']);
 });
 
