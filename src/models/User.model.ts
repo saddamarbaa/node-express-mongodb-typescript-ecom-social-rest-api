@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 import { CartItemT, IUser } from '@src/interfaces';
+import { authorizationRoles } from '@src/utils';
 
 export interface IUserDocument extends Document, IUser {
   // document level operations
@@ -104,8 +105,16 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       type: String,
       trim: true,
       lowercase: true,
-      enum: ['user', 'admin', 'manger', 'moderator', 'supervisor', 'guide'],
-      default: 'user',
+      enum: [
+        authorizationRoles.user,
+        authorizationRoles.admin,
+        authorizationRoles.manger,
+        authorizationRoles.moderator,
+        authorizationRoles.supervisor,
+        authorizationRoles.guide,
+        authorizationRoles.client,
+      ],
+      default: authorizationRoles.user,
     },
     favoriteAnimal: {
       type: String,

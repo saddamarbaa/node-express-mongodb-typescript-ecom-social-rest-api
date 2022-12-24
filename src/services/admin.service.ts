@@ -8,7 +8,13 @@ import User from '@src/models/User.model';
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import { AuthenticatedRequestBody, IUser, ProductT, ResponseT, TPaginationResponse } from '@src/interfaces';
-import { customResponse, deleteFile, isValidMongooseObjectId, sendEmailVerificationEmail } from '@src/utils';
+import {
+  authorizationRoles,
+  customResponse,
+  deleteFile,
+  isValidMongooseObjectId,
+  sendEmailVerificationEmail,
+} from '@src/utils';
 import Product from '@src/models/Product.model';
 
 export const adminAddUserService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
@@ -113,6 +119,109 @@ export const adminAddUserService = async (req: Request, res: Response<ResponseT<
   }
 };
 
+export const adminUpdateAuthService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!isValidMongooseObjectId(req.params.userId) || !req.params.userId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+
+  const rolesArray = Object.values(authorizationRoles);
+  // check for valid role
+  if (req.body.role && !rolesArray.includes(req.body.role)) {
+    if (!rolesArray.includes(req.body.role)) {
+      return next(createHttpError(422, `Invalid role`));
+    }
+  }
+
+  const {
+    name,
+    surname,
+    email,
+    dateOfBirth,
+    gender,
+    mobileNumber,
+    bio,
+    companyName,
+    nationality,
+    address,
+    favoriteAnimal,
+    jobTitle,
+    acceptTerms,
+    // role,
+  } = req.body;
+
+  try {
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    // Admin cant update them roles
+    if (req.body.role && req.user?._id.equals(user._id) && req.body.role !== authorizationRoles.admin) {
+      return next(
+        createHttpError(403, `Auth Failed (Admin cant remove themselves from admin , please ask another admin)`)
+      );
+    }
+
+    if (email) {
+      const existingUser = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
+      if (existingUser && !existingUser._id.equals(user._id)) {
+        return next(createHttpError(422, `E-Mail address ${email} is already exists, please pick a different one.`));
+      }
+    }
+
+    user.name = name || user.name;
+    user.surname = surname || user.surname;
+    user.email = email || user.email;
+    user.gender = gender || user.gender;
+    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
+    user.mobileNumber = mobileNumber || user.mobileNumber;
+    user.acceptTerms = acceptTerms || user.acceptTerms;
+    user.bio = bio || user.bio;
+    user.companyName = companyName || user.companyName;
+    user.nationality = nationality || user.nationality;
+    user.address = address || user.address;
+    user.jobTitle = jobTitle || user.jobTitle;
+    user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
+    user.role = req.body.role || user.role;
+    user.status = req.body.status || user.status;
+    user.profileImage = req.file?.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
+
+    const updatedUser = await user.save({ validateBeforeSave: false, new: true });
+
+    if (!updatedUser) {
+      return next(createHttpError(422, `Failed to update user by given ID ${req.params.userId}`));
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {
+      password: pass,
+      confirmPassword,
+      isVerified,
+      isDeleted,
+      status,
+      acceptTerms: acceptTerm,
+      role: roles,
+      ...otherUserInfo
+    } = updatedUser._doc;
+
+    return res.status(200).send(
+      customResponse<{ user: IUser }>({
+        success: true,
+        error: false,
+        message: `Successfully updated user by ID: ${req.params.userId}`,
+        status: 200,
+        data: { user: otherUserInfo },
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
 export const adminGetUsersService = async (_req: Request, res: TPaginationResponse) => {
   if (res?.paginatedResults) {
     const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;

@@ -2,6 +2,7 @@ import { NextFunction } from 'express';
 
 import userModel from '@src/models/User.model';
 import { TPaginationRequest, TPaginationResponse } from '@src/interfaces';
+import { authorizationRoles } from '@src/utils';
 
 export const usersPaginationMiddleware = () => {
   return async (req: TPaginationRequest, res: TPaginationResponse, next: NextFunction) => {
@@ -40,7 +41,6 @@ export const usersPaginationMiddleware = () => {
 
     // Sort
     const sort: any = {};
-
     if (req.query.sortBy && req.query.orderBy) {
       sort[req.query.sortBy] = req.query.orderBy.toLowerCase() === 'desc' ? -1 : 1;
     } else {
@@ -52,16 +52,20 @@ export const usersPaginationMiddleware = () => {
 
     if (req.query.filterBy && req.query.role) {
       console.log(req.query);
-      if (req.query.role.toLowerCase() === 'admin') {
-        filter.$or = [{ role: 'admin' }];
-      } else if (req.query.role.toLowerCase() === 'user') {
-        filter.$or = [{ role: 'user' }];
-      } else if (req.query.role.toLowerCase() === 'manger') {
-        filter.$or = [{ role: 'manger' }];
-      } else if (req.query.role.toLowerCase() === 'guide') {
-        filter.$or = [{ role: 'guide' }];
-      } else if (req.query.role.toLowerCase() === 'moderator') {
-        filter.$or = [{ role: 'moderator' }];
+      if (req.query.role.toLowerCase() === authorizationRoles.admin) {
+        filter.$or = [{ role: authorizationRoles.admin }];
+      } else if (req.query.role.toLowerCase() === authorizationRoles.user) {
+        filter.$or = [{ role: authorizationRoles.user }];
+      } else if (req.query.role.toLowerCase() === authorizationRoles.manger) {
+        filter.$or = [{ role: authorizationRoles.manger }];
+      } else if (req.query.role.toLowerCase() === authorizationRoles.supervisor) {
+        filter.$or = [{ role: authorizationRoles.supervisor }];
+      } else if (req.query.role.toLowerCase() === authorizationRoles.client) {
+        filter.$or = [{ role: authorizationRoles.client }];
+      } else if (req.query.role.toLowerCase() === authorizationRoles.guide) {
+        filter.$or = [{ role: authorizationRoles.guide }];
+      } else if (req.query.role.toLowerCase() === authorizationRoles.moderator) {
+        filter.$or = [{ role: authorizationRoles.moderator }];
       } else if (req.query.role.toLowerCase() === 'all') {
         filter = {};
       } else {

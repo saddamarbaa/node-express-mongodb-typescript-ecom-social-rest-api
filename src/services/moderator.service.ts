@@ -4,12 +4,14 @@ import { InternalServerError } from 'http-errors';
 import User from '@src/models/User.model';
 import { authorizationRoles, customResponse } from '@src/utils';
 
-export const managerGetUsersService: RequestHandler = async (req, res, next) => {
+export const moderatorGetUsersService: RequestHandler = async (req, res, next) => {
   try {
-    const users = await User.find({ role: authorizationRoles.user });
+    const users = await User.find().select(['-password', '-confirmPassword']);
 
     const data = {
-      user: users || [],
+      user:
+        users.filter((user) => user?.role === authorizationRoles.user || user?.role === authorizationRoles.client) ||
+        [],
     };
 
     return res.status(200).json(
@@ -25,5 +27,3 @@ export const managerGetUsersService: RequestHandler = async (req, res, next) => 
     return next(InternalServerError);
   }
 };
-
-export default managerGetUsersService;
