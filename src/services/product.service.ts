@@ -294,7 +294,7 @@ export const deleteReviewService = async (
       customResponse<typeof data>({
         success: true,
         error: false,
-        message: `Successfully deleted review to product : ${req.params.productId} `,
+        message: `Successfully deleted review from product by ID : ${req.params.productId} `,
         status: 200,
         data,
       })
