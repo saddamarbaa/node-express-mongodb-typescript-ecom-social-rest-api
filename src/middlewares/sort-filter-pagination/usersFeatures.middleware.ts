@@ -2,7 +2,7 @@ import { NextFunction } from 'express';
 
 import userModel from '@src/models/User.model';
 import { TPaginationRequest, TPaginationResponse } from '@src/interfaces';
-import { authorizationRoles } from '@src/utils';
+import { authorizationRoles } from '@src/constants';
 
 export const usersPaginationMiddleware = () => {
   return async (req: TPaginationRequest, res: TPaginationResponse, next: NextFunction) => {

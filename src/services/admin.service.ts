@@ -8,14 +8,9 @@ import User from '@src/models/User.model';
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import { AuthenticatedRequestBody, IUser, ProductT, ResponseT, TPaginationResponse } from '@src/interfaces';
-import {
-  authorizationRoles,
-  customResponse,
-  deleteFile,
-  isValidMongooseObjectId,
-  sendEmailVerificationEmail,
-} from '@src/utils';
+import { customResponse, deleteFile, isValidMongooseObjectId, sendEmailVerificationEmail } from '@src/utils';
 import Product from '@src/models/Product.model';
+import { authorizationRoles } from '@src/constants';
 
 export const adminAddUserService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
   const {

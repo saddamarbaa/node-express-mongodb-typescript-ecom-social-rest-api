@@ -2,6 +2,7 @@ import { NextFunction } from 'express';
 
 import productModel from '@src/models/Product.model';
 import { TPaginationRequest, TPaginationResponse } from '@src/interfaces';
+import { productCategory } from '@src/constants';
 
 export const productsPaginationMiddleware = () => {
   return async (req: TPaginationRequest, res: TPaginationResponse, next: NextFunction) => {
@@ -52,29 +53,29 @@ export const productsPaginationMiddleware = () => {
 
     if (req.query.filterBy && req.query.category) {
       // console.log(req.query.category.toLowerCase());
-      if (req.query.category.toLowerCase() === 'sports') {
-        filter.$or = [{ category: 'Sports' }];
-      } else if (req.query.category.toLowerCase() === 'football') {
-        filter.$or = [{ category: 'Football' }];
-      } else if (req.query.category.toLowerCase() === "women's clothing") {
-        filter.$or = [{ category: "Women's clothing" }];
-      } else if (req.query.category.toLowerCase() === "women's shoes") {
-        filter.$or = [{ category: "Women's Shoes" }];
-      } else if (req.query.category.toLowerCase() === 'jewelery') {
-        filter.$or = [{ category: 'Jewelery' }];
-      } else if (req.query.category.toLowerCase() === "men's clothing") {
-        filter.$or = [{ category: "Men's clothing" }];
-      } else if (req.query.category.toLowerCase() === "men's shoes") {
-        filter.$or = [{ category: "Men's Shoes" }];
-      } else if (req.query.category.toLowerCase() === 'personal computers') {
-        filter.$or = [{ category: 'Personal Computers' }];
-      } else if (req.query.category.toLowerCase() === 'electronics') {
-        filter.$or = [{ category: 'Electronics' }];
-      } else if (req.query.category.toLowerCase() === 'books') {
-        filter.$or = [{ category: 'Books' }];
-      } else if (req.query.category.toLowerCase() === 'toys') {
-        filter.$or = [{ category: 'Toys' }];
-      } else if (req.query.category.toLowerCase() === 'all products') {
+      if (req.query.category.toLowerCase() === productCategory.sport) {
+        filter.$or = [{ category: productCategory.sport }];
+      } else if (req.query.category.toLowerCase() === productCategory.football) {
+        filter.$or = [{ category: productCategory.football }];
+      } else if (req.query.category.toLowerCase() === productCategory.womenClothe) {
+        filter.$or = [{ category: productCategory.womenClothe }];
+      } else if (req.query.category.toLowerCase() === productCategory.womenShoe) {
+        filter.$or = [{ category: productCategory.womenShoe }];
+      } else if (req.query.category.toLowerCase() === productCategory.jewelery) {
+        filter.$or = [{ category: productCategory.jewelery }];
+      } else if (req.query.category.toLowerCase() === productCategory.menClothe) {
+        filter.$or = [{ category: productCategory.menClothe }];
+      } else if (req.query.category.toLowerCase() === productCategory.menShoe) {
+        filter.$or = [{ category: productCategory.menShoe }];
+      } else if (req.query.category.toLowerCase() === productCategory.PersonalComputer) {
+        filter.$or = [{ category: productCategory.PersonalComputer }];
+      } else if (req.query.category.toLowerCase() === productCategory.electronic) {
+        filter.$or = [{ category: productCategory.electronic }];
+      } else if (req.query.category.toLowerCase() === productCategory.book) {
+        filter.$or = [{ category: productCategory.book }];
+      } else if (req.query.category.toLowerCase() === productCategory.toy) {
+        filter.$or = [{ category: productCategory.toy }];
+      } else if (req.query.category.toLowerCase() === productCategory.all) {
         filter = {};
       } else {
         filter = {};
