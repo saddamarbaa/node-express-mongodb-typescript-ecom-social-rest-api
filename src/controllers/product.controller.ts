@@ -16,6 +16,7 @@ import {
   getCartService,
   getProductService,
   getProductsService,
+  getReviewsService,
 } from '@src/services';
 
 export const getProductsController = (req: Request, res: TPaginationResponse) => getProductsService(req, res);
@@ -43,6 +44,12 @@ export const deleteReviewController = (
   res: Response,
   next: NextFunction
 ) => deleteReviewService(req, res, next);
+
+export const getReviewsController = (
+  req: AuthenticatedRequestBody<ReviewProductT>,
+  res: Response,
+  next: NextFunction
+) => getReviewsService(req, res, next);
 
 export const getCartController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   getCartService(req, res, next);

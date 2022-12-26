@@ -5,6 +5,7 @@ import {
   deleteReviewController,
   getProductController,
   getProductsController,
+  getReviewsController,
 } from '@src/controllers';
 
 const router = express.Router();
@@ -13,6 +14,6 @@ router.get('/', productsPaginationMiddleware(), getProductsController);
 router.get('/:productId', getProductController);
 router.put('/reviews', isAuth, reviewProductValidation, addReviewController);
 
-router.route('/reviews/:productId').delete(isAuth, deleteReviewController);
+router.route('/reviews/:productId').delete(isAuth, deleteReviewController).get(getReviewsController);
 
 export = router;
