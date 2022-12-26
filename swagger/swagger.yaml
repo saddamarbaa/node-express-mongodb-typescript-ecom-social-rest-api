@@ -242,6 +242,73 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /products/reviews:
+    put:
+      security:
+        - Authorization: []
+      summary: Add/Update review and comment to product
+      tags:
+        - Product
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                  minimum: 1
+                  example: '63a44be6f4cf592dedf5c70a'
+                comment:
+                  type: string
+                  example: great and modern product
+                rating:
+                  type: number
+                  example: 4.9
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully add review to product .....
+                  data:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        '$ref': '#/components/schemas/ProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   # Cart
 
   /cart:
@@ -3162,7 +3229,7 @@ components:
           type: array
           items:
             type: object
-            '$ref': '#/components/schemas/ReviewsResponse'
+            '$ref': '#/components/schemas/AdminReviewsResponse'
         request:
           type: object
           '$ref': '#/components/schemas/ResponseAdditionalInfo'
@@ -3170,12 +3237,24 @@ components:
           type: object
           '$ref': '#/components/schemas/AdminAuthResponse'
 
-    ReviewsResponse:
+    AdminReviewsResponse:
       type: object
       properties:
         user:
           type: object
           '$ref': '#/components/schemas/AdminAuthResponse'
+        name:
+          type: string
+        rating:
+          type: number
+        comment:
+          type: string
+
+    ReviewsResponse:
+      type: object
+      properties:
+        user:
+          type: string
         name:
           type: string
         rating:
@@ -3279,6 +3358,43 @@ components:
         product:
           type: object
           '$ref': '#/components/schemas/ProductResponse'
+
+  ProductResponse:
+    type: object
+    properties:
+      _id:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      price:
+        type: string
+      brand:
+        type: string
+      category:
+        type: string
+      productImage:
+        type: string
+      stock:
+        type: string
+      createdAt:
+        type: string
+      updatedAt:
+        type: string
+      ratings:
+        type: number
+      numberOfReviews:
+        type: number
+      reviews:
+        type: array
+        items:
+          type: object
+          '$ref': '#/components/schemas/ReviewsResponse'
+      request:
+        type: object
+        '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
   securitySchemes:
     Authorization:
       type: http
