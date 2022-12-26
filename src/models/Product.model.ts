@@ -113,7 +113,7 @@ export const ProductSchema: Schema<ProductT> = new Schema(
       maxLength: 5,
       trim: true,
       lowercase: true,
-      default: 1,
+      default: 0,
     },
     user: {
       // every products shuold blong to user

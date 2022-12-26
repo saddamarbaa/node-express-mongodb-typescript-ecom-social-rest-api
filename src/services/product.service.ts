@@ -218,10 +218,8 @@ export const addReviewService = async (
 
     //  adjust average ratings
     const averageRating =
-      product.reviews.reduce(
-        (accumulator: number, currentValue: ReviewsT) => accumulator + Number(currentValue.rating || 0),
-        0
-      ) / product.reviews.length;
+      product.reviews.reduce((accumulator: number, rev: ReviewsT) => accumulator + Number(rev.rating || 0), 0) /
+      product.reviews.length;
 
     product.ratings = Number(averageRating.toFixed(1));
 
@@ -238,6 +236,65 @@ export const addReviewService = async (
         success: true,
         error: false,
         message: `Successfully add review to product : ${req.body.productId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deleteReviewService = async (
+  req: AuthenticatedRequestBody<ReviewProductT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!isValidMongooseObjectId(req.params.productId) || !req.params.productId) {
+      return next(createHttpError(422, `Invalid request`));
+    }
+
+    const product = (await Product.findById(req.params.productId)) as ProductT;
+
+    if (!product) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyReview = product.reviews.find((rev: ReviewsT) => rev.user.toString() === req.user?._id.toString());
+
+    if (!isAlreadyReview) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    const filteredReviews = product.reviews.filter((rev: ReviewsT) => rev.user.toString() !== req.user?._id.toString());
+
+    if (filteredReviews.length) {
+      //  adjust average ratings
+      const averageRating =
+        filteredReviews.reduce((accumulator: number, rev: ReviewsT) => accumulator + Number(rev.rating || 0), 0) /
+        filteredReviews.length;
+      product.ratings = Number(averageRating.toFixed(1));
+      product.reviews = filteredReviews;
+      product.numberOfReviews = filteredReviews.length;
+    } else {
+      product.reviews = [];
+      product.numberOfReviews = 0;
+      product.ratings = 0;
+    }
+    const updatedProduct = await product.save({
+      validateBeforeSave: true,
+    });
+
+    const data = {
+      product: updatedProduct,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully deleted review to product : ${req.params.productId} `,
         status: 200,
         data,
       })
