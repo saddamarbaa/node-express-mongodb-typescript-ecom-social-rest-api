@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 import { CartItemT, IUser } from '@src/interfaces';
-import { authorizationRoles } from '@src/utils';
+import { authorizationRoles } from '@src/constants';
 
 export interface IUserDocument extends Document, IUser {
   // document level operations

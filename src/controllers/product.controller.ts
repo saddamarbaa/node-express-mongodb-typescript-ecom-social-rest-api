@@ -1,10 +1,18 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { AddProductToCartT, AuthenticatedRequestBody, IUser, TPaginationResponse } from '@src/interfaces';
+import {
+  AddProductToCartT,
+  AuthenticatedRequestBody,
+  IUser,
+  ReviewProductT,
+  TPaginationResponse,
+} from '@src/interfaces';
 import {
   addProductToCartService,
+  addReviewService,
   clearCartService,
   deleteProductFromCartService,
+  deleteReviewService,
   getCartService,
   getProductService,
   getProductsService,
@@ -26,6 +34,15 @@ export const deleteProductFromCartController = (
   res: Response,
   next: NextFunction
 ) => deleteProductFromCartService(req, res, next);
+
+export const addReviewController = (req: AuthenticatedRequestBody<ReviewProductT>, res: Response, next: NextFunction) =>
+  addReviewService(req, res, next);
+
+export const deleteReviewController = (
+  req: AuthenticatedRequestBody<ReviewProductT>,
+  res: Response,
+  next: NextFunction
+) => deleteReviewService(req, res, next);
 
 export const getCartController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   getCartService(req, res, next);

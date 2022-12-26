@@ -8,7 +8,6 @@ import User from '@src/models/User.model';
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import {
-  authorizationRoles,
   customResponse,
   isValidMongooseObjectId,
   sendConfirmResetPasswordEmail,
@@ -17,6 +16,7 @@ import {
 } from '@src/utils';
 import { AuthenticatedRequestBody, IUser, ResponseT } from '@src/interfaces';
 import { verifyRefreshToken } from '@src/middlewares';
+import { authorizationRoles } from '@src/constants';
 
 export const signupService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
   console.log(req.body, req.file);

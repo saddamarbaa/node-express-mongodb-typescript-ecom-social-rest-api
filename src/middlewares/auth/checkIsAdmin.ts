@@ -3,7 +3,7 @@ import createHttpError from 'http-errors';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 import { IAuthRequest as IAdminRequest } from '@src/interfaces';
-import { authorizationRoles } from '@src/utils';
+import { authorizationRoles } from '@src/constants';
 
 export const isAdmin = async (req: IAdminRequest, res: Response, next: NextFunction) => {
   const user = req?.user;

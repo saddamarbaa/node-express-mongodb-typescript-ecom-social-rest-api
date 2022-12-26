@@ -7,3 +7,6 @@ export const addProductValidation: RequestHandler = (req, res, next) =>
 
 export const updateProductValidation: RequestHandler = (req, res, next) =>
   validator(productSchema.updateProduct, { ...req.file, ...req.body }, next);
+
+export const reviewProductValidation: RequestHandler = (req, res, next) =>
+  validator(productSchema.reviewProduct, { ...req.body }, next);
