@@ -2,7 +2,8 @@ import { RequestHandler } from 'express';
 import { InternalServerError } from 'http-errors';
 
 import User from '@src/models/User.model';
-import { authorizationRoles, customResponse } from '@src/utils';
+import { customResponse } from '@src/utils';
+import { authorizationRoles } from '@src/constants';
 
 export const moderatorGetUsersService: RequestHandler = async (req, res, next) => {
   try {

@@ -1,5 +1,10 @@
 import Joi from 'joi';
 
+// @ts-ignore
+import JoiObjectId from 'joi-objectid';
+
+const vaildObjectId = JoiObjectId(Joi);
+
 export const productSchema = {
   addProduct: Joi.object({
     name: Joi.string().min(3).max(100).required(),
@@ -25,6 +30,11 @@ export const productSchema = {
     gender: Joi.string(),
     profileImage: Joi.string(),
     count: Joi.number(),
+  }),
+  reviewProduct: Joi.object({
+    rating: Joi.number().min(1).max(5).required(),
+    comment: Joi.string().min(3).max(300).required(),
+    productId: vaildObjectId().required().label('Invalid request (Please please provide vaild product id)'),
   }),
 };
 

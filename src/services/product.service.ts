@@ -1,7 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
 
-import { AddProductToCartT, AuthenticatedRequestBody, IUser, OrderT, TPaginationResponse } from '@src/interfaces';
+import {
+  AddProductToCartT,
+  AuthenticatedRequestBody,
+  IUser,
+  OrderT,
+  TPaginationResponse,
+  ProductT,
+  ReviewsT,
+  ReviewProductT,
+} from '@src/interfaces';
 import { customResponse, isValidMongooseObjectId } from '@src/utils';
 
 import Product from '@src/models/Product.model';
@@ -164,6 +173,71 @@ export const deleteProductFromCartService = async (
         success: true,
         error: false,
         message: `Successfully removed item: ${req.body.productId} from Cart`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const addReviewService = async (
+  req: AuthenticatedRequestBody<ReviewProductT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { productId, rating, comment } = req.body;
+
+    const review = {
+      user: req.user?._id,
+      name: req.user?.name,
+      comment,
+      rating: Number(rating),
+    };
+    const product = (await Product.findById(productId)) as ProductT;
+
+    if (!product) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyReview = product.reviews.find((rev: ReviewsT) => rev.user.toString() === req.user?._id.toString());
+
+    if (isAlreadyReview) {
+      product.reviews.forEach((rev: ReviewsT) => {
+        if (rev.user.toString() === req.user?._id.toString()) {
+          rev.comment = comment;
+          rev.rating = rating;
+        }
+      });
+    } else {
+      product.reviews.push(review as ReviewsT);
+      product.numberOfReviews = product.reviews.length;
+    }
+
+    //  adjust average ratings
+    const averageRating =
+      product.reviews.reduce(
+        (accumulator: number, currentValue: ReviewsT) => accumulator + Number(currentValue.rating || 0),
+        0
+      ) / product.reviews.length;
+
+    product.ratings = Number(averageRating.toFixed(1));
+
+    const updatedProduct = await product.save({
+      validateBeforeSave: true,
+    });
+
+    const data = {
+      product: updatedProduct,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully add review to product : ${req.body.productId} `,
         status: 200,
         data,
       })

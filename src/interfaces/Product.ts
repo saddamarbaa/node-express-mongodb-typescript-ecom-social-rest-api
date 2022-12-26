@@ -28,3 +28,8 @@ export interface ProductT extends Document {
 export interface AddProductToCartT extends IUser {
   productId: string;
 }
+export interface ReviewProductT extends IUser {
+  productId: string;
+  rating: number;
+  comment: string;
+}
