@@ -304,6 +304,44 @@ export const deleteReviewService = async (
   }
 };
 
+export const getReviewsService = async (
+  req: AuthenticatedRequestBody<ReviewProductT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!isValidMongooseObjectId(req.params.productId) || !req.params.productId) {
+      return next(createHttpError(422, `Invalid request`));
+    }
+
+    const product = (await Product.findById(req.params.productId)) as ProductT;
+
+    if (!product) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    if (!product.reviews.length) {
+      return next(createHttpError(400, `No reviews found for product by ID : ${req.params.productId} `));
+    }
+
+    const data = {
+      reviews: product.reviews,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found reviews for product by ID : ${req.params.productId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getCartService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
     const userCart = await User.findById(req.user?._id).select('cart').populate('cart.items.productId').exec();
