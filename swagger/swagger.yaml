@@ -804,9 +804,106 @@ paths:
                 schema:
                 '$ref': '#/components/schemas/DeprecatedApiResponse'
 
+  /orders/invoices/{orderId}:
+    get:
+      summary: Generate user order invoice as pdf and download
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /orders/{orderId}:
+    delete:
+      summary: Delete single order from the list of orders
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted order by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /orders/clear-orders:
     delete:
-      summary: Clear user order list
+      summary: Clear all the user order list
       security:
         - Authorization: []
       tags:
@@ -841,46 +938,6 @@ paths:
                         items:
                           type: string
                         maxItems: 0
-
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
-
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /orders/invoices/{orderId}:
-    get:
-      summary: Generate user order invoice as pdf and download
-      security:
-        - Authorization: []
-      tags:
-        - Order
-      parameters:
-        - in: path
-          name: orderId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            example: 6398540ee6e5ae8c37c333ac
-      description:
-      responses:
-        '200':
-          description: OK
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
 
         '400':
           description: Bad request
