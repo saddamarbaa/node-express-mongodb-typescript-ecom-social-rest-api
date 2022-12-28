@@ -692,16 +692,36 @@ paths:
                   data:
                     type: object
                     properties:
-                      products:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            quantity:
-                              type: number
-                            product:
+                      orders:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                          products:
+                            type: array
+                            items:
                               type: object
-                              '$ref': '#/components/schemas/ProductResponse'
+                              properties:
+                                quantity:
+                                  type: number
+                                product:
+                                  type: object
+                                  '$ref': '#/components/schemas/ProductResponse'
+                          user:
+                            type: object
+                            properties:
+                              email:
+                                type: string
+                              name:
+                                type: string
+                              surname:
+                                type: string
+                              phone:
+                                type: string
+                              address:
+                                type: string
+                              userId:
+                                type: string
 
         '400':
           description: Bad request
@@ -821,6 +841,46 @@ paths:
                         items:
                           type: string
                         maxItems: 0
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /orders/invoices/{orderId}:
+    get:
+      summary: Generate user order invoice as pdf and download
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
 
         '400':
           description: Bad request
@@ -1005,6 +1065,35 @@ paths:
                       post:
                         type: object
                         $ref: '#/components/schemas/PostResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  #  filestream
+  /pdf-test:
+    get:
+      summary: Api for testing pdf document serve (Returns PDF file)
+      tags:
+        - PDF - filestream
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
         '400':
           description: Bad request
           content:
