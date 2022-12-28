@@ -50,7 +50,7 @@
     "ioi": "^0.0.1",
     "joi": "^17.7.0",
     "joi-objectid": "^4.0.2",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "^6.8.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
