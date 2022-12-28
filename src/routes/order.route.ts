@@ -2,7 +2,8 @@ import express from 'express';
 
 import { isAuth } from '@src/middlewares';
 import {
-  clearOrdersController,
+  clearAllOrdersController,
+  clearSingleOrdersController,
   getInvoicesController,
   getOrdersController,
   postOrderController,
@@ -12,7 +13,8 @@ const router = express.Router();
 
 router.get('/', isAuth, getOrdersController);
 router.post('/', isAuth, postOrderController);
-router.delete('/clear-orders', isAuth, clearOrdersController);
+router.delete('/clear-orders', isAuth, clearAllOrdersController);
+router.delete('/:orderId', isAuth, clearSingleOrdersController);
 router.get('/invoices/:orderId', isAuth, getInvoicesController);
 
 export = router;
