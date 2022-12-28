@@ -9,10 +9,12 @@ import productsRoutes from '@src/routes/product.route';
 import orderRoutes from '@src/routes/order.route';
 import cartRoutes from '@src/routes/cart.route';
 import moderatorRoutes from '@src/routes/moderator.route';
+import pdfServeRoute from '@src/routes/pdfDoc.route';
 
 const router = express.Router();
 
 router.use('/', homeRoute);
+router.use('/pdf-test', pdfServeRoute);
 router.use('/healthChecker', healthCheckRoute);
 router.use('/admin', adminRoutes);
 router.use('/auth', authRoutes);

@@ -1,8 +1,11 @@
 import { NextFunction, Response } from 'express';
 import createHttpError from 'http-errors';
+import fs from 'fs';
+import PDFDocument from 'pdfkit';
+import { resolve } from 'path';
 
 import { AuthenticatedRequestBody, IUser, OrderT } from '@src/interfaces';
-import { customResponse } from '@src/utils';
+import { customResponse, isValidMongooseObjectId } from '@src/utils';
 
 import Order from '@src/models/Order.model';
 import User from '@src/models/User.model';
@@ -11,14 +14,8 @@ export const getOrdersService = async (req: AuthenticatedRequestBody<IUser>, res
   try {
     const orders = await Order.find({ 'user.userId': req.user?._id });
 
-    const transformedProducts = orders.map((item) => {
-      return {
-        quantity: item.products[0].quantity,
-        product: item.products[0].product,
-      };
-    });
     const data = {
-      products: transformedProducts,
+      orders,
     };
 
     return res.status(200).send(
@@ -115,6 +112,50 @@ export const clearOrdersService = async (req: AuthenticatedRequestBody<IUser>, r
         data: { products: [] },
       })
     );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getInvoicesService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+  const { orderId } = req.params;
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return next(createHttpError(400, `No order found.`));
+  }
+
+  if (order.user.userId.toString() !== req?.user?._id.toString()) {
+    return next(createHttpError(403, `Unauthorized`));
+  }
+
+  try {
+    const invoiceName = `invoice-${orderId}.pdf`;
+
+    const invoicePath = resolve(process.cwd(), `${process.env.PWD}/public/invoices/${invoiceName}`);
+
+    const pdfDoc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${invoiceName}"`);
+    pdfDoc.pipe(fs.createWriteStream(invoicePath));
+    pdfDoc.pipe(res);
+
+    pdfDoc.fontSize(26).text('Invoice', {
+      underline: true,
+    });
+    pdfDoc.text('-----------------------');
+    let totalPrice = 0;
+    order.products.forEach((prod: any) => {
+      totalPrice += prod.quantity * prod.product.price;
+      // eslint-disable-next-line no-useless-concat
+      pdfDoc.fontSize(15).text(`${prod.product.name} - ${prod.quantity} x ` + `$${prod.product.price}`);
+    });
+    pdfDoc.text('----------------------------------');
+    pdfDoc.fontSize(20).text(`Total Price: $${totalPrice}`);
+    pdfDoc.end();
   } catch (error) {
     return next(error);
   }
