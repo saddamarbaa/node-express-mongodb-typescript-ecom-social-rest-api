@@ -212,7 +212,7 @@ export const addReviewService = async (
         }
       });
     } else {
-      product.reviews.push(review as ReviewsT);
+      product.reviews.unshift(review as ReviewsT);
       product.numberOfReviews = product.reviews.length;
     }
 
