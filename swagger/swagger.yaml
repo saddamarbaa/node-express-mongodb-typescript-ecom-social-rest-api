@@ -761,6 +761,12 @@ paths:
                     address:
                       type: string
                       example: 'Tiban center 12'
+                    street:
+                      type: string
+                      example: '23 frey terminal'
+                    city:
+                      type: string
+                      example: 'Batam'
                     country:
                       type: string
                       example: 'Indonesia'
@@ -775,7 +781,7 @@ paths:
                       example: '+6285366666'
 
       responses:
-        '200':
+        '201':
           description: OK
           content:
             application/json:
@@ -791,7 +797,7 @@ paths:
                     example: false
                   status:
                     type: integer
-                    example: 200
+                    example: 201
                   message:
                     type: string
                     example: Thank you, your orders will be shipped in 2-3 business days
@@ -4176,9 +4182,13 @@ components:
       properties:
         address:
           type: string
-        phoneNo:
-          type: string
         zipCode:
+          type: string
+        street":
+          type: string
+        city:
+          type: string
+        phoneNo:
           type: string
         status:
           type: string

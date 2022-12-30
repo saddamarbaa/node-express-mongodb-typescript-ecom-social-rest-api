@@ -17,7 +17,9 @@ export const orderSchema = {
         address: Joi.string().required(),
         phoneNo: Joi.string().required(),
         zipCode: Joi.string().required(),
-        status: Joi.string().required(),
+        status: Joi.string(),
+        street: Joi.string(),
+        city: Joi.string().required(),
         country: Joi.string().required(),
       })
       .required(),

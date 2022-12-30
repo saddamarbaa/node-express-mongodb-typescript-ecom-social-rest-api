@@ -11,6 +11,8 @@ export interface ShippingInfoT {
   zipCode: string;
   status: string;
   country: string;
+  street: string;
+  city: string;
 }
 
 export interface OrderT extends Document {

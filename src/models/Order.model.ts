@@ -9,22 +9,43 @@ export const orderSchema: Schema<OrderT> = new Schema(
       address: {
         type: String,
         required: true,
+        trim: true,
+        lowercase: true,
       },
       phoneNo: {
         type: String,
         required: true,
+        trim: true,
+      },
+      status: {
+        type: String,
+        required: false,
+        trim: true,
+        lowercase: true,
       },
       zipCode: {
         type: String,
         required: true,
+        trim: true,
+        lowercase: true,
       },
-      status: {
+      street: {
+        type: String,
+        required: false,
+        trim: true,
+        lowercase: true,
+      },
+      city: {
         type: String,
         required: true,
+        trim: true,
+        lowercase: true,
       },
       country: {
         type: String,
         required: true,
+        trim: true,
+        lowercase: true,
       },
     },
     user: {
