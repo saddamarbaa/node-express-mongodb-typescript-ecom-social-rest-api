@@ -2535,6 +2535,56 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /admin/orders:
+    get:
+      summary: Returns a list of orders for all users
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found all orders
+                  data:
+                    type: object
+                    properties:
+                      orders:
+                        type: object
+                        '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /admin/posts:
     get:
       summary: Returns a list of posts
@@ -3790,6 +3840,59 @@ components:
                 type: object
                 '$ref': '#/components/schemas/ProductResponse'
 
+    AdminOrderResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        shippingInfo:
+          type: object
+          '$ref': '#/components/schemas/ShippingInfo'
+        paymentInfo:
+          type: string
+        textAmount:
+          type: number
+        shippingAmount:
+          type: number
+        totalAmount:
+          type: number
+        orderStatus:
+          type: string
+        deliveredAt:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            surname:
+              type: string
+            phone:
+              type: string
+            address:
+              type: string
+            userId:
+              type: object
+              '$ref': '#/components/schemas/AdminAuthResponse'
+        orderItems:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              quantity:
+                type: number
+              product:
+                type: object
+                '$ref': '#/components/schemas/AdminProductResponse'
+
     ShippingInfo:
       type: object
       properties:
@@ -3803,6 +3906,7 @@ components:
           type: string
         country:
           type: string
+
   securitySchemes:
     Authorization:
       type: http
