@@ -16,8 +16,15 @@ import {
   adminDeleteAllOrderForGivenUserService,
   adminClearAllOrdersService,
   adminGetAllOrdersForGivenUserService,
+  adminUpdateOrderStatusService,
 } from '@src/services';
-import { AuthenticatedRequestBody, IUser, ProductT, TPaginationResponse } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser, ProcessingOrderT, ProductT, TPaginationResponse } from '@src/interfaces';
+
+export const adminUpdateOrderStatusController = (
+  req: AuthenticatedRequestBody<ProcessingOrderT>,
+  res: Response,
+  next: NextFunction
+) => adminUpdateOrderStatusService(req, res, next);
 
 export const adminGetUsersController = (req: Request, res: TPaginationResponse) => adminGetUsersService(req, res);
 

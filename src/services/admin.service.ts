@@ -8,7 +8,14 @@ import Order from '@src/models/Order.model';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
-import { AuthenticatedRequestBody, IUser, ProductT, ResponseT, TPaginationResponse } from '@src/interfaces';
+import {
+  AuthenticatedRequestBody,
+  IUser,
+  ProcessingOrderT,
+  ProductT,
+  ResponseT,
+  TPaginationResponse,
+} from '@src/interfaces';
 import { customResponse, deleteFile, isValidMongooseObjectId, sendEmailVerificationEmail } from '@src/utils';
 import Product from '@src/models/Product.model';
 import { authorizationRoles } from '@src/constants';
@@ -584,6 +591,55 @@ export const adminDeleteProductService = async (
     // });
   } catch (error) {
     return next(InternalServerError);
+  }
+};
+
+export const adminUpdateOrderStatusService = async (
+  req: AuthenticatedRequestBody<ProcessingOrderT>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { orderStatus } = req.body;
+  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId },
+      {
+        orderStatus,
+      },
+      {
+        new: true,
+      }
+    )
+      .populate('user.userId', '-password -confirmPassword ')
+      .populate({
+        path: 'orderItems.product',
+        populate: { path: 'user', select: '-password -confirmPassword' },
+      })
+      .exec();
+
+    if (!order) {
+      return next(new createHttpError.BadRequest());
+    }
+    const data = {
+      order,
+    };
+
+    return res.status(201).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully update order by ID ${orderId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
   }
 };
 

@@ -7,6 +7,7 @@ import {
   isAuth,
   productsPaginationMiddleware,
   signupUserValidation,
+  updateOrderStatusValidation,
   updateProductValidation,
   updateUserValidation,
   uploadImage,
@@ -27,6 +28,7 @@ import {
   adminGetUsersController,
   adminRemoveUserController,
   adminUpdateAuthController,
+  adminUpdateOrderStatusController,
   adminUpdateProductController,
 } from '@src/controllers';
 import { environmentConfig } from '@src/configs';
@@ -92,7 +94,14 @@ router.get(
 router
   .route('/orders/:orderId')
   .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrderController)
+  .patch(
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS),
+    updateOrderStatusValidation,
+    adminUpdateOrderStatusController
+  )
   .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminDeleteSingleOrderController);
+
 router.delete(
   '/orders/clear-user-order/:userId',
   isAuth,
