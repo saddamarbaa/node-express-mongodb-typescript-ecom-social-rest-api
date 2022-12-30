@@ -727,4 +727,31 @@ export const adminDeleteAllOrderForGivenUserService = async (
   }
 };
 
+export const adminClearAllOrdersService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Delete complete Order collection
+    const dropCompleteCollection = await Order.deleteMany({});
+
+    if (dropCompleteCollection.deletedCount === 0) {
+      return next(createHttpError(400, `Failed to Cleared orders`));
+    }
+
+    return res.status(200).send(
+      customResponse({
+        success: true,
+        error: false,
+        message: `Successful Cleared all orders`,
+        status: 200,
+        data: null,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export default adminGetUsersService;
