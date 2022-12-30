@@ -1,7 +1,7 @@
 export const productCategory = {
   womenClothe: "Women's clothing",
   menClothe: "Men's clothing",
-  womenShoe: "Men's Shoes",
+  womenShoe: "Women's Shoes",
   menShoe: "Men's Shoes",
   toy: 'Toys',
   football: 'Football',

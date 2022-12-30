@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 
-import { AuthenticatedRequestBody, IUser } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser, ProcessingOrderT } from '@src/interfaces';
 import {
   clearAllOrdersService,
   clearSingleOrderService,
@@ -12,8 +12,11 @@ import {
 export const getOrdersController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   getOrdersService(req, res, next);
 
-export const postOrderController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
-  postOrderService(req, res, next);
+export const postOrderController = (
+  req: AuthenticatedRequestBody<ProcessingOrderT>,
+  res: Response,
+  next: NextFunction
+) => postOrderService(req, res, next);
 
 export const clearSingleOrdersController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   clearSingleOrderService(req, res, next);
