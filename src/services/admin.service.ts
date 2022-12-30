@@ -657,6 +657,46 @@ export const adminGetOrderService = async (req: AuthenticatedRequestBody<IUser>,
   }
 };
 
+export const adminGetAllOrdersForGivenUserService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!isValidMongooseObjectId(req.params.userId) || !req.params.userId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+
+  try {
+    const { userId } = req.params;
+
+    const orders = await Order.find({ 'user.userId': userId })
+      .populate('user.userId', '-password -confirmPassword ')
+      .populate({
+        path: 'orderItems.product',
+        populate: { path: 'user', select: '-password -confirmPassword' },
+      })
+      .exec();
+
+    const data = {
+      orders,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: !orders.length
+          ? `No order found for user by ID ${userId}`
+          : `Successfully found  all order for user by ID ${userId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const adminDeleteSingleOrderService = async (
   req: AuthenticatedRequestBody<IUser>,
   res: Response,
