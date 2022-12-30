@@ -16,6 +16,7 @@ import {
   adminAddProductController,
   adminAddUserController,
   adminDeleteProductController,
+  adminGetOrderController,
   adminGetOrdersController,
   adminGetProductController,
   adminGetProductsController,
@@ -72,5 +73,6 @@ router.get('/products/:productId', isAuth, isAdmin, adminGetProductController);
 router.delete('/products/delete/:productId', isAuth, isAdmin, adminDeleteProductController);
 
 router.get('/orders', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrdersController);
+router.get('/orders/:orderId', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrderController);
 
 export = router;

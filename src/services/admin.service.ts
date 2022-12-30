@@ -620,4 +620,41 @@ export const adminGetOrdersService = async (
   }
 };
 
+export const adminGetOrderService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId)
+      .populate('user.userId', '-password -confirmPassword ')
+      .populate({
+        path: 'orderItems.product',
+        // Get users of product
+        populate: { path: 'user', select: '-password -confirmPassword' },
+      })
+      .exec();
+
+    if (!order) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const data = {
+      order,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found order by ID ${orderId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export default adminGetUsersService;
