@@ -657,4 +657,43 @@ export const adminGetOrderService = async (req: AuthenticatedRequestBody<IUser>,
   }
 };
 
+export const adminDeleteSingleOrderService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isRemoved = await Order.findByIdAndRemove({
+      _id: orderId,
+    });
+
+    if (!isRemoved) {
+      return next(createHttpError(400, `Failed to delete order by given ID ${orderId}`));
+    }
+
+    return res.status(200).json(
+      customResponse({
+        data: null,
+        success: true,
+        error: false,
+        message: `Successfully deleted order by ID ${orderId}`,
+        status: 200,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export default adminGetUsersService;
