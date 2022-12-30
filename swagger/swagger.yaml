@@ -873,6 +873,64 @@ paths:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
   /orders/{orderId}:
+    get:
+      summary: Get single order based on request id
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      description:
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found order by ID ....
+                  data:
+                    type: object
+                    properties:
+                      order:
+                        type: object
+                        '$ref': '#/components/schemas/OrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
     delete:
       summary: Delete single order from the list of orders
       security:
