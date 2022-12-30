@@ -2,6 +2,7 @@ import express from 'express';
 
 import {
   addProductValidation,
+  customRoles,
   isAdmin,
   isAuth,
   productsPaginationMiddleware,
@@ -15,6 +16,7 @@ import {
   adminAddProductController,
   adminAddUserController,
   adminDeleteProductController,
+  adminGetOrdersController,
   adminGetProductController,
   adminGetProductsController,
   adminGetUserController,
@@ -23,6 +25,7 @@ import {
   adminUpdateAuthController,
   adminUpdateProductController,
 } from '@src/controllers';
+import { environmentConfig } from '@src/configs';
 
 const router = express.Router();
 
@@ -67,5 +70,7 @@ router.put(
 router.get('/products', isAuth, isAdmin, productsPaginationMiddleware(), adminGetProductsController);
 router.get('/products/:productId', isAuth, isAdmin, adminGetProductController);
 router.delete('/products/delete/:productId', isAuth, isAdmin, adminDeleteProductController);
+
+router.get('/orders', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrdersController);
 
 export = router;

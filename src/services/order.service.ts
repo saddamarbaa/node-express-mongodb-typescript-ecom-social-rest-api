@@ -39,6 +39,46 @@ export const getOrdersService = async (req: AuthenticatedRequestBody<IUser>, res
   }
 };
 
+export const getOrderService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId)
+      .populate(
+        'user.userId',
+        '-password -confirmPassword  -status -cart -role -status -isVerified -isDeleted -acceptTerms'
+      )
+      .populate('orderItems.product')
+      .exec();
+
+    if (!order) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    if (order.user.userId._id.toString() !== req?.user?._id.toString()) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    const data = {
+      order,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found order by ID ${orderId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const postOrderService = async (
   req: AuthenticatedRequestBody<ProcessingOrderT>,
   res: Response,
@@ -47,7 +87,6 @@ export const postOrderService = async (
   try {
     const { shippingInfo, paymentInfo, textAmount, shippingAmount, totalAmount, orderStatus, orderItems } = req.body;
 
-    console.log(req.body);
     const authUser = await User.findById(req.user?._id).select('-password -confirmPassword -cart -status');
 
     if (!authUser) {

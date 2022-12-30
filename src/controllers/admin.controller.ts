@@ -10,6 +10,7 @@ import {
   adminUpdateProductService,
   removeAuthService,
   adminUpdateAuthService,
+  adminGetOrdersService,
 } from '@src/services';
 import { AuthenticatedRequestBody, IUser, ProductT, TPaginationResponse } from '@src/interfaces';
 
@@ -43,5 +44,8 @@ export const adminUpdateProductController = (
 
 export const adminDeleteProductController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminDeleteProductService(req, res, next);
+
+export const adminGetOrdersController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminGetOrdersService(req, res, next);
 
 export default adminGetUsersController;

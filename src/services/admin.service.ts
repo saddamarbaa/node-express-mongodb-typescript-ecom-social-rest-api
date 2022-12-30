@@ -4,6 +4,7 @@ import { SignOptions } from 'jsonwebtoken';
 
 import Token from '@src/models/Token.model';
 import User from '@src/models/User.model';
+import Order from '@src/models/Order.model';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
@@ -583,6 +584,39 @@ export const adminDeleteProductService = async (
     // });
   } catch (error) {
     return next(InternalServerError);
+  }
+};
+
+export const adminGetOrdersService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const orders = await Order.find()
+      .populate('user.userId', '-password -confirmPassword ')
+      .populate({
+        path: 'orderItems.product',
+        // Get users of product
+        populate: { path: 'user', select: '-password -confirmPassword' },
+      })
+      .exec();
+
+    const data = {
+      orders,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successful Found all orders`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
   }
 };
 
