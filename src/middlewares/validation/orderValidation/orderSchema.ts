@@ -2,6 +2,7 @@ import Joi from 'joi';
 
 // @ts-ignore
 import JoiObjectId from 'joi-objectid';
+import { orderStatus } from '@src/constants';
 
 const vaildObjectId = JoiObjectId(Joi);
 
@@ -33,6 +34,19 @@ export const orderSchema = {
           .required()
       )
       .default([]),
+  }),
+  updateOrderStatus: Joi.object({
+    orderStatus: Joi.string()
+      .required()
+      .valid(
+        orderStatus.cancelled,
+        orderStatus.completed,
+        orderStatus.delivered,
+        orderStatus.pending,
+        orderStatus.shipped,
+        orderStatus.waitingPayment,
+        orderStatus.waitingPickup
+      ),
   }),
 };
 
