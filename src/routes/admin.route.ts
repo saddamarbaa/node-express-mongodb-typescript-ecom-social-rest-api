@@ -28,6 +28,7 @@ import {
   adminUpdateProductController,
 } from '@src/controllers';
 import { environmentConfig } from '@src/configs';
+import { adminDeleteAllOrderForGivenUserService } from '@src/services';
 
 const router = express.Router();
 
@@ -79,5 +80,12 @@ router
   .route('/orders/:orderId')
   .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrderController)
   .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminDeleteSingleOrderController);
+
+router.delete(
+  '/orders/clear-user-order/:userId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  adminDeleteAllOrderForGivenUserService
+);
 
 export = router;

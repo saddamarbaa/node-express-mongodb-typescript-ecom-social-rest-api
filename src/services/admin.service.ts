@@ -696,4 +696,35 @@ export const adminDeleteSingleOrderService = async (
   }
 };
 
+export const adminDeleteAllOrderForGivenUserService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!isValidMongooseObjectId(req.params.userId) || !req.params.userId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
+
+  try {
+    const { userId } = req.params;
+    const droppedUserOrder = await Order.deleteMany({ 'user.userId': userId });
+
+    if (droppedUserOrder.deletedCount === 0) {
+      return next(createHttpError(400, `Failed to delete order for given user by ID ${userId}`));
+    }
+
+    return res.status(200).json(
+      customResponse({
+        data: null,
+        success: true,
+        error: false,
+        message: `Successfully deleted all orders for user by ID ${userId}`,
+        status: 200,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export default adminGetUsersService;

@@ -13,6 +13,7 @@ import {
   adminGetOrdersService,
   adminGetOrderService,
   adminDeleteSingleOrderService,
+  adminDeleteAllOrderForGivenUserService,
 } from '@src/services';
 import { AuthenticatedRequestBody, IUser, ProductT, TPaginationResponse } from '@src/interfaces';
 
@@ -58,5 +59,11 @@ export const adminDeleteSingleOrderController = (
   res: Response,
   next: NextFunction
 ) => adminDeleteSingleOrderService(req, res, next);
+
+export const adminDeleteAllOrderForGivenUserController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteAllOrderForGivenUserService(req, res, next);
 
 export default adminGetUsersController;
