@@ -694,34 +694,7 @@ paths:
                     properties:
                       orders:
                         type: object
-                        properties:
-                          _id:
-                            type: string
-                          products:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                quantity:
-                                  type: number
-                                product:
-                                  type: object
-                                  '$ref': '#/components/schemas/ProductResponse'
-                          user:
-                            type: object
-                            properties:
-                              email:
-                                type: string
-                              name:
-                                type: string
-                              surname:
-                                type: string
-                              phone:
-                                type: string
-                              address:
-                                type: string
-                              userId:
-                                type: string
+                        '$ref': '#/components/schemas/OrderResponse'
 
         '400':
           description: Bad request
@@ -744,6 +717,63 @@ paths:
       tags:
         - Order
       description:
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderItems:
+                  items:
+                    type: object
+                    properties:
+                      product:
+                        type: string
+                        example: 63aa95109e8eb8a0f45c412e
+                      quantity:
+                        type: number
+                        example: 10
+                paymentInfo:
+                  type: string
+                  minimum: 1
+                  example: strip
+                orderStatus:
+                  type: string
+                  minimum: 1
+                  example: 'pending'
+                textAmount:
+                  type: number
+                  minimum: 1
+                  example: 10
+                shippingAmount:
+                  type: number
+                  minimum: 1
+                  example: 40
+                totalAmount:
+                  type: number
+                  minimum: 1
+                  example: 100
+                shippingInfo:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      example: 'Tiban center 12'
+                    country:
+                      type: string
+                      example: 'Indonesia'
+                    zipCode:
+                      type: string
+                      example: 'Cd544'
+                    status:
+                      type: string
+                      example: 'Tiban center 12'
+                    phoneNo:
+                      type: string
+                      example: '+6285366666'
+
       responses:
         '200':
           description: OK
@@ -768,11 +798,9 @@ paths:
                   data:
                     type: object
                     properties:
-                      orderItems:
-                        type: array
-                        items:
-                          type: object
-                          '$ref': '#/components/schemas/ProductResponse'
+                      order:
+                        type: object
+                        '$ref': '#/components/schemas/OrderResponse'
 
         '400':
           description: Bad request
@@ -3000,6 +3028,38 @@ components:
           nullable: true
           example: null
 
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          required: true
+        surname:
+          type: string
+        email:
+          type: string
+          required: true
+        dateOfBirth:
+          type: string
+        gender:
+          type: string
+        profileImage:
+          type: string
+        mobileNumber:
+          type: string
+        companyName:
+          type: string
+        nationality:
+          type: string
+        address:
+          type: string
+        bio:
+          type: string
+        jobTitle:
+          type: string
+
     AuthRequest:
       type: object
       description: Model containing post request info
@@ -3619,42 +3679,72 @@ components:
           type: object
           '$ref': '#/components/schemas/ProductResponse'
 
-  ProductResponse:
-    type: object
-    properties:
-      _id:
-        type: string
-      name:
-        type: string
-      description:
-        type: string
-      price:
-        type: string
-      brand:
-        type: string
-      category:
-        type: string
-      productImage:
-        type: string
-      stock:
-        type: string
-      createdAt:
-        type: string
-      updatedAt:
-        type: string
-      ratings:
-        type: number
-      numberOfReviews:
-        type: number
-      reviews:
-        type: array
-        items:
+    OrderResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        shippingInfo:
           type: object
-          '$ref': '#/components/schemas/ReviewsResponse'
-      request:
-        type: object
-        '$ref': '#/components/schemas/ResponseAdditionalInfo'
+          '$ref': '#/components/schemas/ShippingInfo'
+        paymentInfo:
+          type: string
+        textAmount:
+          type: number
+        shippingAmount:
+          type: number
+        totalAmount:
+          type: number
+        orderStatus:
+          type: string
+        deliveredAt:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            surname:
+              type: string
+            phone:
+              type: string
+            address:
+              type: string
+            userId:
+              type: object
+              '$ref': '#/components/schemas/User'
+        orderItems:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              quantity:
+                type: number
+              product:
+                type: object
+                '$ref': '#/components/schemas/ProductResponse'
 
+    ShippingInfo:
+      type: object
+      properties:
+        address:
+          type: string
+        phoneNo:
+          type: string
+        zipCode:
+          type: string
+        status:
+          type: string
+        country:
+          type: string
   securitySchemes:
     Authorization:
       type: http
