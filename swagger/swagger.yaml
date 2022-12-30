@@ -932,7 +932,7 @@ paths:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
     delete:
-      summary: Delete single order from the list of orders
+      summary: Delete single order based on request id
       security:
         - Authorization: []
       tags:
