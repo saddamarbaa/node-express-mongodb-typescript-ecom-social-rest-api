@@ -79,7 +79,7 @@ paths:
 
   /products:
     get:
-      summary: Returns a list of products
+      summary: Returns a list of products (can search, sort by each filed, filter by each filed)
       tags:
         - Product
       description:
@@ -89,27 +89,27 @@ paths:
           schema:
             type: integer
             minimum: 1
-            example: 20
+            example: 10
           description: The numbers of items to return (the default value is 20)
         - in: query
           name: page
           schema:
             type: integer
-            minimum: 1
-            example: 1
+            # minimum: 1
+            # example: 1
           description: Pagination page number (the default value is 1)
         - in: query
-          name: filterBy
+          name: sort
           schema:
             type: string
-            example:
-          description: Filter type (Example - category)
+            example: 'price,-ratings'
+          description: Sort query (the default is sort by lowest price and highest rating
         - in: query
           name: category
           schema:
             type: string
             example:
-          description: Category name (Example - books)
+          description: Filter by Category name (Example - books,toys,jewelery,personal computers)
         - in: query
           name: search
           schema:
@@ -1086,7 +1086,63 @@ paths:
                     properties:
                       stripeKey:
                         type: string
-                        minimum: 0
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+  /payment/captureStripePayment:
+    post:
+      summary: Api to capture stripe payment (TODO)
+      tags:
+        - Payment
+      security:
+        - Authorization: []
+      description:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  example: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Payment Success
+                  data:
+                    type: object
+                    properties:
+                      client_secret:
+                        type: string
 
         '400':
           description: Bad request
