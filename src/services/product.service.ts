@@ -58,6 +58,14 @@ export const getProductsService = async (_req: Request, res: TPaginationResponse
   }
 };
 
+export const getTop5CheapestProductsService = async (req: Request, res: Response, next: NextFunction) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratings,price';
+  req.query.limit = '5';
+  req.query.fields = '-_v';
+  next();
+};
+
 export const getProductService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   if (!isValidMongooseObjectId(req.params.productId) || !req.params.productId) {
     return next(createHttpError(422, `Invalid request`));

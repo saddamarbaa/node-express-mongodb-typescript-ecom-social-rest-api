@@ -95,7 +95,10 @@ export const productsPaginationMiddleware = () => {
         query = query.select('-_v');
       }
 
-      results.results = await query.exec();
+      results.results = await query
+        .populate('user', '-password -confirmPassword  -status -cart -role -status -isVerified -isDeleted -acceptTerms')
+        .populate('reviews.user', 'name  surname nationality ')
+        .exec();
 
       // Add paginated Results to the request
       res.paginatedResults = results;

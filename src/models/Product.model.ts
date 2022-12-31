@@ -67,6 +67,7 @@ export const ProductSchema: Schema<ProductT> = new Schema(
       },
       default: productCategory.all,
       trim: true,
+      lowercase: true,
       required: [true, 'Category is required please select one'],
     },
     stock: {
