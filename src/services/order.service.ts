@@ -3,8 +3,9 @@ import createHttpError from 'http-errors';
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import { resolve } from 'path';
+import Product from '@src/models/Product.model';
 
-import { AuthenticatedRequestBody, IUser, OrderT } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser, OrderT, ProcessingOrderT } from '@src/interfaces';
 import { customResponse, isValidMongooseObjectId } from '@src/utils';
 
 import Order from '@src/models/Order.model';
@@ -12,7 +13,13 @@ import User from '@src/models/User.model';
 
 export const getOrdersService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const orders = await Order.find({ 'user.userId': req.user?._id });
+    const orders = await Order.find({ 'user.userId': req.user?._id })
+      .populate(
+        'user.userId',
+        '-password -confirmPassword  -status -cart -role -status -isVerified -isDeleted -acceptTerms'
+      )
+      .populate('orderItems.product')
+      .exec();
 
     const data = {
       orders,
@@ -32,31 +39,99 @@ export const getOrdersService = async (req: AuthenticatedRequestBody<IUser>, res
   }
 };
 
-export const postOrderService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+export const getOrderService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
+    return next(createHttpError(422, `Invalid request`));
+  }
   try {
-    const authUser = await User.findById(req.user?._id);
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId)
+      .populate(
+        'user.userId',
+        '-password -confirmPassword  -status -cart -role -status -isVerified -isDeleted -acceptTerms'
+      )
+      .populate('orderItems.product')
+      .exec();
+
+    if (!order) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    if (order.user.userId._id.toString() !== req?.user?._id.toString()) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    const data = {
+      order,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found order by ID ${orderId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const postOrderService = async (
+  req: AuthenticatedRequestBody<ProcessingOrderT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { shippingInfo, paymentInfo, textAmount, shippingAmount, totalAmount, orderStatus, orderItems } = req.body;
+
+    const authUser = await User.findById(req.user?._id).select('-password -confirmPassword -cart -status');
 
     if (!authUser) {
       return next(createHttpError(401, `Auth Failed`));
     }
 
-    const userCart = await User.findById(req.user?._id).select('cart').populate('cart.items.productId').exec();
+    // check if ordered product still exists on db
+    if (orderItems && orderItems.length > 0) {
+      orderItems.forEach(async (item) => {
+        const isProductStillExits = await Product.findById(item.product);
+        if (!isProductStillExits) return next(new createHttpError.BadRequest());
+      });
+    }
 
-    if (!userCart) {
+    // const userCart = await User.findById(req.user?._id).select('cart').populate('cart.items.productId').exec();
+    const userCart = await User.findById(req.user?._id);
+    if (!userCart && !orderItems) {
       return next(createHttpError(401, `Auth Failed`));
     }
 
-    if (userCart.cart.items.length <= 0) {
+    if (!orderItems && userCart.cart.items.length <= 0) {
       return next(createHttpError(402, `Oder Failed (your cart is empty)`));
     }
 
-    const orderItems = userCart.cart.items.map((item: { quantity: number; productId: { _doc: OrderT } }) => {
-      return { quantity: item.quantity, product: { ...item.productId._doc } };
-    });
+    const finalItemsToOrder =
+      orderItems && orderItems.length > 0
+        ? orderItems
+        : userCart.cart.items.map((item: { quantity: number; productId: { _doc: OrderT } }) => {
+            return { quantity: item.quantity, product: item.productId };
+          });
+
+    const itemTotalAmount = finalItemsToOrder.reduce(
+      (accumulator: number, currentValue: { product: string; quantity: number }) => accumulator + currentValue.quantity,
+      0
+    );
 
     // Create new order
     // Assuming (name,email,phone,address) will be coming in req.body
     const order = new Order({
+      shippingInfo,
+      paymentInfo,
+      textAmount,
+      shippingAmount,
+      totalAmount: totalAmount || itemTotalAmount + shippingAmount + textAmount,
+      orderStatus,
       user: {
         name: authUser.name,
         surname: authUser.surname,
@@ -65,19 +140,20 @@ export const postOrderService = async (req: AuthenticatedRequestBody<IUser>, res
         address: authUser.address,
         userId: userCart._id,
       },
-      products: orderItems,
+      orderItems: finalItemsToOrder,
     });
 
     // Save the order
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const beenOrderItem = await order.save();
+    const orderedItem = await order.save();
+    orderedItem.user = authUser;
 
     // Clear the cart
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const updatedCart = await authUser.clearCart();
+    if (!orderItems) {
+      await authUser.clearCart();
+    }
 
     const data = {
-      orderItems,
+      order: orderedItem,
     };
 
     return res.status(201).send(

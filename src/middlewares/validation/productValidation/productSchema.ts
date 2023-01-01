@@ -2,6 +2,7 @@ import Joi from 'joi';
 
 // @ts-ignore
 import JoiObjectId from 'joi-objectid';
+import { productCategory } from '@src/constants';
 
 const vaildObjectId = JoiObjectId(Joi);
 
@@ -11,7 +12,23 @@ export const productSchema = {
     description: Joi.string().min(15).required(),
     price: Joi.number().required(),
     brand: Joi.string().required(),
-    category: Joi.string(),
+    category: Joi.string()
+      .required()
+      .valid(
+        productCategory.all,
+        productCategory.book,
+        productCategory.electronic,
+        productCategory.football,
+        productCategory.jewelery,
+        productCategory.menShoe,
+        productCategory.menClothe,
+        productCategory.sport,
+        productCategory.toy,
+        productCategory.womenClothe,
+        productCategory.womenShoe,
+        productCategory.PersonalComputer
+      ),
+
     stock: Joi.string(),
     mobileNumber: Joi.string(),
     gender: Joi.string(),

@@ -79,7 +79,7 @@ paths:
 
   /products:
     get:
-      summary: Returns a list of products
+      summary: Returns a list of products (can search, sort by each filed, filter by each filed)
       tags:
         - Product
       description:
@@ -89,27 +89,27 @@ paths:
           schema:
             type: integer
             minimum: 1
-            example: 20
+            example: 10
           description: The numbers of items to return (the default value is 20)
         - in: query
           name: page
           schema:
             type: integer
-            minimum: 1
-            example: 1
+            # minimum: 1
+            # example: 1
           description: Pagination page number (the default value is 1)
         - in: query
-          name: filterBy
+          name: sort
           schema:
             type: string
-            example:
-          description: Filter type (Example - category)
+            example: 'price,-ratings'
+          description: Sort query (the default is sort by lowest price and highest rating
         - in: query
           name: category
           schema:
             type: string
             example:
-          description: Category name (Example - books)
+          description: Filter by Category name (Example - books,toys,jewelery,personal computers)
         - in: query
           name: search
           schema:
@@ -118,6 +118,83 @@ paths:
           description: search term (Example - nodejs)
       responses:
         '200': # status code
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found products
+                  data:
+                    type: object
+                    properties:
+                      totalDocs:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                      lastPage:
+                        type: integer
+                      count:
+                        type: integer
+                      currentPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      nextPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/ProductResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /products/top-5-cheap:
+    get:
+      summary: Returns 5 top cheapest and highly rated product
+      tags:
+        - Product
+      description:
+      responses:
+        '200':
           description: OK
           content:
             application/json:
@@ -694,34 +771,7 @@ paths:
                     properties:
                       orders:
                         type: object
-                        properties:
-                          _id:
-                            type: string
-                          products:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                quantity:
-                                  type: number
-                                product:
-                                  type: object
-                                  '$ref': '#/components/schemas/ProductResponse'
-                          user:
-                            type: object
-                            properties:
-                              email:
-                                type: string
-                              name:
-                                type: string
-                              surname:
-                                type: string
-                              phone:
-                                type: string
-                              address:
-                                type: string
-                              userId:
-                                type: string
+                        '$ref': '#/components/schemas/OrderResponse'
 
         '400':
           description: Bad request
@@ -744,8 +794,78 @@ paths:
       tags:
         - Order
       description:
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderItems:
+                  items:
+                    type: object
+                    properties:
+                      product:
+                        type: string
+                        example: 63aa95109e8eb8a0f45c412e
+                      quantity:
+                        type: number
+                        example: 10
+                paymentInfo:
+                  type: string
+                  minimum: 1
+                  example: strip
+                orderStatus:
+                  type: string
+                  enum:
+                    - 'pending'
+                    - 'delivered'
+                    - 'waiting payment'
+                    - 'waiting pickup'
+                    - 'shipped'
+                    - 'cancelled'
+                    - 'completed'
+                  default: 'pending'
+                textAmount:
+                  type: number
+                  minimum: 1
+                  example: 10
+                shippingAmount:
+                  type: number
+                  minimum: 1
+                  example: 40
+                totalAmount:
+                  type: number
+                  minimum: 1
+                  example: 100
+                shippingInfo:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      example: 'Tiban center 12'
+                    street:
+                      type: string
+                      example: '23 frey terminal'
+                    city:
+                      type: string
+                      example: 'Batam'
+                    country:
+                      type: string
+                      example: 'Indonesia'
+                    zipCode:
+                      type: string
+                      example: 'Cd544'
+                    status:
+                      type: string
+                      example: 'Tiban center 12'
+                    phoneNo:
+                      type: string
+                      example: '+6285366666'
+
       responses:
-        '200':
+        '201':
           description: OK
           content:
             application/json:
@@ -761,18 +881,16 @@ paths:
                     example: false
                   status:
                     type: integer
-                    example: 200
+                    example: 201
                   message:
                     type: string
                     example: Thank you, your orders will be shipped in 2-3 business days
                   data:
                     type: object
                     properties:
-                      orderItems:
-                        type: array
-                        items:
-                          type: object
-                          '$ref': '#/components/schemas/ProductResponse'
+                      order:
+                        type: object
+                        '$ref': '#/components/schemas/OrderResponse'
 
         '400':
           description: Bad request
@@ -845,8 +963,66 @@ paths:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
   /orders/{orderId}:
+    get:
+      summary: Get single order based on request id
+      security:
+        - Authorization: []
+      tags:
+        - Order
+      description:
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found order by ID ....
+                  data:
+                    type: object
+                    properties:
+                      order:
+                        type: object
+                        '$ref': '#/components/schemas/OrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
     delete:
-      summary: Delete single order from the list of orders
+      summary: Delete single order based on request id
       security:
         - Authorization: []
       tags:
@@ -938,6 +1114,194 @@ paths:
                         items:
                           type: string
                         maxItems: 0
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /payment/create-stripe-checkout-session:
+    post:
+      summary: Create a stripe checkout session and return redirect url to stripe page for completing payment process
+      tags:
+        - Payment
+      security:
+        - Authorization: []
+      description:
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderItems:
+                  items:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            default: 'Clean code book in js'
+                          _id:
+                            type: string
+                            default: '63b01991f5f5c95f072fea53'
+                          price:
+                            type: number
+                            default: 2
+                          description:
+                            type: string
+                            default: 'Checkout clean code book in js'
+                          productImage:
+                            type: string
+                            default: '/static/uploads/products/productImage-b2f8042f-58ef-479a-a817-b5636e5eaf5b.png'
+                      quantity:
+                        type: number
+                        example: 2
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Payment Success
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /payment/stripKey:
+    get:
+      summary: Returns a stripe public key for Front-End to continue payment process
+      tags:
+        - Payment
+      security:
+        - Authorization: []
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Success
+                  data:
+                    type: object
+                    properties:
+                      stripeKey:
+                        type: string
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+  /payment/captureStripePayment:
+    post:
+      summary: Api to capture stripe payment (TODO)
+      tags:
+        - Payment
+      security:
+        - Authorization: []
+      description:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  example: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Payment Success
+                  data:
+                    type: object
+                    properties:
+                      client_secret:
+                        type: string
 
         '400':
           description: Bad request
@@ -2449,6 +2813,411 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /admin/orders:
+    get:
+      summary: Returns a list of orders for all users
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found all orders
+                  data:
+                    type: object
+                    properties:
+                      orders:
+                        type: object
+                        '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/orders/get-user-order/{userId}:
+    get:
+      summary: Returns a list of all the orders for  given user
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6395894b31dbc5441a53ae6e
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found  all order for user by ID ...
+                  data:
+                    type: object
+                    properties:
+                      orders:
+                        type: object
+                        '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/orders/{orderId}:
+    get:
+      summary: Get single order based on request id
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      description:
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found order by ID ....
+                  data:
+                    type: object
+                    properties:
+                      order:
+                        type: object
+                        '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+    patch:
+      summary: Update order status
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 63aea7d0cfd10d1caa4cdfda
+      description:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderStatus:
+                  type: string
+                  enum:
+                    - 'pending'
+                    - 'delivered'
+                    - 'waiting payment'
+                    - 'waiting pickup'
+                    - 'shipped'
+                    - 'cancelled'
+                    - 'completed'
+                  default: 'completed'
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully update order by ID ...
+                  data:
+                    type: object
+                    properties:
+                      order:
+                        type: object
+                        '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+    delete:
+      summary: Delete single order based on request id
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted order by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/orders/clear-user-order/{userId}:
+    delete:
+      summary: Admin delete all the order for given user id
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6395894b31dbc5441a53ae6e
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted all orders for user by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/orders/clear-all-orders:
+    delete:
+      summary: Admin delete all the orders in db
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Cleared all orders
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /admin/posts:
     get:
       summary: Returns a list of posts
@@ -2852,6 +3621,56 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /manager/orders:
+    get:
+      summary: Returns a list of orders for customer whose role is user
+      security:
+        - Authorization: []
+      tags:
+        - Manager
+      description:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found all orders
+                  data:
+                    type: object
+                    properties:
+                      orders:
+                        type: object
+                        '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   # Moderator
 
   /moderator/users:
@@ -2999,6 +3818,38 @@ components:
           type: object
           nullable: true
           example: null
+
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          required: true
+        surname:
+          type: string
+        email:
+          type: string
+          required: true
+        dateOfBirth:
+          type: string
+        gender:
+          type: string
+        profileImage:
+          type: string
+        mobileNumber:
+          type: string
+        companyName:
+          type: string
+        nationality:
+          type: string
+        address:
+          type: string
+        bio:
+          type: string
+        jobTitle:
+          type: string
 
     AuthRequest:
       type: object
@@ -3619,41 +4470,129 @@ components:
           type: object
           '$ref': '#/components/schemas/ProductResponse'
 
-  ProductResponse:
-    type: object
-    properties:
-      _id:
-        type: string
-      name:
-        type: string
-      description:
-        type: string
-      price:
-        type: string
-      brand:
-        type: string
-      category:
-        type: string
-      productImage:
-        type: string
-      stock:
-        type: string
-      createdAt:
-        type: string
-      updatedAt:
-        type: string
-      ratings:
-        type: number
-      numberOfReviews:
-        type: number
-      reviews:
-        type: array
-        items:
+    OrderResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        shippingInfo:
           type: object
-          '$ref': '#/components/schemas/ReviewsResponse'
-      request:
-        type: object
-        '$ref': '#/components/schemas/ResponseAdditionalInfo'
+          '$ref': '#/components/schemas/ShippingInfo'
+        paymentInfo:
+          type: string
+        textAmount:
+          type: number
+        shippingAmount:
+          type: number
+        totalAmount:
+          type: number
+        orderStatus:
+          type: string
+        deliveredAt:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            surname:
+              type: string
+            phone:
+              type: string
+            address:
+              type: string
+            userId:
+              type: object
+              '$ref': '#/components/schemas/User'
+        orderItems:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              quantity:
+                type: number
+              product:
+                type: object
+                '$ref': '#/components/schemas/ProductResponse'
+
+    AdminOrderResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        shippingInfo:
+          type: object
+          '$ref': '#/components/schemas/ShippingInfo'
+        paymentInfo:
+          type: string
+        textAmount:
+          type: number
+        shippingAmount:
+          type: number
+        totalAmount:
+          type: number
+        orderStatus:
+          type: string
+        deliveredAt:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            surname:
+              type: string
+            phone:
+              type: string
+            address:
+              type: string
+            userId:
+              type: object
+              '$ref': '#/components/schemas/AdminAuthResponse'
+        orderItems:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              quantity:
+                type: number
+              product:
+                type: object
+                '$ref': '#/components/schemas/AdminProductResponse'
+
+    ShippingInfo:
+      type: object
+      properties:
+        address:
+          type: string
+        zipCode:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        phoneNo:
+          type: string
+        status:
+          type: string
+        country:
+          type: string
 
   securitySchemes:
     Authorization:

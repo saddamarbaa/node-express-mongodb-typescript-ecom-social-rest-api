@@ -1,15 +1,53 @@
 import mongoose, { Schema } from 'mongoose';
 
 import { OrderT } from '@src/interfaces';
+import { orderStatus } from '@src/constants';
 
 export const orderSchema: Schema<OrderT> = new Schema(
   {
-    products: [
-      {
-        product: { type: Object, required: true },
-        quantity: { type: Number, required: true },
+    shippingInfo: {
+      address: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
       },
-    ],
+      phoneNo: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      status: {
+        type: String,
+        required: false,
+        trim: true,
+        lowercase: true,
+      },
+      zipCode: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
+      },
+      street: {
+        type: String,
+        required: false,
+        trim: true,
+        lowercase: true,
+      },
+      city: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
+      },
+      country: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
+      },
+    },
     user: {
       email: {
         type: String,
@@ -40,6 +78,60 @@ export const orderSchema: Schema<OrderT> = new Schema(
         required: true,
         ref: 'User',
       },
+    },
+    orderItems: [
+      {
+        product: {
+          type: Schema.Types.ObjectId,
+          required: true,
+          ref: 'Product',
+        },
+        quantity: { type: Number, required: true },
+      },
+    ],
+    paymentInfo: {
+      type: String,
+      required: true,
+    },
+    textAmount: {
+      type: Number,
+      required: true,
+    },
+    shippingAmount: {
+      type: Number,
+      required: true,
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+    },
+    orderStatus: {
+      type: String,
+      required: true,
+      enum: [
+        orderStatus.cancelled,
+        orderStatus.completed,
+        orderStatus.delivered,
+        orderStatus.pending,
+        orderStatus.shipped,
+        orderStatus.waitingPayment,
+        orderStatus.waitingPickup,
+      ],
+      default: orderStatus.pending,
+      trim: true,
+      message: `Please select status only from short listed option (${orderStatus.pending},
+        ${orderStatus.waitingPickup},
+          ${orderStatus.waitingPayment},
+          ${orderStatus.shipped},
+          ${orderStatus.delivered},
+          ${orderStatus.completed},
+          ${orderStatus.cancelled},
+        )`,
+    },
+    deliveredAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
     },
   },
   {

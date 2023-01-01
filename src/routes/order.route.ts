@@ -1,10 +1,11 @@
 import express from 'express';
 
-import { isAuth } from '@src/middlewares';
+import { isAuth, processingOrderValidation } from '@src/middlewares';
 import {
   clearAllOrdersController,
-  clearSingleOrdersController,
+  clearSingleOrderController,
   getInvoicesController,
+  getOrderController,
   getOrdersController,
   postOrderController,
 } from '@src/controllers/order.controller';
@@ -12,9 +13,10 @@ import {
 const router = express.Router();
 
 router.get('/', isAuth, getOrdersController);
-router.post('/', isAuth, postOrderController);
+router.get('/:orderId', isAuth, getOrderController);
+router.post('/', isAuth, processingOrderValidation, postOrderController);
 router.delete('/clear-orders', isAuth, clearAllOrdersController);
-router.delete('/:orderId', isAuth, clearSingleOrdersController);
+router.delete('/:orderId', isAuth, clearSingleOrderController);
 router.get('/invoices/:orderId', isAuth, getInvoicesController);
 
 export = router;

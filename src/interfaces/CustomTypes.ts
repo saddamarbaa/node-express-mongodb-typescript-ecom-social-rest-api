@@ -12,6 +12,8 @@ export interface TPaginationRequest extends Request {
     search: string;
     content: string;
     role: string;
+    sort: string;
+    fields: string;
   };
 }
 

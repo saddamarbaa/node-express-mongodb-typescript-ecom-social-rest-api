@@ -57,6 +57,7 @@
     "nodemailer": "^6.8.0",
     "nodemailer-sendgrid-transport": "^0.2.0",
     "pdfkit": "^0.13.0",
+    "stripe": "^11.5.0",
     "swagger-jsdoc": "^6.2.5",
     "swagger-ui-express": "^4.6.0",
     "tsconfig-paths": "^4.1.1",

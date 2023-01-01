@@ -10,8 +10,21 @@ import {
   adminUpdateProductService,
   removeAuthService,
   adminUpdateAuthService,
+  adminGetOrdersService,
+  adminGetOrderService,
+  adminDeleteSingleOrderService,
+  adminDeleteAllOrderForGivenUserService,
+  adminClearAllOrdersService,
+  adminGetAllOrdersForGivenUserService,
+  adminUpdateOrderStatusService,
 } from '@src/services';
-import { AuthenticatedRequestBody, IUser, ProductT, TPaginationResponse } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser, ProcessingOrderT, ProductT, TPaginationResponse } from '@src/interfaces';
+
+export const adminUpdateOrderStatusController = (
+  req: AuthenticatedRequestBody<ProcessingOrderT>,
+  res: Response,
+  next: NextFunction
+) => adminUpdateOrderStatusService(req, res, next);
 
 export const adminGetUsersController = (req: Request, res: TPaginationResponse) => adminGetUsersService(req, res);
 
@@ -43,5 +56,35 @@ export const adminUpdateProductController = (
 
 export const adminDeleteProductController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminDeleteProductService(req, res, next);
+
+export const adminGetOrdersController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminGetOrdersService(req, res, next);
+
+export const adminGetOrderController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminGetOrderService(req, res, next);
+
+export const adminGetAllOrdersForGivenUserController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminGetAllOrdersForGivenUserService(req, res, next);
+
+export const adminDeleteSingleOrderController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteSingleOrderService(req, res, next);
+
+export const adminDeleteAllOrderForGivenUserController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteAllOrderForGivenUserService(req, res, next);
+
+export const adminClearAllOrdersController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminClearAllOrdersService(req, res, next);
 
 export default adminGetUsersController;
