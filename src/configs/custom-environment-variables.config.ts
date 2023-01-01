@@ -26,6 +26,8 @@ export const environmentConfig = {
   SUPERVISOR_EMAILS: process.env.SUPERVISOR_EMAILS,
   GUIDE_EMAILS: process.env.GUIDE_EMAILS,
   CLIENT_EMAILS: process.env.CLIENT_EMAILS,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
 };
 
 export default environmentConfig;
