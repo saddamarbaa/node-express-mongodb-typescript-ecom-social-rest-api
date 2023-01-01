@@ -40,3 +40,32 @@ export const getStripePublicKeyService = async (
     return next(createHttpError.InternalServerError);
   }
 };
+
+export const captureStripePaymentService = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: req.body?.amount,
+      currency: 'usd',
+      // currency: 'usd',
+
+      // optional
+      metadata: { integration_check: 'accept_a_payment' },
+    });
+
+    const data = {
+      client_secret: paymentIntent.client_secret,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Success`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(createHttpError.InternalServerError);
+  }
+};
