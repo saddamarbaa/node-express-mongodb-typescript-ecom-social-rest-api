@@ -1,4 +1,5 @@
 import mongoose, { Document } from 'mongoose';
+import { ProductT } from './Product';
 import { IUser } from './User';
 
 export interface OrderedUser extends IUser {
@@ -28,3 +29,7 @@ export interface OrderT extends Document {
 }
 
 export interface ProcessingOrderT extends IUser, OrderT {}
+
+export interface ProcessingStripeCheckoutT extends IUser {
+  orderItems: { quantity: number; product: ProductT }[];
+}
