@@ -48,6 +48,25 @@ export const orderSchema = {
         orderStatus.waitingPickup
       ),
   }),
+  createStripeCheckoutSession: Joi.object({
+    orderItems: Joi.array()
+      .items(
+        Joi.object()
+          .keys({
+            product: Joi.object()
+              .keys({
+                name: Joi.string().required(),
+                price: Joi.number().required(),
+                description: Joi.string().required(),
+                productImage: Joi.string().required(),
+              })
+              .required(),
+            quantity: Joi.number().min(1).required(),
+          })
+          .required()
+      )
+      .required(),
+  }),
 };
 
 export default orderSchema;
