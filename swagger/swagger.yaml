@@ -1334,9 +1334,9 @@ paths:
 
   # Post
 
-  /posts:
+  /feed/posts:
     get:
-      summary: Returns a list of posts
+      summary: Returns a list of posts (can search, sort by each filed, filter by each filed)
       tags:
         - Post
       description:
@@ -1347,26 +1347,26 @@ paths:
             type: integer
             minimum: 1
             example: 10
-          description: The numbers of items to return (the default value is 10)
+          description: The numbers of items to return (the default value is 20)
         - in: query
           name: page
           schema:
             type: integer
-            minimum: 1
-            example: 1
+            # minimum: 1
+            # example: 1
           description: Pagination page number (the default value is 1)
         - in: query
-          name: filterBy
+          name: sort
           schema:
             type: string
             example:
-          description: Filter type (Example - category)
+          description: Sort query
         - in: query
           name: category
           schema:
             type: string
             example:
-          description: Category name (Example - coding)
+          description: Filter by Category name (Example - coding,sports,social,blockchain,devapp,nodejs)
         - in: query
           name: search
           schema:
@@ -1374,7 +1374,7 @@ paths:
             example:
           description: search term (Example - nodejs)
       responses:
-        '200':
+        '200': # status code
           description: OK
           content:
             application/json:
@@ -1444,63 +1444,6 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /posts/{postId}:
-    get:
-      summary: Return post based on request id
-      tags:
-        - Post
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully Found post by given id ...
-                  data:
-                    type: object
-                    properties:
-                      post:
-                        type: object
-                        $ref: '#/components/schemas/PostResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
-
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /feed/posts:
     post:
       security:
         - Authorization: []
@@ -4619,7 +4562,7 @@ components:
           type: string
         content:
           type: string
-        productImage:
+        postImage:
           type: string
         createdAt:
           type: string
@@ -4645,12 +4588,19 @@ components:
           type: string
         content:
           type: string
-        productImage:
+        postImage:
           type: string
         createdAt:
           type: string
         updatedAt:
           type: string
+        numberOfLikes:
+          type: number
+        comments:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostCommentResponse'
         author:
           type: object
           '$ref': '#/components/schemas/AdminAuthResponse'
