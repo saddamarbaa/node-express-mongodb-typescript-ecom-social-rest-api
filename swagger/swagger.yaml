@@ -1500,6 +1500,61 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /feed/posts:
+    post:
+      security:
+        - Authorization: []
+      summary: Add a new post
+      tags:
+        - Post
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              '$ref': '#/components/schemas/PostRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Successfully added new post
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/PostResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   #  filestream
   /pdf-test:
     get:
@@ -4384,73 +4439,6 @@ components:
         url:
           type: string
 
-    PostRequest:
-      type: object
-      description: Model containing post request info
-      properties:
-        category:
-          type: string
-          enum:
-            - 'coding'
-            - 'sports'
-            - 'nodejs'
-            - 'typescript'
-            - 'all'
-          default: 'coding'
-        title:
-          type: string
-          example: Clean Architecture Review
-        content:
-          type: string
-          example: Clean Architecture TypeScript Express API Book
-        postImage:
-          type: string
-          format: binary
-          description: Image type /png/jpg/jpeg/webp
-    PostResponse:
-      type: object
-      properties:
-        _id:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        productImage:
-          type: string
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-        author:
-          type: object
-          '$ref': '#/components/schemas/AuthResponse'
-        request:
-          type: object
-          '$ref': '#/components/schemas/ResponseAdditionalInfo'
-
-    AdminPostResponse:
-      type: object
-      properties:
-        _id:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        productImage:
-          type: string
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-        author:
-          type: object
-          '$ref': '#/components/schemas/AdminAuthResponse'
-        request:
-          type: object
-          '$ref': '#/components/schemas/ResponseAdditionalInfo'
-
     AuthCartResponse:
       type: object
       properties:
@@ -4593,6 +4581,93 @@ components:
           type: string
         country:
           type: string
+
+    PostRequest:
+      type: object
+      description: Model containing post request info
+      properties:
+        category:
+          type: string
+          enum:
+            - 'coding'
+            - 'sports'
+            - 'reactjs'
+            - 'nextjs'
+            - 'nodejs'
+            - 'typescript'
+            - 'devapp'
+            - 'blockchain'
+            - 'social'
+          default: 'social'
+        title:
+          type: string
+          example: Clean Architecture Review
+        content:
+          type: string
+          example: Clean Architecture TypeScript Express API Book
+        postImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+
+    PostResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        productImage:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        numberOfLikes:
+          type: number
+        comments:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostCommentResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    AdminPostResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        productImage:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        author:
+          type: object
+          '$ref': '#/components/schemas/AdminAuthResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    PostCommentResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        comment:
+          type: string
+        user:
+          type: object
+          '$ref': '#/components/schemas/User'
 
   securitySchemes:
     Authorization:
