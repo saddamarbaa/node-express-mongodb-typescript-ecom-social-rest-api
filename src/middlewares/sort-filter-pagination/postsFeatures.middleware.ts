@@ -22,9 +22,9 @@ export const postPaginationMiddleware = () => {
         const searchText = req.query.search.toLowerCase();
         searchQuery = {
           $or: [
-            { name: { $regex: searchText } },
-            { description: { $regex: searchText } },
-            { brand: { $regex: searchText } },
+            { title: { $regex: searchText } },
+            { content: { $regex: searchText } },
+            { category: { $regex: searchText } },
           ],
         };
       }
