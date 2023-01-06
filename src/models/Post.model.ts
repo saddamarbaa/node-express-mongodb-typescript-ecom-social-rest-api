@@ -15,7 +15,7 @@ export const PostSchema: Schema<PostT> = new Schema(
     content: {
       type: String,
       trim: true,
-      minlength: 3,
+      minlength: 5,
       required: [true, 'Please provide post description'],
     },
     postImage: { type: String, required: true },

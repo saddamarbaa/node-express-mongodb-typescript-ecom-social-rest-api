@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import createHttpError, { InternalServerError } from 'http-errors';
+import { InternalServerError } from 'http-errors';
 import { customResponse } from '@src/utils';
 
 import { AuthenticatedRequestBody, PostT, TPaginationResponse } from '@src/interfaces';
@@ -50,18 +50,6 @@ export const getPostsService = async (_req: Request, res: TPaginationResponse) =
 export const createPostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
   const { title, content, category } = req.body;
 
-  // if (!req.file) {
-  //   res.status(422).send(
-  //     response<null>({
-  //       data: null,
-  //       success: false,
-  //       error: true,
-  //       message: `Invalid request (Please upload Image)`,
-  //       status: 422,
-  //     })
-  //   );
-  // }
-
   const userId = req?.user?._id || '';
 
   const postData = new Post({
@@ -89,6 +77,6 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
