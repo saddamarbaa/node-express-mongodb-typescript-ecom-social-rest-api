@@ -56,30 +56,37 @@ export const getPostsService = async (_req: Request, res: TPaginationResponse) =
 export const createPostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
   const { title, content, category } = req.body;
 
-  const userId = req?.user?._id || '';
-
   const postData = new Post({
     title,
     content,
     category: category?.toLocaleLowerCase(),
     postImage: `/static/uploads/posts/${req?.file?.filename}`,
-    author: userId,
+    author: req?.user?._id || '',
   });
 
   try {
     const createdPost = await Post.create(postData);
 
     const data = {
-      post: createdPost,
+      post: {
+        ...createdPost._doc,
+        author: undefined,
+        creator: {
+          _id: req?.user?._id || '',
+          name: req?.user?._id || '',
+          surname: req?.user?._id || '',
+          profileImage: req?.user?._id || '',
+        },
+      },
     };
 
-    return res.status(201).json(
-      customResponse<any>({
-        data,
+    return res.status(201).send(
+      customResponse<typeof data>({
         success: true,
         error: false,
         message: `Successfully added new post`,
         status: 201,
+        data,
       })
     );
   } catch (error) {

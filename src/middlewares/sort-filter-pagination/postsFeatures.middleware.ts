@@ -95,12 +95,7 @@ export const postPaginationMiddleware = () => {
         query = query.select('-_v');
       }
 
-      results.results = await query
-        .populate(
-          'author',
-          '-password -confirmPassword  -status -cart -role -status -isVerified -isDeleted -acceptTerms'
-        )
-        .exec();
+      results.results = await query.populate('author', '-password -confirmPassword').exec();
 
       // Add paginated Results to the request
       res.paginatedResults = results;
