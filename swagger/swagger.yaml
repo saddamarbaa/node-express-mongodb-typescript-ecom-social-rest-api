@@ -3216,11 +3216,13 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /admin/posts:
+  /admin/feed/posts:
     get:
-      summary: Returns a list of posts
+      summary: Returns a list of posts with full info of their creator
       tags:
         - Admin
+      security:
+        - Authorization: []
       description:
       parameters:
         - in: query
