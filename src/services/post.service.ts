@@ -27,6 +27,12 @@ export const getPostsService = async (_req: Request, res: TPaginationResponse) =
       const { author, ...otherPostInfo } = postDoc._doc;
       return {
         ...otherPostInfo,
+        creator: {
+          _id: author._id,
+          name: author.name,
+          surname: author.surname,
+          profileImage: author.profileImage,
+        },
         request: {
           type: 'Get',
           description: 'Get one post with the id',

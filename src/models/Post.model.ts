@@ -56,11 +56,15 @@ export const PostSchema: Schema<PostT> = new Schema(
       lowercase: true,
       required: true,
     },
-    numberOfLikes: {
-      type: Number,
-      required: false,
-      default: 0,
-    },
+    likes: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User', // add relationship
+          required: [true, 'User is required'],
+        },
+      },
+    ],
     comments: [
       {
         user: {

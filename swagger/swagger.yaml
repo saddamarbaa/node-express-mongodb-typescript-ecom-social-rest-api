@@ -4568,13 +4568,19 @@ components:
           type: string
         updatedAt:
           type: string
-        numberOfLikes:
-          type: number
+        likes:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostLikeResponse'
         comments:
           type: array
           items:
             type: object
             '$ref': '#/components/schemas/PostCommentResponse'
+        creator:
+          type: object
+          '$ref': '#/components/schemas/LikeAndCommentUser'
         request:
           type: object
           '$ref': '#/components/schemas/ResponseAdditionalInfo'
@@ -4594,14 +4600,17 @@ components:
           type: string
         updatedAt:
           type: string
-        numberOfLikes:
-          type: number
+        likes:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostLikeResponse'
         comments:
           type: array
           items:
             type: object
             '$ref': '#/components/schemas/PostCommentResponse'
-        author:
+        creator:
           type: object
           '$ref': '#/components/schemas/AdminAuthResponse'
         request:
@@ -4617,7 +4626,26 @@ components:
           type: string
         user:
           type: object
-          '$ref': '#/components/schemas/User'
+          '$ref': '#/components/schemas/LikeAndCommentUser'
+
+    PostLikeResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          '$ref': '#/components/schemas/LikeAndCommentUser'
+
+    LikeAndCommentUser:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        profileImage:
+          type: string
 
   securitySchemes:
     Authorization:

@@ -6,6 +6,10 @@ export interface CommentT {
   user: mongoose.Schema.Types.ObjectId;
 }
 
+export interface LikeT {
+  user: mongoose.Schema.Types.ObjectId;
+}
+
 export interface PostT extends mongoose.Document {
   title: string;
   content: string;
@@ -13,6 +17,7 @@ export interface PostT extends mongoose.Document {
   author: mongoose.Schema.Types.ObjectId;
   numberOfLikes: number;
   comments: CommentT[];
+  likes: LikeT[];
   _id: string;
   createdAt?: string;
   updatedAt?: string;

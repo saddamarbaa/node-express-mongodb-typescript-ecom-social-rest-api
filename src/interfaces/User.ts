@@ -14,7 +14,7 @@ export interface IUser extends Document {
   favoriteAnimal?: string;
   nationality?: string;
   companyName?: string;
-  profileImage?: any;
+  profileImage?: string;
   jobTitle?: string;
   status?: string;
   isVerified?: boolean;
