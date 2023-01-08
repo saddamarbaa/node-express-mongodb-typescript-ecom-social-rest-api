@@ -5,6 +5,7 @@ import {
   customRoles,
   isAdmin,
   isAuth,
+  postPaginationMiddleware,
   productsPaginationMiddleware,
   signupUserValidation,
   updateOrderStatusValidation,
@@ -22,6 +23,7 @@ import {
   adminGetAllOrdersForGivenUserController,
   adminGetOrderController,
   adminGetOrdersController,
+  adminGetPostsController,
   adminGetProductController,
   adminGetProductsController,
   adminGetUserController,
@@ -107,6 +109,14 @@ router.delete(
   isAuth,
   customRoles(environmentConfig.ADMIN_EMAILS),
   adminDeleteAllOrderForGivenUserService
+);
+
+router.get(
+  '/feed/posts',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  postPaginationMiddleware(),
+  adminGetPostsController
 );
 
 export = router;

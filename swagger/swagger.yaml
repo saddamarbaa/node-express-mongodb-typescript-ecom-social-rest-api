@@ -1334,9 +1334,9 @@ paths:
 
   # Post
 
-  /posts:
+  /feed/posts:
     get:
-      summary: Returns a list of posts
+      summary: Returns a list of posts (can search, sort by each filed, filter by each filed)
       tags:
         - Post
       description:
@@ -1347,26 +1347,26 @@ paths:
             type: integer
             minimum: 1
             example: 10
-          description: The numbers of items to return (the default value is 10)
+          description: The numbers of items to return (the default value is 20)
         - in: query
           name: page
           schema:
             type: integer
-            minimum: 1
-            example: 1
+            # minimum: 1
+            # example: 1
           description: Pagination page number (the default value is 1)
         - in: query
-          name: filterBy
+          name: sort
           schema:
             type: string
             example:
-          description: Filter type (Example - category)
+          description: Sort query
         - in: query
           name: category
           schema:
             type: string
             example:
-          description: Category name (Example - coding)
+          description: Filter by Category name (Example - coding,sports,social,blockchain,devapp,nodejs)
         - in: query
           name: search
           schema:
@@ -1374,7 +1374,7 @@ paths:
             example:
           description: search term (Example - nodejs)
       responses:
-        '200':
+        '200': # status code
           description: OK
           content:
             application/json:
@@ -1444,23 +1444,20 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /posts/{postId}:
-    get:
-      summary: Return post based on request id
+    post:
+      security:
+        - Authorization: []
+      summary: Add a new post
       tags:
         - Post
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              '$ref': '#/components/schemas/PostRequest'
       responses:
-        '200':
+        '201':
           description: OK
           content:
             application/json:
@@ -1470,22 +1467,23 @@ paths:
                   success:
                     type: boolean
                     example: true
-                    description: is success or fail
+                    description:
                   error:
                     type: boolean
                     example: false
                   status:
                     type: integer
-                    example: 200
+                    example: 201
                   message:
                     type: string
-                    example: Successfully Found post by given id ...
+                    example: Successfully added new post
                   data:
                     type: object
                     properties:
                       post:
                         type: object
-                        $ref: '#/components/schemas/PostResponse'
+                        '$ref': '#/components/schemas/PostResponse'
+
         '400':
           description: Bad request
           content:
@@ -3218,11 +3216,13 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /admin/posts:
+  /admin/feed/posts:
     get:
-      summary: Returns a list of posts
+      summary: Returns a list of posts with full info of their creator
       tags:
         - Admin
+      security:
+        - Authorization: []
       description:
       parameters:
         - in: query
@@ -3656,6 +3656,118 @@ paths:
                       orders:
                         type: object
                         '$ref': '#/components/schemas/AdminOrderResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /manager/feed/posts:
+    get:
+      summary: Returns a list of posts which created by customer whose role is a user
+      tags:
+        - Manager
+      security:
+        - Authorization: []
+      description:
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+          description: The numbers of items to return (the default value is 10)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          description: Pagination page number (the default value is 1)
+        - in: query
+          name: filterBy
+          schema:
+            type: string
+            example:
+          description: Filter type (Example - category)
+        - in: query
+          name: category
+          schema:
+            type: string
+            example:
+          description: Category name (Example - coding)
+        - in: query
+          name: search
+          schema:
+            type: string
+            example:
+          description: search term (Example - nodejs)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful Found posts
+                  data:
+                    type: object
+                    properties:
+                      totalDocs:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                      lastPage:
+                        type: integer
+                      count:
+                        type: integer
+                      currentPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      nextPage:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            minimum: 1
+                          limit:
+                            type: integer
+                            minimum: 1
+                      posts:
+                        type: array
+                        items:
+                          type: object
+                          '$ref': '#/components/schemas/AdminPostResponse'
 
         '400':
           description: Bad request
@@ -4384,73 +4496,6 @@ components:
         url:
           type: string
 
-    PostRequest:
-      type: object
-      description: Model containing post request info
-      properties:
-        category:
-          type: string
-          enum:
-            - 'coding'
-            - 'sports'
-            - 'nodejs'
-            - 'typescript'
-            - 'all'
-          default: 'coding'
-        title:
-          type: string
-          example: Clean Architecture Review
-        content:
-          type: string
-          example: Clean Architecture TypeScript Express API Book
-        postImage:
-          type: string
-          format: binary
-          description: Image type /png/jpg/jpeg/webp
-    PostResponse:
-      type: object
-      properties:
-        _id:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        productImage:
-          type: string
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-        author:
-          type: object
-          '$ref': '#/components/schemas/AuthResponse'
-        request:
-          type: object
-          '$ref': '#/components/schemas/ResponseAdditionalInfo'
-
-    AdminPostResponse:
-      type: object
-      properties:
-        _id:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        productImage:
-          type: string
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-        author:
-          type: object
-          '$ref': '#/components/schemas/AdminAuthResponse'
-        request:
-          type: object
-          '$ref': '#/components/schemas/ResponseAdditionalInfo'
-
     AuthCartResponse:
       type: object
       properties:
@@ -4592,6 +4637,128 @@ components:
         status:
           type: string
         country:
+          type: string
+
+    PostRequest:
+      type: object
+      description: Model containing post request info
+      properties:
+        category:
+          type: string
+          enum:
+            - 'coding'
+            - 'sports'
+            - 'reactjs'
+            - 'nextjs'
+            - 'nodejs'
+            - 'typescript'
+            - 'devapp'
+            - 'blockchain'
+            - 'social'
+          default: 'social'
+        title:
+          type: string
+          example: Clean Architecture Review
+        content:
+          type: string
+          example: Clean Architecture TypeScript Express API Book
+        postImage:
+          type: string
+          format: binary
+          description: Image type /png/jpg/jpeg/webp
+
+    PostResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        postImage:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        likes:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostLikeResponse'
+        comments:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostCommentResponse'
+        creator:
+          type: object
+          '$ref': '#/components/schemas/LikeAndCommentUser'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    AdminPostResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        postImage:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        likes:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostLikeResponse'
+        comments:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostCommentResponse'
+        creator:
+          type: object
+          '$ref': '#/components/schemas/AdminAuthResponse'
+        request:
+          type: object
+          '$ref': '#/components/schemas/ResponseAdditionalInfo'
+
+    PostCommentResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        comment:
+          type: string
+        user:
+          type: object
+          '$ref': '#/components/schemas/LikeAndCommentUser'
+
+    PostLikeResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          '$ref': '#/components/schemas/LikeAndCommentUser'
+
+    LikeAndCommentUser:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        profileImage:
           type: string
 
   securitySchemes:

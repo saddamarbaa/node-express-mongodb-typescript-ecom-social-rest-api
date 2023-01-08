@@ -11,6 +11,7 @@ import cartRoutes from '@src/routes/cart.route';
 import moderatorRoutes from '@src/routes/moderator.route';
 import pdfServeRoute from '@src/routes/pdfDoc.route';
 import paymentRoute from '@src/routes/payment.route';
+import feedRoute from '@src/routes/feed.route';
 
 const router = express.Router();
 
@@ -25,4 +26,5 @@ router.use('/products', productsRoutes);
 router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);
 router.use('/payment', paymentRoute);
+router.use('/feed', feedRoute);
 export default router;

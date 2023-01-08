@@ -17,6 +17,7 @@ import {
   adminClearAllOrdersService,
   adminGetAllOrdersForGivenUserService,
   adminUpdateOrderStatusService,
+  adminGetPostsService,
 } from '@src/services';
 import { AuthenticatedRequestBody, IUser, ProcessingOrderT, ProductT, TPaginationResponse } from '@src/interfaces';
 
@@ -86,5 +87,7 @@ export const adminClearAllOrdersController = (
   res: Response,
   next: NextFunction
 ) => adminClearAllOrdersService(req, res, next);
+
+export const adminGetPostsController = (req: Request, res: TPaginationResponse) => adminGetPostsService(req, res);
 
 export default adminGetUsersController;
