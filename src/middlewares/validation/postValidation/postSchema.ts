@@ -1,6 +1,11 @@
 import Joi from 'joi';
 
+// @ts-ignore
+import JoiObjectId from 'joi-objectid';
+
 import { postCategory } from '@src/constants';
+
+const vaildObjectId = JoiObjectId(Joi);
 
 export const postSchema = {
   addPost: Joi.object({
@@ -18,5 +23,8 @@ export const postSchema = {
       postCategory.social
     ),
     filename: Joi.string().required().label('Invalid request (Please upload Image)'),
+  }),
+  validatedPostId: Joi.object({
+    postId: vaildObjectId().required(),
   }),
 };
