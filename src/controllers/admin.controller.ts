@@ -18,8 +18,16 @@ import {
   adminGetAllOrdersForGivenUserService,
   adminUpdateOrderStatusService,
   adminGetPostsService,
+  adminCreatePostService,
 } from '@src/services';
-import { AuthenticatedRequestBody, IUser, ProcessingOrderT, ProductT, TPaginationResponse } from '@src/interfaces';
+import {
+  AuthenticatedRequestBody,
+  IUser,
+  PostT,
+  ProcessingOrderT,
+  ProductT,
+  TPaginationResponse,
+} from '@src/interfaces';
 
 export const adminUpdateOrderStatusController = (
   req: AuthenticatedRequestBody<ProcessingOrderT>,
@@ -89,5 +97,8 @@ export const adminClearAllOrdersController = (
 ) => adminClearAllOrdersService(req, res, next);
 
 export const adminGetPostsController = (req: Request, res: TPaginationResponse) => adminGetPostsService(req, res);
+
+export const adminCreatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+  adminCreatePostService(req, res, next);
 
 export default adminGetUsersController;

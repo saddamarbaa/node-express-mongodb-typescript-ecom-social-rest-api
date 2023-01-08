@@ -26,7 +26,7 @@ export const isAuth = async (req: IAuthRequest, res: Response, next: NextFunctio
       }
 
       try {
-        const decodedUserInDB = await User.findOne({ _id: decodedUser?.userId });
+        const decodedUserInDB = await User.findOne({ _id: decodedUser?.userId }).select('-password -confirmPassword');
 
         if (!decodedUserInDB) {
           return next(createHttpError(403, `Auth Failed (Unauthorized)`));

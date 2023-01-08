@@ -1,6 +1,7 @@
 import express from 'express';
 
 import {
+  addPostValidation,
   addProductValidation,
   customRoles,
   isAdmin,
@@ -18,6 +19,7 @@ import {
   adminAddProductController,
   adminAddUserController,
   adminClearAllOrdersController,
+  adminCreatePostController,
   adminDeleteProductController,
   adminDeleteSingleOrderController,
   adminGetAllOrdersForGivenUserController,
@@ -111,12 +113,9 @@ router.delete(
   adminDeleteAllOrderForGivenUserService
 );
 
-router.get(
-  '/feed/posts',
-  isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
-  postPaginationMiddleware(),
-  adminGetPostsController
-);
+router
+  .route('/feed/posts')
+  .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postPaginationMiddleware(), adminGetPostsController)
+  .post(uploadImage.single('postImage'), isAuth, addPostValidation, adminCreatePostController);
 
 export = router;
