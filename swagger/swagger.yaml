@@ -3328,6 +3328,60 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+    post:
+      security:
+        - Authorization: []
+      summary: Admin add a new post
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              '$ref': '#/components/schemas/PostRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Successfully added new post
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/AdminPostResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /admin/posts/{postId}:
     get:
       security:
@@ -3366,61 +3420,6 @@ paths:
                   message:
                     type: string
                     example: Successfully Found post by given id ...
-                  data:
-                    type: object
-                    properties:
-                      post:
-                        type: object
-                        '$ref': '#/components/schemas/AdminPostResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
-
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /admin/posts/add:
-    post:
-      security:
-        - Authorization: []
-      summary: Admin add a new post
-      tags:
-        - Admin
-      description:
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PostRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 201
-                  message:
-                    type: string
-                    example: Successfully created new post
                   data:
                     type: object
                     properties:
