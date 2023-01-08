@@ -3496,181 +3496,50 @@ paths:
 
   /admin/posts/{postId}:
     get:
-      security:
-        - Authorization: []
-      summary: Return post based on request id
+      deprecated: true
+      summary: This endpoint is been deprecated
       tags:
         - Admin
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
       responses:
-        '200':
-          description: OK
+        '410':
+          description: Deprecated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully Found post by given id ...
-                  data:
-                    type: object
-                    properties:
-                      post:
-                        type: object
-                        '$ref': '#/components/schemas/AdminPostResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /admin/posts/update/{postId}:
     patch:
       security:
         - Authorization: []
-      summary: Edit post based on request id
+      summary: This endpoint is been deprecated
       tags:
         - Admin
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PostRequest'
+      deprecated: true
       responses:
-        '200':
-          description: OK
+        '410':
+          description: Deprecated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully updated post by given id ...
-                  data:
-                    type: object
-                    properties:
-                      post:
-                        type: object
-                        '$ref': '#/components/schemas/AdminPostResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /admin/posts/delete/{postId}:
     delete:
       security:
         - Authorization: []
       summary: Delete post based on request id
       tags:
         - Admin
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
+      deprecated: true
       responses:
-        '200':
-          description: OK
+        '410':
+          description: Deprecated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully deleted post by ID ...
-                  data:
-                    type: object
-                    nullable: true
-                    example: null
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
-
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
   # Manager
 
