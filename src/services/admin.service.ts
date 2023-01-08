@@ -5,12 +5,14 @@ import { SignOptions } from 'jsonwebtoken';
 import Token from '@src/models/Token.model';
 import User from '@src/models/User.model';
 import Order from '@src/models/Order.model';
+import Post from '@src/models/Post.model';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import {
   AuthenticatedRequestBody,
   IUser,
+  PostT,
   ProcessingOrderT,
   ProductT,
   ResponseT,
@@ -890,6 +892,46 @@ export const adminGetPostsService = async (_req: Request, res: TPaginationRespon
         data: responseObject,
       })
     );
+  }
+};
+
+export const adminCreatePostService = async (
+  req: AuthenticatedRequestBody<PostT>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { title, content, category } = req.body;
+
+  const postData = new Post({
+    title,
+    content,
+    category: category?.toLocaleLowerCase(),
+    postImage: `/static/uploads/posts/${req?.file?.filename}`,
+    author: req?.user?._id || '',
+  });
+
+  try {
+    const createdPost = await Post.create(postData);
+
+    const data = {
+      post: {
+        ...createdPost._doc,
+        author: undefined,
+        creator: req?.user,
+      },
+    };
+
+    return res.status(201).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully added new post`,
+        status: 201,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
   }
 };
 
