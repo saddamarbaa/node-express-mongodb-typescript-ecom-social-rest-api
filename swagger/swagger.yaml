@@ -1498,6 +1498,61 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /feed/posts/{postId}:
+    get:
+      summary: Get post based on request id
+      tags:
+        - Post
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 63baa65d8d3ae49ad7361509
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found post by ID ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/PostResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   #  filestream
   /pdf-test:
     get:
@@ -3382,14 +3437,13 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /admin/posts/{postId}:
+  /admin/feed/posts/{postId}:
     get:
-      security:
-        - Authorization: []
       summary: Return post based on request id
       tags:
         - Admin
-      description:
+      security:
+        - Authorization: []
       parameters:
         - in: path
           name: postId
@@ -3398,7 +3452,7 @@ paths:
           schema:
             type: string
             minimum: 1
-            default: 6358c27dca30b98e0e68d063
+            example: 63baa65d8d3ae49ad7361509
       responses:
         '200':
           description: OK
@@ -3410,7 +3464,7 @@ paths:
                   success:
                     type: boolean
                     example: true
-                    description: is success or fail
+                    description:
                   error:
                     type: boolean
                     example: false
@@ -3419,7 +3473,7 @@ paths:
                     example: 200
                   message:
                     type: string
-                    example: Successfully Found post by given id ...
+                    example: Successfully found post by ID ...
                   data:
                     type: object
                     properties:
@@ -3440,125 +3494,52 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /admin/posts/update/{postId}:
+  /admin/posts/{postId}:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Admin
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
     patch:
       security:
         - Authorization: []
-      summary: Edit post based on request id
+      summary: This endpoint is been deprecated
       tags:
         - Admin
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PostRequest'
+      deprecated: true
       responses:
-        '200':
-          description: OK
+        '410':
+          description: Deprecated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully updated post by given id ...
-                  data:
-                    type: object
-                    properties:
-                      post:
-                        type: object
-                        '$ref': '#/components/schemas/AdminPostResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /admin/posts/delete/{postId}:
     delete:
       security:
         - Authorization: []
       summary: Delete post based on request id
       tags:
         - Admin
-      description:
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            default: 6358c27dca30b98e0e68d063
+      deprecated: true
       responses:
-        '200':
-          description: OK
+        '410':
+          description: Deprecated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                    description: is success or fail
-                  error:
-                    type: boolean
-                    example: false
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully deleted post by ID ...
-                  data:
-                    type: object
-                    nullable: true
-                    example: null
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/BadRequestResponse'
-
-        '500':
-          description: 500 Internal Server Error
-          content:
-            application/json:
-              schema:
-                '$ref': '#/components/schemas/ServerErrorResponse'
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
   # Manager
 

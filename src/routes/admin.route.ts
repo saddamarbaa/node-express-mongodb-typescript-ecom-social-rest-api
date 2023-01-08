@@ -6,6 +6,7 @@ import {
   customRoles,
   isAdmin,
   isAuth,
+  postIdValidation,
   postPaginationMiddleware,
   productsPaginationMiddleware,
   signupUserValidation,
@@ -25,6 +26,7 @@ import {
   adminGetAllOrdersForGivenUserController,
   adminGetOrderController,
   adminGetOrdersController,
+  adminGetPostController,
   adminGetPostsController,
   adminGetProductController,
   adminGetProductsController,
@@ -117,5 +119,10 @@ router
   .route('/feed/posts')
   .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postPaginationMiddleware(), adminGetPostsController)
   .post(uploadImage.single('postImage'), isAuth, addPostValidation, adminCreatePostController);
+
+router
+  .route('/feed/posts/:postId')
+  .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminGetPostController)
+  .delete(uploadImage.single('postImage'), isAuth, addPostValidation, adminCreatePostController);
 
 export = router;

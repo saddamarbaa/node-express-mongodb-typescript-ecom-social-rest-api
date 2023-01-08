@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { InternalServerError } from 'http-errors';
+import createHttpError, { InternalServerError } from 'http-errors';
 import { customResponse } from '@src/utils';
 
-import { AuthenticatedRequestBody, PostT, TPaginationResponse } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@src/interfaces';
 import Post from '@src/models/Post.model';
 
 export const getPostsService = async (_req: Request, res: TPaginationResponse) => {
@@ -73,10 +73,15 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
         author: undefined,
         creator: {
           _id: req?.user?._id || '',
-          name: req?.user?._id || '',
-          surname: req?.user?._id || '',
-          profileImage: req?.user?._id || '',
+          name: req?.user?.name || '',
+          surname: req?.user?.surname || '',
+          profileImage: req?.user?.profileImage || '',
         },
+      },
+      request: {
+        type: 'Get',
+        description: 'Get all posts',
+        url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
       },
     };
 
@@ -86,6 +91,48 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
         error: false,
         message: `Successfully added new post`,
         status: 201,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  try {
+    const post = await Post.findById(req.params.postId).populate('author').exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: {
+          _id: author._id,
+          name: author.name,
+          surname: author.surname,
+          profileImage: author.profileImage,
+        },
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found post by ID: ${req.params.postId}`,
+        status: 200,
         data,
       })
     );

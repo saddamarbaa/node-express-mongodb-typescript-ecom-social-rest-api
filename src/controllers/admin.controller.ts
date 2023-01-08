@@ -19,6 +19,7 @@ import {
   adminUpdateOrderStatusService,
   adminGetPostsService,
   adminCreatePostService,
+  adminGetPostService,
 } from '@src/services';
 import {
   AuthenticatedRequestBody,
@@ -97,6 +98,9 @@ export const adminClearAllOrdersController = (
 ) => adminClearAllOrdersService(req, res, next);
 
 export const adminGetPostsController = (req: Request, res: TPaginationResponse) => adminGetPostsService(req, res);
+
+export const adminGetPostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminGetPostService(req, res, next);
 
 export const adminCreatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
   adminCreatePostService(req, res, next);
