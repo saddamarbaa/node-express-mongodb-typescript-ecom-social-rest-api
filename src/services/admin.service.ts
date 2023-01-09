@@ -1042,4 +1042,59 @@ export const adminClearAllPostsService = async (
   }
 };
 
+export const adminUpdatePostService = async (
+  req: AuthenticatedRequestBody<PostT>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { title, content, category } = req.body;
+
+  try {
+    const post = await Post.findById(req.params.postId).populate('author').exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    post.title = title || post.title;
+    post.content = content || post.content;
+    post.category = category || post.category;
+
+    if (req?.file?.filename) {
+      post.postImage = `/static/uploads/posts/${req?.file?.filename}`;
+      const fullImage = post.postImage || '';
+      const imagePath = fullImage.split('/').pop() || '';
+      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+      deleteFile(folderFullPath);
+    }
+
+    const updatedPost = await post.save({ new: true });
+
+    const data = {
+      post: {
+        ...updatedPost._doc,
+        author: undefined,
+        creator: updatedPost._doc.author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).json(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully update post by ID ${req.params.postId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
 export default adminGetUsersService;
