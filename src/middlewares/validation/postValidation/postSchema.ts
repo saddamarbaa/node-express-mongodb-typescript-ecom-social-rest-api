@@ -24,6 +24,23 @@ export const postSchema = {
     ),
     filename: Joi.string().required().label('Invalid request (Please upload Image)'),
   }),
+  updatePost: Joi.object({
+    title: Joi.string().min(3).max(100),
+    content: Joi.string().min(5),
+    postId: vaildObjectId().required(),
+    category: Joi.string().valid(
+      postCategory.blockchain,
+      postCategory.coding,
+      postCategory.devApp,
+      postCategory.nextjs,
+      postCategory.nodejs,
+      postCategory.reactjs,
+      postCategory.sports,
+      postCategory.typeScript,
+      postCategory.social
+    ),
+    filename: Joi.string().label('Invalid request (Please upload Image)'),
+  }),
   validatedPostId: Joi.object({
     postId: vaildObjectId().required(),
   }),
