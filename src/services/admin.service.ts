@@ -972,4 +972,74 @@ export const adminCreatePostService = async (
   }
 };
 
+export const adminDeletePostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findByIdAndRemove({
+      _id: req.params.postId,
+    });
+
+    if (!post) {
+      return next(createHttpError(400, `Failed to delete post by given ID ${req.params.postId}`));
+    }
+
+    const fullImage = post.postImage || '';
+    const imagePath = fullImage.split('/').pop() || '';
+    const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+
+    deleteFile(folderFullPath);
+
+    return res.status(200).json(
+      customResponse({
+        data: null,
+        success: true,
+        error: false,
+        message: `Successfully deleted post by ID ${req.params.postId}`,
+        status: 200,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const adminClearAllPostsService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const posts = await Post.find();
+    // Delete complete post collection
+    const dropCompleteCollection = await Post.deleteMany({});
+
+    if (dropCompleteCollection.deletedCount === 0) {
+      return next(createHttpError(400, `Failed to Cleared posts`));
+    }
+
+    // Remove all the images
+    posts.forEach((post) => {
+      const fullImage = post.postImage || '';
+      const imagePath = fullImage.split('/').pop() || '';
+      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+      deleteFile(folderFullPath);
+    });
+
+    return res.status(200).send(
+      customResponse({
+        success: true,
+        error: false,
+        message: `Successful Cleared all posts`,
+        status: 200,
+        data: null,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export default adminGetUsersService;
