@@ -11,6 +11,7 @@ import {
   productsPaginationMiddleware,
   signupUserValidation,
   updateOrderStatusValidation,
+  updatePostValidation,
   updateProductValidation,
   updateUserValidation,
   uploadImage,
@@ -36,6 +37,7 @@ import {
   adminRemoveUserController,
   adminUpdateAuthController,
   adminUpdateOrderStatusController,
+  adminUpdatePostController,
   adminUpdateProductController,
 } from '@src/controllers';
 import { environmentConfig } from '@src/configs';
@@ -137,6 +139,12 @@ router.delete(
 router
   .route('/feed/posts/:postId')
   .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminGetPostController)
-  .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminDeletePostController);
-
+  .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminDeletePostController)
+  .patch(
+    uploadImage.single('postImage'),
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS),
+    updatePostValidation,
+    adminUpdatePostController
+  );
 export = router;
