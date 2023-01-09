@@ -39,7 +39,7 @@ import {
   adminUpdateProductController,
 } from '@src/controllers';
 import { environmentConfig } from '@src/configs';
-import { adminDeleteAllOrderForGivenUserService } from '@src/services';
+import { adminClearAllPostsService, adminDeleteAllOrderForGivenUserService } from '@src/services';
 
 const router = express.Router();
 
@@ -119,7 +119,20 @@ router.delete(
 router
   .route('/feed/posts')
   .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postPaginationMiddleware(), adminGetPostsController)
-  .post(uploadImage.single('postImage'), isAuth, addPostValidation, adminCreatePostController);
+  .post(
+    uploadImage.single('postImage'),
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS),
+    addPostValidation,
+    adminCreatePostController
+  );
+
+router.delete(
+  '/feed/posts/clear-all-posts',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  adminClearAllPostsService
+);
 
 router
   .route('/feed/posts/:postId')
