@@ -20,6 +20,7 @@ import {
   adminGetPostsService,
   adminCreatePostService,
   adminGetPostService,
+  adminDeletePostService,
 } from '@src/services';
 import {
   AuthenticatedRequestBody,
@@ -104,5 +105,8 @@ export const adminGetPostController = (req: AuthenticatedRequestBody<IUser>, res
 
 export const adminCreatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
   adminCreatePostService(req, res, next);
+
+export const adminDeletePostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminDeletePostService(req, res, next);
 
 export default adminGetUsersController;

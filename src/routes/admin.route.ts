@@ -21,6 +21,7 @@ import {
   adminAddUserController,
   adminClearAllOrdersController,
   adminCreatePostController,
+  adminDeletePostController,
   adminDeleteProductController,
   adminDeleteSingleOrderController,
   adminGetAllOrdersForGivenUserController,
@@ -123,6 +124,6 @@ router
 router
   .route('/feed/posts/:postId')
   .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminGetPostController)
-  .delete(uploadImage.single('postImage'), isAuth, addPostValidation, adminCreatePostController);
+  .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminDeletePostController);
 
 export = router;
