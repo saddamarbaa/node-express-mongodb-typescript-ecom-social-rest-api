@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
-import { customResponse } from '@src/utils';
+import { customResponse, deleteFile } from '@src/utils';
 
 import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@src/interfaces';
 import Post from '@src/models/Post.model';
@@ -134,6 +134,47 @@ export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: 
         message: `Successfully found post by ID: ${req.params.postId}`,
         status: 200,
         data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const deletePostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  try {
+    const post = await Post.findById(req.params.postId).populate('author').exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    // Allow user to delete only post which is created by them
+    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    const isDeleted = await Post.findByIdAndRemove({
+      _id: req.params.postId,
+    });
+
+    if (!isDeleted) {
+      return next(createHttpError(400, `Failed to delete post by given ID ${req.params.postId}`));
+    }
+
+    const fullImage = post.postImage || '';
+    const imagePath = fullImage.split('/').pop() || '';
+    const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+
+    deleteFile(folderFullPath);
+
+    return res.status(200).json(
+      customResponse({
+        data: null,
+        success: true,
+        error: false,
+        message: `Successfully deleted post by ID ${req.params.postId}`,
+        status: 200,
       })
     );
   } catch (error) {
