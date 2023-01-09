@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
+
 import { customResponse, deleteFile } from '@src/utils';
 
 import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@src/interfaces';
@@ -132,6 +133,67 @@ export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: 
         success: true,
         error: false,
         message: `Successfully found post by ID: ${req.params.postId}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
+  const { title, content, category } = req.body;
+
+  try {
+    const post = await Post.findById(req.params.postId).populate('author').exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    // Allow user to update only post which is created by them
+    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+    post.title = title || post.title;
+    post.content = content || post.content;
+    post.category = category || post.category;
+
+    if (req?.file?.filename) {
+      post.postImage = `/static/uploads/posts/${req?.file?.filename}`;
+      // Delete the old post image
+      const fullImage = post.postImage || '';
+      const imagePath = fullImage.split('/').pop() || '';
+      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+      deleteFile(folderFullPath);
+    }
+
+    const updatedPost = await post.save({ new: true });
+
+    const data = {
+      post: {
+        ...updatedPost._doc,
+        author: undefined,
+        creator: {
+          _id: req?.user?._id,
+          name: req?.user?.name,
+          surname: req?.user?.surname,
+          profileImage: req?.user?.profileImage,
+        },
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).json(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully update post by ID ${req.params.postId}`,
         status: 200,
         data,
       })
