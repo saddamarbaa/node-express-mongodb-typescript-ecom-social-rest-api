@@ -24,3 +24,7 @@ export const sendVerificationMailValidation: RequestHandler = (req, res, next) =
 
 export const resetPasswordValidation: RequestHandler = (req, res, next) =>
   validator(userSchema.resetPassword, { ...req.body, ...req.params }, next);
+
+export const userIdValidation: RequestHandler = (req, res, next) => {
+  return validator(userSchema.validatedUserId, req.params, next);
+};
