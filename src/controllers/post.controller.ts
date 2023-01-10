@@ -5,10 +5,14 @@ import {
   deletePostService,
   getPostService,
   getPostsService,
+  getUserPostsService,
   updatePostService,
 } from '@src/services';
 
 export const getPostsController = (req: Request, res: TPaginationResponse) => getPostsService(req, res);
+
+export const getUserPostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  getUserPostsService(req, res, next);
 
 export const getPostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   getPostService(req, res, next);

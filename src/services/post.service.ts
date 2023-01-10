@@ -243,3 +243,47 @@ export const deletePostService = async (req: AuthenticatedRequestBody<IUser>, re
     return next(InternalServerError);
   }
 };
+
+export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  try {
+    const posts = await Post.find({
+      author: req?.user?._id || '',
+    })
+      .populate('author')
+      .exec();
+
+    const data = {
+      posts: posts?.map((postDoc: any) => {
+        const { author, ...otherPostInfo } = postDoc._doc;
+        return {
+          ...otherPostInfo,
+          creator: {
+            _id: author._id,
+            name: author.name,
+            surname: author.surname,
+            profileImage: author.profileImage,
+          },
+          request: {
+            type: 'Get',
+            description: 'Get one post with the id',
+            url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+          },
+        };
+      }),
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: posts.length
+          ? `Successfully found all posts for user by ID ${req?.user?._id}`
+          : `No post found for user by ID ${req?.user?._id}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
