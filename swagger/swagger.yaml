@@ -1723,18 +1723,9 @@ paths:
     delete:
       security:
         - Authorization: []
-      summary: Delete post based on request id
+      summary: Delete all posts for given user
       tags:
         - Post
-      parameters:
-        - in: path
-          name: postId
-          required: true
-          description: Unique id
-          schema:
-            type: string
-            minimum: 1
-            example: 63bae1dbc7c5b2f65f3cbd97
       responses:
         '200':
           description: OK
