@@ -15,6 +15,7 @@ import {
   updateProductValidation,
   updateUserValidation,
   uploadImage,
+  userIdValidation,
   usersPaginationMiddleware,
 } from '@src/middlewares';
 import {
@@ -22,6 +23,7 @@ import {
   adminAddUserController,
   adminClearAllOrdersController,
   adminCreatePostController,
+  adminDeleteAllPostForGivenUserController,
   adminDeletePostController,
   adminDeleteProductController,
   adminDeleteSingleOrderController,
@@ -134,6 +136,14 @@ router.delete(
   isAuth,
   customRoles(environmentConfig.ADMIN_EMAILS),
   adminClearAllPostsService
+);
+
+router.delete(
+  '/feed/posts/user/:userId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  userIdValidation,
+  adminDeleteAllPostForGivenUserController
 );
 
 router
