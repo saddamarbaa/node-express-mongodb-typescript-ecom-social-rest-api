@@ -3728,6 +3728,61 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /admin/feed/posts/user/{userId}:
+    delete:
+      security:
+        - Authorization: []
+      summary: Admin delete all posts for given user
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 63bae1dbc7c5b2f65f3cbd97
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully deleted all posts for user by ID ...
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /admin/feed/posts/clear-all-posts:
     delete:
       summary: Admin delete all the posts in db
