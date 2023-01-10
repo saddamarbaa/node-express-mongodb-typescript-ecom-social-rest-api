@@ -3,6 +3,7 @@ import express from 'express';
 import {
   createPostController,
   deletePostController,
+  deleteUserPostsController,
   getPostController,
   getPostsController,
   getUserPostsController,
@@ -21,6 +22,7 @@ const router = express.Router();
 
 router.get('/posts', postPaginationMiddleware(), getPostsController);
 router.get('/posts/user-posts', isAuth, getUserPostsController);
+router.delete('/posts/user-posts', isAuth, deleteUserPostsController);
 router.get('/posts/:postId', postIdValidation, getPostController);
 router.delete('/posts/:postId', isAuth, postIdValidation, deletePostController);
 router.patch('/posts/:postId', uploadImage.single('postImage'), isAuth, updatePostValidation, updatePostController);

@@ -3,6 +3,7 @@ import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@sr
 import {
   createPostService,
   deletePostService,
+  deleteUserPostsService,
   getPostService,
   getPostsService,
   getUserPostsService,
@@ -22,6 +23,9 @@ export const createPostController = (req: AuthenticatedRequestBody<PostT>, res: 
 
 export const deletePostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   deletePostService(req, res, next);
+
+export const deleteUserPostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  deleteUserPostsService(req, res, next);
 
 export const updatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
   updatePostService(req, res, next);
