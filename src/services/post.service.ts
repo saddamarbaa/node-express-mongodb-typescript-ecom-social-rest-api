@@ -243,3 +243,93 @@ export const deletePostService = async (req: AuthenticatedRequestBody<IUser>, re
     return next(InternalServerError);
   }
 };
+
+export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
+  try {
+    const posts = await Post.find({
+      author: req?.user?._id || '',
+    })
+      .populate('author')
+      .exec();
+
+    const data = {
+      posts: posts?.map((postDoc: any) => {
+        const { author, ...otherPostInfo } = postDoc._doc;
+        return {
+          ...otherPostInfo,
+          creator: {
+            _id: author._id,
+            name: author.name,
+            surname: author.surname,
+            profileImage: author.profileImage,
+          },
+          request: {
+            type: 'Get',
+            description: 'Get one post with the id',
+            url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+          },
+        };
+      }),
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: posts.length
+          ? `Successfully found all posts for user by ID ${req?.user?._id}`
+          : `No post found for user by ID ${req?.user?._id}`,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deleteUserPostsService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const posts = await Post.find({
+      author: req?.user?._id || '',
+    })
+      .populate('author')
+      .exec();
+
+    if (!posts || !posts.length) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const droppedUserPost = await Post.deleteMany({
+      author: req?.user?._id,
+    });
+
+    if (droppedUserPost.deletedCount === 0) {
+      return next(createHttpError(400, `Failed to delete post for given user by ID ${req?.user?._id}`));
+    }
+
+    // Remove all the images
+    posts.forEach((post) => {
+      const fullImage = post.postImage || '';
+      const imagePath = fullImage.split('/').pop() || '';
+      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+      deleteFile(folderFullPath);
+    });
+
+    return res.status(200).json(
+      customResponse({
+        data: null,
+        success: true,
+        error: false,
+        message: `Successfully deleted all posts for user by ID ${req?.user?._id}`,
+        status: 200,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};

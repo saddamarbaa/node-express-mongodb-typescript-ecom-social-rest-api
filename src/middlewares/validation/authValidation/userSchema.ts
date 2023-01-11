@@ -71,6 +71,9 @@ export const userSchema = {
     password: Joi.string().min(6).required(),
     confirmPassword: Joi.string().required().valid(Joi.ref('password')),
   }),
+  validatedUserId: Joi.object({
+    userId: vaildObjectId().required(),
+  }),
 };
 
 export default userSchema;

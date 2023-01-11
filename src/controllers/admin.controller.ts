@@ -23,6 +23,7 @@ import {
   adminDeletePostService,
   adminClearAllPostsService,
   adminUpdatePostService,
+  adminDeleteAllPostForGivenUserService,
 } from '@src/services';
 import {
   AuthenticatedRequestBody,
@@ -113,6 +114,12 @@ export const adminUpdatePostController = (req: AuthenticatedRequestBody<PostT>, 
 
 export const adminDeletePostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminDeletePostService(req, res, next);
+
+export const adminDeleteAllPostForGivenUserController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteAllPostForGivenUserService(req, res, next);
 
 export const adminClearAllPostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminClearAllPostsService(req, res, next);
