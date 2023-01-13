@@ -21,6 +21,7 @@ import {
 import { customResponse, deleteFile, isValidMongooseObjectId, sendEmailVerificationEmail } from '@src/utils';
 import Product from '@src/models/Product.model';
 import { authorizationRoles } from '@src/constants';
+import { cloudinary } from '@src/middlewares';
 
 export const adminAddUserService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
   const {
@@ -41,31 +42,52 @@ export const adminAddUserService = async (req: Request, res: Response<ResponseT<
     role,
   } = req.body;
 
-  const newUser = new User({
-    email,
-    password,
-    name,
-    surname,
-    confirmPassword,
-    jobTitle,
-    bio,
-    favoriteAnimal,
-    mobileNumber,
-    gender,
-    dateOfBirth,
-    role,
-    address,
-    nationality,
-    companyName,
-    profileImage: req.file?.filename ? `/static/uploads/users/${req.file.filename}` : '/static/uploads/users/temp.png',
-    acceptTerms: true,
-  });
-
   try {
     const isEmailExit = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
     if (isEmailExit) {
+      if (req.file?.filename) {
+        const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file.filename}`;
+        deleteFile(localFilePath);
+      }
       return next(createHttpError(422, `E-Mail address ${email} is already exists, please pick a different one.`));
     }
+
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      // localFilePath: path of image which was just
+      // uploaded to "public/uploads/users" folder
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'users',
+      });
+
+      // Image has been successfully uploaded on
+      // cloudinary So we dont need local image file anymore
+      // Remove file from local uploads folder
+      deleteFile(localFilePath);
+    }
+
+    const newUser = new User({
+      email,
+      password,
+      name,
+      surname,
+      confirmPassword,
+      jobTitle,
+      bio,
+      favoriteAnimal,
+      mobileNumber,
+      gender,
+      dateOfBirth,
+      role,
+      address,
+      nationality,
+      companyName,
+      profileImage: cloudinaryResult?.secure_url,
+      cloudinary_id: cloudinaryResult?.public_id,
+      acceptTerms: true,
+    });
 
     const user = await newUser.save();
     let token = await new Token({ userId: user._id });
@@ -120,7 +142,12 @@ export const adminAddUserService = async (req: Request, res: Response<ResponseT<
       })
     );
   } catch (error) {
-    return next(error);
+    // Remove file from local uploads folder
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+      deleteFile(localFilePath);
+    }
+    return next(InternalServerError);
   }
 };
 
@@ -129,18 +156,6 @@ export const adminUpdateAuthService = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!isValidMongooseObjectId(req.params.userId) || !req.params.userId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
-  const rolesArray = Object.values(authorizationRoles);
-  // check for valid role
-  if (req.body.role && !rolesArray.includes(req.body.role)) {
-    if (!rolesArray.includes(req.body.role)) {
-      return next(createHttpError(422, `Invalid role`));
-    }
-  }
-
   const {
     name,
     surname,
@@ -175,8 +190,33 @@ export const adminUpdateAuthService = async (
     if (email) {
       const existingUser = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
       if (existingUser && !existingUser._id.equals(user._id)) {
+        if (req.file?.filename) {
+          const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file.filename}`;
+          deleteFile(localFilePath);
+        }
         return next(createHttpError(422, `E-Mail address ${email} is already exists, please pick a different one.`));
       }
+    }
+
+    if (user.cloudinary_id) {
+      // Delete the old image from cloudinary
+      await cloudinary.uploader.destroy(user.cloudinary_id);
+    }
+
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      // localFilePath: path of image which was just
+      // uploaded to "public/uploads/users" folder
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'users',
+      });
+
+      // Image has been successfully uploaded on
+      // cloudinary So we dont need local image file anymore
+      // Remove file from local uploads folder
+      deleteFile(localFilePath);
     }
 
     user.name = name || user.name;
@@ -194,7 +234,8 @@ export const adminUpdateAuthService = async (
     user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
     user.role = req.body.role || user.role;
     user.status = req.body.status || user.status;
-    user.profileImage = req.file?.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
+    user.profileImage = req.file?.filename ? cloudinaryResult?.secure_url : user.profileImage;
+    user.cloudinary_id = req.file?.filename ? cloudinaryResult?.public_id : user.cloudinary_id;
 
     const updatedUser = await user.save({ validateBeforeSave: false, new: true });
 
@@ -224,9 +265,15 @@ export const adminUpdateAuthService = async (
       })
     );
   } catch (error) {
+    // Remove file from local uploads folder
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+      deleteFile(localFilePath);
+    }
     return next(InternalServerError);
   }
 };
+
 export const adminGetUsersService = async (_req: Request, res: TPaginationResponse) => {
   if (res?.paginatedResults) {
     const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
@@ -315,24 +362,51 @@ export const adminAddProductService = async (
 ) => {
   const { name, price, description, brand, category, stock } = req.body;
 
-  if (!req.file) {
-    return next(createHttpError(422, `Invalid request (Please upload Image)`));
-  }
+  // console.log(req.file, req.files);
+
+  const imageUrlList: any[] = [];
 
   const userId = req?.user?._id || '';
 
-  const productData = new Product({
-    name,
-    price,
-    description,
-    brand,
-    category,
-    stock,
-    productImage: `/static/uploads/products/${req?.file?.filename}`,
-    user: userId,
-  });
-
   try {
+    if (req.files) {
+      for (let index = 0; index < req?.files?.length; index += 1) {
+        // @ts-ignore
+        const element = req.files && req.files[index].filename;
+
+        // localFilePath: path of image which was just
+        // uploaded to "public/uploads/products" folder
+        const localFilePath = `${process.env.PWD}/public/uploads/products/${element}`;
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await cloudinary.uploader.upload(localFilePath, {
+          folder: 'products',
+        });
+
+        imageUrlList.push({
+          url: result?.secure_url,
+          cloudinary_id: result?.public_id,
+        });
+
+        // Image has been successfully uploaded on
+        // cloudinary So we dont need local image file anymore
+        // Remove file from local uploads folder
+        // eslint-disable-next-line no-await-in-loop
+        await deleteFile(localFilePath);
+      }
+    }
+
+    const productData = new Product({
+      name,
+      price,
+      description,
+      brand,
+      category,
+      stock,
+      productImages: imageUrlList,
+      user: userId,
+    });
+
     const createdProduct = await Product.create(productData);
 
     const data = {
@@ -342,6 +416,7 @@ export const adminAddProductService = async (
         price: createdProduct.price,
         description: createdProduct.description,
         productImage: createdProduct.productImage,
+        productImages: createdProduct.productImages,
         count: createdProduct.count,
         ratings: createdProduct.ratings,
         brand: createdProduct.brand,
@@ -377,6 +452,15 @@ export const adminAddProductService = async (
       })
     );
   } catch (error: any) {
+    if (req.files) {
+      for (let index = 0; index < req?.files?.length; index += 1) {
+        // @ts-ignore
+        const element = req.files && req.files[index].filename;
+        const localFilePath = `${process.env.PWD}/public/uploads/products/${element}`;
+        // eslint-disable-next-line no-await-in-loop
+        await deleteFile(localFilePath);
+      }
+    }
     return next(error);
   }
 };
@@ -552,12 +636,18 @@ export const adminDeleteProductService = async (
     }
 
     // Delete the product image
-    const fullImage = product.productImage || '';
-    const imagePath = fullImage.split('/').pop() || '';
-    const folderFullPath = `${process.env.PWD}/public/uploads/products/${imagePath}`;
+    // const fullImage = product.productImage || '';
+    // const imagePath = fullImage.split('/').pop() || '';
+    // const folderFullPath = `${process.env.PWD}/public/uploads/products/${imagePath}`;
 
-    deleteFile(folderFullPath);
+    // deleteFile(folderFullPath);
 
+    // Delete image from cloudinary
+    product?.productImages?.forEach(async (image: any) => {
+      if (image?.cloudinary_id) {
+        await cloudinary.uploader.destroy(image.cloudinary_id);
+      }
+    });
     return res.status(200).json(
       customResponse({
         data: null,
@@ -591,6 +681,44 @@ export const adminDeleteProductService = async (
 
     //   });
     // });
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const adminClearAllProductsService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const products = await Product.find();
+    // Delete complete product collection
+    const dropCompleteCollection = await Product.deleteMany({});
+
+    if (dropCompleteCollection.deletedCount === 0) {
+      return next(createHttpError(400, `Failed to clear posts`));
+    }
+
+    // Remove all the images
+    products.forEach((product) => {
+      product?.productImages?.forEach(async (image: any) => {
+        // Delete image from cloudinary
+        if (image?.cloudinary_id) {
+          await cloudinary.uploader.destroy(image.cloudinary_id);
+        }
+      });
+    });
+
+    return res.status(200).send(
+      customResponse({
+        success: true,
+        error: false,
+        message: `Successful cleared all products`,
+        status: 200,
+        data: null,
+      })
+    );
   } catch (error) {
     return next(InternalServerError);
   }
@@ -1062,7 +1190,7 @@ export const adminClearAllPostsService = async (
     const dropCompleteCollection = await Post.deleteMany({});
 
     if (dropCompleteCollection.deletedCount === 0) {
-      return next(createHttpError(400, `Failed to Cleared posts`));
+      return next(createHttpError(400, `Failed to clear posts`));
     }
 
     // Remove all the images

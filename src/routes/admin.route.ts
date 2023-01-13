@@ -22,6 +22,7 @@ import {
   adminAddProductController,
   adminAddUserController,
   adminClearAllOrdersController,
+  adminClearAllProductsController,
   adminCreatePostController,
   adminDeleteAllPostForGivenUserController,
   adminDeletePostController,
@@ -67,16 +68,17 @@ router.put(
   updateUserValidation,
   adminUpdateAuthController
 );
-router.delete('/users/remove/:userId', isAuth, isAdmin, adminRemoveUserController);
+router.delete('/users/remove/:userId', isAuth, isAdmin, userIdValidation, adminRemoveUserController);
 
 router.post(
   '/products/add',
-  uploadImage.single('productImage'),
+  uploadImage.array('productImage'),
   isAuth,
   isAdmin,
   addProductValidation,
   adminAddProductController
 );
+
 router.put(
   '/products/update/:productId',
   uploadImage.single('productImage'),
@@ -88,6 +90,8 @@ router.put(
 router.get('/products', isAuth, isAdmin, productsPaginationMiddleware(), adminGetProductsController);
 router.get('/products/:productId', isAuth, isAdmin, adminGetProductController);
 router.delete('/products/delete/:productId', isAuth, isAdmin, adminDeleteProductController);
+
+router.delete('/products/clear-all-products', isAuth, isAdmin, adminClearAllProductsController);
 
 router.get('/orders', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrdersController);
 router.delete(
