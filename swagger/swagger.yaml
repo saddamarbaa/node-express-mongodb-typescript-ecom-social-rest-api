@@ -3078,6 +3078,53 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /admin/products/clear-all-products:
+    delete:
+      summary: Admin delete all the products in db
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful cleared all products
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /admin/orders:
     get:
       summary: Returns a list of orders for all users
@@ -4763,19 +4810,19 @@ components:
         category:
           type: string
           enum:
-            - "Women's clothing"
-            - "Men's clothing"
-            - "Men's Shoes"
-            - "Women's Shoes"
-            - 'Toys'
-            - 'Football'
-            - 'Books'
-            - 'Personal Computers'
+            - "men's clothing"
+            - "women's clothing"
+            - "women's shoes"
+            - "men's shoes"
+            - 'toys'
+            - 'football'
+            - 'books'
+            - 'personal computers'
             - 'Jewelery'
-            - 'Electronics'
-            - 'Sports'
-            - 'All Products'
-          default: 'Books'
+            - 'electronics'
+            - 'sports'
+            - 'all products'
+          default: 'books'
         name:
           type: string
           example: Clean Architecture
@@ -4792,9 +4839,11 @@ components:
           type: string
           example: 'in stock - order soon'
         productImage:
-          type: string
-          format: binary
-          description: Image type /png/jpg/jpeg/webp
+          type: array
+          items:
+            type: string
+            format: binary
+            description: Image type /png/jpg/jpeg/webp
 
     ProductResponse:
       type: object
