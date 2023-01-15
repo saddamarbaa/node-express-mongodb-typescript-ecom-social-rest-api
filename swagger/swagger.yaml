@@ -60,21 +60,6 @@ paths:
               schema:
                 '$ref': '#/components/schemas/HealthCheckResponse'
 
-  /test/healthChecker:
-    get:
-      deprecated: true
-      summary: This endpoint is been deprecated
-      tags:
-        - HealthCheck
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
   # Products
 
   /products:
@@ -906,22 +891,6 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-    delete:
-      deprecated: true
-      summary: This endpoint is been deprecated
-      security:
-        - Authorization: []
-      tags:
-        - Order
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
   /orders/invoices/{orderId}:
     get:
       summary: Generate user order invoice as pdf and download
@@ -1317,21 +1286,6 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /checkout:
-    get:
-      deprecated: true
-      summary: This endpoint is been deprecated
-      tags:
-        - Checkout
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
   # Post
 
   /feed/posts:
@@ -1456,6 +1410,10 @@ paths:
           multipart/form-data:
             schema:
               '$ref': '#/components/schemas/PostRequest'
+            encoding:
+              postImage:
+                contentType: application/octet-stream
+
       responses:
         '201':
           description: OK
@@ -1966,21 +1924,6 @@ paths:
             application/json:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
-
-  /auth/profile:
-    get:
-      deprecated: true
-      summary: This endpoint is been deprecated
-      tags:
-        - Auth
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
   /auth/logout:
     post:
@@ -2968,13 +2911,22 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /admin/products/update:
+  /admin/products/update/{productId}:
     put:
       security:
         - Authorization: []
       summary: Admin update product based on request id
       tags:
         - Admin
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6398540ee6e5ae8c37c333ac
       requestBody:
         required: true
         content:
@@ -3064,6 +3016,53 @@ paths:
                     type: object
                     nullable: true
                     example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/products/clear-all-products:
+    delete:
+      summary: Admin delete all the products in db
+      security:
+        - Authorization: []
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successful cleared all products
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+
         '400':
           description: Bad request
           content:
@@ -3925,53 +3924,6 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /admin/posts/{postId}:
-    get:
-      deprecated: true
-      summary: This endpoint is been deprecated
-      tags:
-        - Admin
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
-    patch:
-      security:
-        - Authorization: []
-      summary: This endpoint is been deprecated
-      tags:
-        - Admin
-      deprecated: true
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
-    delete:
-      security:
-        - Authorization: []
-      summary: Delete post based on request id
-      tags:
-        - Admin
-      deprecated: true
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
   # Manager
 
   /manager/users:
@@ -4248,21 +4200,6 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
-  /moderator/users/band/{userId}:
-    delete:
-      deprecated: true
-      summary: This endpoint is been deprecated
-      tags:
-        - Moderator
-      responses:
-        '410':
-          description: Deprecated
-          content:
-            application/json:
-              schema:
-                schema:
-                '$ref': '#/components/schemas/DeprecatedApiResponse'
-
   # Supervisor
 
   /supervisor:
@@ -4318,6 +4255,115 @@ paths:
             application/json:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
+
+  # Deprecated APIs
+
+  /test/healthChecker:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Deprecated APIs
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  /checkout:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Deprecated APIs
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  /auth/profile:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Deprecated APIs
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  /admin/posts/{postId}:
+    get:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Deprecated APIs
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+    patch:
+      security:
+        - Authorization: []
+      summary: This endpoint is been deprecated
+      tags:
+        - Deprecated APIs
+      deprecated: true
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+    delete:
+      security:
+        - Authorization: []
+      summary: Delete post based on request id
+      tags:
+        - Deprecated APIs
+      deprecated: true
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
+
+  /moderator/users/band/{userId}:
+    delete:
+      deprecated: true
+      summary: This endpoint is been deprecated
+      tags:
+        - Deprecated APIs
+      responses:
+        '410':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                schema:
+                '$ref': '#/components/schemas/DeprecatedApiResponse'
 
 components:
   schemas:
@@ -4763,19 +4809,19 @@ components:
         category:
           type: string
           enum:
-            - "Women's clothing"
-            - "Men's clothing"
-            - "Men's Shoes"
-            - "Women's Shoes"
-            - 'Toys'
-            - 'Football'
-            - 'Books'
-            - 'Personal Computers'
-            - 'Jewelery'
-            - 'Electronics'
-            - 'Sports'
-            - 'All Products'
-          default: 'Books'
+            - "men's clothing"
+            - "women's clothing"
+            - "women's shoes"
+            - "men's shoes"
+            - 'toys'
+            - 'football'
+            - 'books'
+            - 'personal computers'
+            - 'jewelery'
+            - 'electronics'
+            - 'sports'
+            - 'all products'
+          default: 'books'
         name:
           type: string
           example: Clean Architecture
@@ -4791,10 +4837,12 @@ components:
         stock:
           type: string
           example: 'in stock - order soon'
-        productImage:
-          type: string
-          format: binary
-          description: Image type /png/jpg/jpeg/webp
+        productImages:
+          type: array
+          items:
+            type: string
+            format: binary
+            description: Image type /png/jpg/jpeg/webp
 
     ProductResponse:
       type: object
@@ -5075,7 +5123,7 @@ components:
           example: Clean Architecture TypeScript Express API Book
         postImage:
           type: string
-          format: binary
+          format: base64
           description: Image type /png/jpg/jpeg/webp
 
     PostResponse:

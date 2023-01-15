@@ -10,3 +10,7 @@ export const updateOrderStatusValidation: RequestHandler = (req, res, next) =>
 
 export const createStripeCheckoutSessionValidation: RequestHandler = (req, res, next) =>
   validator(orderSchema.createStripeCheckoutSession, { ...req.body }, next);
+
+export const orderIdValidation: RequestHandler = (req, res, next) => {
+  return validator(orderSchema.validatedOrderId, { ...req.file, ...req.body, ...req.params }, next);
+};

@@ -67,6 +67,9 @@ export const orderSchema = {
       )
       .required(),
   }),
+  validatedOrderId: Joi.object({
+    orderId: vaildObjectId().required(),
+  }),
 };
 
 export default orderSchema;

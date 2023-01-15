@@ -1,5 +1,5 @@
 import express from 'express';
-import { isAuth } from '@src/middlewares';
+import { isAuth, productIdValidation } from '@src/middlewares';
 import {
   addProductToCartController,
   clearCartController,
@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 router.get('/', isAuth, getCartController);
-router.post('/', isAuth, addProductToCartController);
+router.post('/', isAuth, productIdValidation, addProductToCartController);
 router.delete('/clear-cart', isAuth, clearCartController);
 router.post('/delete-item', isAuth, deleteProductFromCartController);
 

@@ -8,6 +8,7 @@ import {
   isAuth,
   postIdValidation,
   postPaginationMiddleware,
+  productIdValidation,
   productsPaginationMiddleware,
   signupUserValidation,
   updateOrderStatusValidation,
@@ -22,6 +23,7 @@ import {
   adminAddProductController,
   adminAddUserController,
   adminClearAllOrdersController,
+  adminClearAllProductsController,
   adminCreatePostController,
   adminDeleteAllPostForGivenUserController,
   adminDeletePostController,
@@ -53,7 +55,7 @@ router.get('/users/:userId', isAuth, adminGetUserController);
 router.post(
   '/users/add',
   isAuth,
-  isAdmin,
+  customRoles(environmentConfig.ADMIN_EMAILS),
   uploadImage.single('profileImage'),
   signupUserValidation,
   adminAddUserController
@@ -62,32 +64,58 @@ router.post(
 router.put(
   '/users/update/:userId',
   isAuth,
-  isAdmin,
+  customRoles(environmentConfig.ADMIN_EMAILS),
   uploadImage.single('profileImage'),
   updateUserValidation,
   adminUpdateAuthController
 );
-router.delete('/users/remove/:userId', isAuth, isAdmin, adminRemoveUserController);
+router.delete(
+  '/users/remove/:userId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  userIdValidation,
+  adminRemoveUserController
+);
 
 router.post(
   '/products/add',
-  uploadImage.single('productImage'),
+  uploadImage.array('productImages'),
   isAuth,
-  isAdmin,
+  customRoles(environmentConfig.ADMIN_EMAILS),
   addProductValidation,
   adminAddProductController
 );
+
 router.put(
   '/products/update/:productId',
-  uploadImage.single('productImage'),
+  uploadImage.array('productImages'),
   isAuth,
-  isAdmin,
+  customRoles(environmentConfig.ADMIN_EMAILS),
   updateProductValidation,
   adminUpdateProductController
 );
-router.get('/products', isAuth, isAdmin, productsPaginationMiddleware(), adminGetProductsController);
-router.get('/products/:productId', isAuth, isAdmin, adminGetProductController);
-router.delete('/products/delete/:productId', isAuth, isAdmin, adminDeleteProductController);
+router.get(
+  '/products',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  productsPaginationMiddleware(),
+  adminGetProductsController
+);
+router.get('/products/:productId', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetProductController);
+router.delete(
+  '/products/delete/:productId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  productIdValidation,
+  adminDeleteProductController
+);
+
+router.delete(
+  '/products/clear-all-products',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS),
+  adminClearAllProductsController
+);
 
 router.get('/orders', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrdersController);
 router.delete(

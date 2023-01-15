@@ -12,7 +12,6 @@ import {
   ReviewProductT,
 } from '@src/interfaces';
 import { customResponse, isValidMongooseObjectId } from '@src/utils';
-
 import Product from '@src/models/Product.model';
 import User from '@src/models/User.model';
 
@@ -110,10 +109,6 @@ export const addProductToCartService = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!isValidMongooseObjectId(req.body.productId) || !req.body.productId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
   try {
     const product = await Product.findById(req.body.productId);
 

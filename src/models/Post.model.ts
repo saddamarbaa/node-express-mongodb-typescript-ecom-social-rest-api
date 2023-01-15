@@ -19,6 +19,9 @@ export const PostSchema: Schema<PostT> = new Schema(
       required: [true, 'Please provide post description'],
     },
     postImage: { type: String, required: true },
+    cloudinary_id: {
+      type: String,
+    },
     author: {
       // every post shuold blong to user
       type: mongoose.Schema.Types.ObjectId,

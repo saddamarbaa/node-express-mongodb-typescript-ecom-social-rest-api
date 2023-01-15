@@ -22,4 +22,5 @@ export interface PostT extends mongoose.Document {
   createdAt?: string;
   updatedAt?: string;
   category?: string;
+  cloudinary_id?: string;
 }

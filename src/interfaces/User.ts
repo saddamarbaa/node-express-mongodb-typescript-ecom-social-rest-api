@@ -39,6 +39,7 @@ export interface IUser extends Document {
       quantity: number;
     }[];
   };
+  cloudinary_id?: string;
 }
 
 export interface IRequestUser extends Request {

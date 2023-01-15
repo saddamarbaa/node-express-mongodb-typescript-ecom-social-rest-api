@@ -1,15 +1,15 @@
 import { NextFunction, Response } from 'express';
-import createHttpError from 'http-errors';
+import createHttpError, { InternalServerError } from 'http-errors';
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import { resolve } from 'path';
-import Product from '@src/models/Product.model';
 
 import { AuthenticatedRequestBody, IUser, OrderT, ProcessingOrderT } from '@src/interfaces';
-import { customResponse, isValidMongooseObjectId } from '@src/utils';
-
+import { customResponse } from '@src/utils';
 import Order from '@src/models/Order.model';
 import User from '@src/models/User.model';
+import Product from '@src/models/Product.model';
+import { authorizationRoles } from '@src/constants';
 
 export const getOrdersService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
@@ -35,14 +35,11 @@ export const getOrdersService = async (req: AuthenticatedRequestBody<IUser>, res
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
 export const getOrderService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
-  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
   try {
     const { orderId } = req.params;
     const order = await Order.findById(orderId)
@@ -75,7 +72,7 @@ export const getOrderService = async (req: AuthenticatedRequestBody<IUser>, res:
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
@@ -166,7 +163,7 @@ export const postOrderService = async (
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
@@ -175,10 +172,6 @@ export const clearSingleOrderService = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
   try {
     const { orderId } = req.params;
     const order = await Order.findById(orderId);
@@ -209,7 +202,7 @@ export const clearSingleOrderService = async (
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
@@ -241,21 +234,21 @@ export const clearAllOrdersService = async (
 };
 
 export const getInvoicesService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
-  if (!isValidMongooseObjectId(req.params.orderId) || !req.params.orderId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-  const { orderId } = req.params;
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    return next(createHttpError(400, `No order found.`));
-  }
-
-  if (order.user.userId.toString() !== req?.user?._id.toString()) {
-    return next(createHttpError(403, `Unauthorized`));
-  }
-
   try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).populate('user.userId').populate('orderItems.product').exec();
+
+    if (!order) {
+      return next(createHttpError(400, `No order found.`));
+    }
+
+    if (
+      order.user?.userId?._id.toString() !== req?.user?._id.toString() &&
+      req?.user?.role !== authorizationRoles?.client
+    ) {
+      return next(createHttpError(403, `Unauthorized`));
+    }
+
     const invoiceName = `invoice-${orderId}.pdf`;
 
     const invoicePath = resolve(process.cwd(), `${process.env.PWD}/public/invoices/${invoiceName}`);
@@ -271,7 +264,7 @@ export const getInvoicesService = async (req: AuthenticatedRequestBody<IUser>, r
     });
     pdfDoc.text('-----------------------');
     let totalPrice = 0;
-    order.products.forEach((prod: any) => {
+    order.orderItems.forEach((prod: any) => {
       totalPrice += prod.quantity * prod.product.price;
       // eslint-disable-next-line no-useless-concat
       pdfDoc.fontSize(15).text(`${prod.product.name} - ${prod.quantity} x ` + `$${prod.product.price}`);
@@ -280,6 +273,6 @@ export const getInvoicesService = async (req: AuthenticatedRequestBody<IUser>, r
     pdfDoc.fontSize(20).text(`Total Price: $${totalPrice}`);
     pdfDoc.end();
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
