@@ -4,22 +4,21 @@ import { SignOptions } from 'jsonwebtoken';
 
 import Token from '@src/models/Token.model';
 import User from '@src/models/User.model';
-
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import {
   customResponse,
-  isValidMongooseObjectId,
+  deleteFile,
   sendConfirmResetPasswordEmail,
   sendEmailVerificationEmail,
   sendResetPasswordEmail,
 } from '@src/utils';
 import { AuthenticatedRequestBody, IUser, ResponseT } from '@src/interfaces';
-import { verifyRefreshToken } from '@src/middlewares';
+import { cloudinary, verifyRefreshToken } from '@src/middlewares';
 import { authorizationRoles } from '@src/constants';
 
 export const signupService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
-  console.log(req.body, req.file);
+  // console.log(req.body, req.file);
 
   const {
     email,
@@ -54,31 +53,52 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
     role = authorizationRoles.client;
   }
 
-  const newUser = new User({
-    email,
-    password,
-    name,
-    surname,
-    confirmPassword,
-    jobTitle,
-    bio,
-    favoriteAnimal,
-    mobileNumber,
-    gender,
-    dateOfBirth,
-    address,
-    nationality,
-    companyName,
-    role,
-    profileImage: req.file?.filename ? `/static/uploads/users/${req.file.filename}` : '/static/uploads/users/temp.png',
-    acceptTerms: acceptTerms || !!environmentConfig?.ADMIN_EMAILS?.includes(`${email}`),
-  });
-
   try {
     const isEmailExit = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
     if (isEmailExit) {
+      if (req.file?.filename) {
+        const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file.filename}`;
+        deleteFile(localFilePath);
+      }
       return next(createHttpError(422, `E-Mail address ${email} is already exists, please pick a different one.`));
     }
+
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      // localFilePath: path of image which was just
+      // uploaded to "public/uploads/users" folder
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'users',
+      });
+
+      // Image has been successfully uploaded on
+      // cloudinary So we dont need local image file anymore
+      // Remove file from local uploads folder
+      deleteFile(localFilePath);
+    }
+
+    const newUser = new User({
+      email,
+      password,
+      name,
+      surname,
+      confirmPassword,
+      jobTitle,
+      bio,
+      favoriteAnimal,
+      mobileNumber,
+      gender,
+      dateOfBirth,
+      address,
+      nationality,
+      companyName,
+      role,
+      profileImage: cloudinaryResult?.secure_url,
+      cloudinary_id: cloudinaryResult?.public_id,
+      acceptTerms: acceptTerms || !!environmentConfig?.ADMIN_EMAILS?.includes(`${email}`),
+    });
 
     const user = await newUser.save();
     let token = await new Token({ userId: user._id });
@@ -133,6 +153,11 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
       })
     );
   } catch (error) {
+    // Remove file from local uploads folder
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+      deleteFile(localFilePath);
+    }
     return next(error);
   }
 };
@@ -384,10 +409,6 @@ export const logoutService: RequestHandler = async (req, res, next) => {
 };
 
 export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
-  if (!isValidMongooseObjectId(req.params.userId) || !req.params.userId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
   const {
     name,
     surname,
@@ -418,13 +439,33 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
     if (email) {
       const existingUser = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
       if (existingUser && !existingUser._id.equals(user._id)) {
+        if (req.file?.filename) {
+          const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file.filename}`;
+          deleteFile(localFilePath);
+        }
         return next(createHttpError(422, `E-Mail address ${email} is already exists, please pick a different one.`));
       }
     }
 
-    if (req.body?.confirmPassword && req.body?.password) {
-      user.password = req.body.password;
-      user.confirmPassword = req.body.confirmPassword;
+    if (req.file?.filename && user.cloudinary_id) {
+      // Delete the old image from cloudinary
+      await cloudinary.uploader.destroy(user.cloudinary_id);
+    }
+
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      // localFilePath: path of image which was just
+      // uploaded to "public/uploads/users" folder
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'users',
+      });
+
+      // Image has been successfully uploaded on
+      // cloudinary So we dont need local image file anymore
+      // Remove file from local uploads folder
+      deleteFile(localFilePath);
     }
 
     user.name = name || user.name;
@@ -440,9 +481,10 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
     user.address = address || user.address;
     user.jobTitle = jobTitle || user.jobTitle;
     user.favoriteAnimal = favoriteAnimal || user.favoriteAnimal;
-    user.profileImage = req.file?.filename ? `/static/uploads/users/${req.file.filename}` : user.profileImage;
+    user.profileImage = req.file?.filename ? cloudinaryResult?.secure_url : user.profileImage;
+    user.cloudinary_id = req.file?.filename ? cloudinaryResult?.public_id : user.cloudinary_id;
 
-    const updatedUser = await user.save({ validateBeforeSave: false });
+    const updatedUser = await user.save({ validateBeforeSave: false, new: true });
 
     if (!updatedUser) {
       return next(createHttpError(422, `Failed to update user by given ID ${req.params.userId}`));
@@ -470,15 +512,16 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
       })
     );
   } catch (error) {
-    return next(error);
+    // Remove file from local uploads folder
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
+      deleteFile(localFilePath);
+    }
+    return next(InternalServerError);
   }
 };
 
 export const removeAuthService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
-  if (!isValidMongooseObjectId(req.params.userId) || !req.params.userId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
   try {
     const user = await User.findById(req.params.userId);
 
@@ -490,6 +533,12 @@ export const removeAuthService = async (req: AuthenticatedRequestBody<IUser>, re
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
+    // Delete image from cloudinary
+    if (user.cloudinary_id) {
+      await cloudinary.uploader.destroy(user.cloudinary_id);
+    }
+
+    // Delete user from db
     const deletedUser = await User.findByIdAndRemove({
       _id: req.params.userId,
     });

@@ -9,6 +9,7 @@ import {
   signupUserValidation,
   updateUserValidation,
   uploadImage,
+  userIdValidation,
   verifyUserMailValidation,
 } from '@src/middlewares';
 import {
@@ -30,7 +31,7 @@ router.post('/signup', uploadImage.single('profileImage'), signupUserValidation,
 router.post('/login', loginUserValidation, loginController);
 router.post('/logout', refreshTokenValidation, logoutController);
 router.patch('/update/:userId', isAuth, uploadImage.single('profileImage'), updateUserValidation, updateAuthController);
-router.delete('/remove/:userId', isAuth, removeAuthController);
+router.delete('/remove/:userId', isAuth, userIdValidation, removeAuthController);
 router.get('/verify-email/:userId/:token', verifyUserMailValidation, verifyEmailController);
 router.post('/refresh-token', refreshTokenValidation, refreshTokenController);
 router.post('/forget-password', sendVerificationMailValidation, sendForgotPasswordMailController);

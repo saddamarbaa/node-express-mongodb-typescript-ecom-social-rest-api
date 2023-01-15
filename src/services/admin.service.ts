@@ -6,7 +6,6 @@ import Token from '@src/models/Token.model';
 import User from '@src/models/User.model';
 import Order from '@src/models/Order.model';
 import Post from '@src/models/Post.model';
-
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import {
@@ -198,7 +197,7 @@ export const adminUpdateAuthService = async (
       }
     }
 
-    if (user.cloudinary_id) {
+    if (req.file?.filename && user.cloudinary_id) {
       // Delete the old image from cloudinary
       await cloudinary.uploader.destroy(user.cloudinary_id);
     }
@@ -461,7 +460,7 @@ export const adminAddProductService = async (
         await deleteFile(localFilePath);
       }
     }
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
@@ -554,10 +553,6 @@ export const adminUpdateProductService = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!isValidMongooseObjectId(req.params.productId) || !req.params.productId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
   const { name, price, description, brand, category, stock } = req.body;
 
   try {
@@ -566,20 +561,48 @@ export const adminUpdateProductService = async (
       return next(new createHttpError.BadRequest());
     }
 
+    const imageUrlList: any[] = [];
+
+    if (req.files) {
+      // Upload new images
+      for (let index = 0; index < req?.files?.length; index += 1) {
+        // @ts-ignore
+        const element = req.files && req.files[index].filename;
+
+        // localFilePath: path of image which was just
+        // uploaded to "public/uploads/products" folder
+        const localFilePath = `${process.env.PWD}/public/uploads/products/${element}`;
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await cloudinary.uploader.upload(localFilePath, {
+          folder: 'products',
+        });
+
+        imageUrlList.push({
+          url: result?.secure_url,
+          cloudinary_id: result?.public_id,
+        });
+
+        // eslint-disable-next-line no-await-in-loop
+        await deleteFile(localFilePath);
+      }
+
+      // Remove the old images
+      product?.productImages?.forEach(async (image: any) => {
+        if (image?.cloudinary_id) {
+          await cloudinary.uploader.destroy(image.cloudinary_id);
+        }
+      });
+
+      product.productImages = imageUrlList;
+    }
+
     product.name = name || product.name;
     product.price = price || product.price;
     product.description = description || product.description;
     product.brand = brand || product.brand;
     product.category = category || product.category;
     product.stock = stock || product.stock;
-    if (req?.file?.filename) {
-      product.profileImage = `/static/uploads/products/${req?.file?.filename}`;
-      // Delete the old product image
-      const imagePath = product?._doc?.productImage.split('/').pop() || '';
-      const folderFullPath = `${process.env.PWD}/public/uploads/products/${imagePath}`;
-      deleteFile(folderFullPath);
-    }
-
     const updatedProduct = await product.save();
 
     const data = {
@@ -612,7 +635,16 @@ export const adminUpdateProductService = async (
         data,
       })
     );
-  } catch (error) {
+  } catch (error: any) {
+    if (req.files) {
+      for (let index = 0; index < req?.files?.length; index += 1) {
+        // @ts-ignore
+        const element = req.files && req.files[index].filename;
+        const localFilePath = `${process.env.PWD}/public/uploads/products/${element}`;
+        // eslint-disable-next-line no-await-in-loop
+        await deleteFile(localFilePath);
+      }
+    }
     return next(InternalServerError);
   }
 };
@@ -622,18 +654,23 @@ export const adminDeleteProductService = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!isValidMongooseObjectId(req.params.productId) || !req.params.productId) {
-    return next(createHttpError(422, `Invalid request`));
-  }
-
   try {
-    const product = await Product.findByIdAndRemove({
-      _id: req.params.productId,
-    });
-
+    const product = await Product.findById(req.params.productId);
     if (!product) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isDeleted = await product.remove();
+    if (!isDeleted) {
       return next(createHttpError(400, `Failed to delete product by given ID ${req.params.productId}`));
     }
+
+    // Remove all the images
+    product?.productImages?.forEach(async (image: any) => {
+      if (image?.cloudinary_id) {
+        await cloudinary.uploader.destroy(image.cloudinary_id);
+      }
+    });
 
     // Delete the product image
     // const fullImage = product.productImage || '';
@@ -642,12 +679,6 @@ export const adminDeleteProductService = async (
 
     // deleteFile(folderFullPath);
 
-    // Delete image from cloudinary
-    product?.productImages?.forEach(async (image: any) => {
-      if (image?.cloudinary_id) {
-        await cloudinary.uploader.destroy(image.cloudinary_id);
-      }
-    });
     return res.status(200).json(
       customResponse({
         data: null,
@@ -1067,15 +1098,29 @@ export const adminCreatePostService = async (
 ) => {
   const { title, content, category } = req.body;
 
-  const postData = new Post({
-    title,
-    content,
-    category: category?.toLocaleLowerCase(),
-    postImage: `/static/uploads/posts/${req?.file?.filename}`,
-    author: req?.user?._id || '',
-  });
+  // console.log(req.body, req.file);
 
   try {
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'posts',
+      });
+
+      // Remove file from local uploads folder
+      deleteFile(localFilePath);
+    }
+
+    const postData = new Post({
+      title,
+      content,
+      category: category?.toLocaleLowerCase(),
+      postImage: cloudinaryResult?.secure_url,
+      cloudinary_id: cloudinaryResult?.public_id,
+      author: req?.user?._id || '',
+    });
+
     const createdPost = await Post.create(postData);
 
     const data = {
@@ -1083,6 +1128,11 @@ export const adminCreatePostService = async (
         ...createdPost._doc,
         author: undefined,
         creator: req?.user,
+      },
+      request: {
+        type: 'Get',
+        description: 'Get all posts',
+        url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/feed/posts`,
       },
     };
 
@@ -1096,6 +1146,11 @@ export const adminCreatePostService = async (
       })
     );
   } catch (error) {
+    // Remove file from local uploads folder
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+      deleteFile(localFilePath);
+    }
     return next(InternalServerError);
   }
 };
@@ -1114,11 +1169,16 @@ export const adminDeletePostService = async (
       return next(createHttpError(400, `Failed to delete post by given ID ${req.params.postId}`));
     }
 
-    const fullImage = post.postImage || '';
-    const imagePath = fullImage.split('/').pop() || '';
-    const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+    // const fullImage = post.postImage || '';
+    // const imagePath = fullImage.split('/').pop() || '';
+    // const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
 
-    deleteFile(folderFullPath);
+    // deleteFile(folderFullPath);
+
+    // Delete image from cloudinary
+    if (post.cloudinary_id) {
+      await cloudinary.uploader.destroy(post.cloudinary_id);
+    }
 
     return res.status(200).json(
       customResponse({
@@ -1158,11 +1218,10 @@ export const adminDeleteAllPostForGivenUserService = async (
     }
 
     // Remove all the images
-    posts.forEach((post) => {
-      const fullImage = post.postImage || '';
-      const imagePath = fullImage.split('/').pop() || '';
-      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
-      deleteFile(folderFullPath);
+    posts.forEach(async (post) => {
+      if (post?.cloudinary_id) {
+        await cloudinary.uploader.destroy(post?.cloudinary_id);
+      }
     });
 
     return res.status(200).json(
@@ -1194,11 +1253,10 @@ export const adminClearAllPostsService = async (
     }
 
     // Remove all the images
-    posts.forEach((post) => {
-      const fullImage = post.postImage || '';
-      const imagePath = fullImage.split('/').pop() || '';
-      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
-      deleteFile(folderFullPath);
+    posts.forEach(async (post) => {
+      if (post?.cloudinary_id) {
+        await cloudinary.uploader.destroy(post?.cloudinary_id);
+      }
     });
 
     return res.status(200).send(
@@ -1229,17 +1287,27 @@ export const adminUpdatePostService = async (
       return next(new createHttpError.BadRequest());
     }
 
+    if (post.cloudinary_id && req.file?.filename) {
+      // Delete the old image from cloudinary
+      await cloudinary.uploader.destroy(post.cloudinary_id);
+    }
+
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'posts',
+      });
+
+      deleteFile(localFilePath);
+    }
+
     post.title = title || post.title;
     post.content = content || post.content;
     post.category = category || post.category;
-
-    if (req?.file?.filename) {
-      post.postImage = `/static/uploads/posts/${req?.file?.filename}`;
-      const fullImage = post.postImage || '';
-      const imagePath = fullImage.split('/').pop() || '';
-      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
-      deleteFile(folderFullPath);
-    }
+    post.cloudinary_id = req.file?.filename ? cloudinaryResult?.public_id : post.cloudinary_id;
+    post.postImage = req.file?.filename ? cloudinaryResult?.secure_url : post.postImage;
 
     const updatedPost = await post.save({ new: true });
 

@@ -2,9 +2,9 @@ import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
 
 import { customResponse, deleteFile } from '@src/utils';
-
 import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@src/interfaces';
 import Post from '@src/models/Post.model';
+import { cloudinary } from '@src/middlewares';
 
 export const getPostsService = async (_req: Request, res: TPaginationResponse) => {
   if (res?.paginatedResults) {
@@ -57,15 +57,29 @@ export const getPostsService = async (_req: Request, res: TPaginationResponse) =
 export const createPostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
   const { title, content, category } = req.body;
 
-  const postData = new Post({
-    title,
-    content,
-    category: category?.toLocaleLowerCase(),
-    postImage: `/static/uploads/posts/${req?.file?.filename}`,
-    author: req?.user?._id || '',
-  });
+  // console.log(req.body, req.file);
 
   try {
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'posts',
+      });
+
+      // Remove file from local uploads folder
+      deleteFile(localFilePath);
+    }
+
+    const postData = new Post({
+      title,
+      content,
+      category: category?.toLocaleLowerCase(),
+      postImage: cloudinaryResult?.secure_url,
+      cloudinary_id: cloudinaryResult?.public_id,
+      author: req?.user?._id || '',
+    });
+
     const createdPost = await Post.create(postData);
 
     const data = {
@@ -96,6 +110,11 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
       })
     );
   } catch (error) {
+    // Remove file from local uploads folder
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+      deleteFile(localFilePath);
+    }
     return next(InternalServerError);
   }
 };
@@ -156,18 +175,28 @@ export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, re
     if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
+
+    if (post.cloudinary_id && req.file?.filename) {
+      // Delete the old image from cloudinary
+      await cloudinary.uploader.destroy(post.cloudinary_id);
+    }
+
+    let cloudinaryResult;
+    if (req.file?.filename) {
+      const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+
+      cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+        folder: 'posts',
+      });
+
+      deleteFile(localFilePath);
+    }
+
     post.title = title || post.title;
     post.content = content || post.content;
     post.category = category || post.category;
-
-    if (req?.file?.filename) {
-      post.postImage = `/static/uploads/posts/${req?.file?.filename}`;
-      // Delete the old post image
-      const fullImage = post.postImage || '';
-      const imagePath = fullImage.split('/').pop() || '';
-      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
-      deleteFile(folderFullPath);
-    }
+    post.cloudinary_id = req.file?.filename ? cloudinaryResult?.public_id : post.cloudinary_id;
+    post.postImage = req.file?.filename ? cloudinaryResult?.secure_url : post.postImage;
 
     const updatedPost = await post.save({ new: true });
 
@@ -224,11 +253,16 @@ export const deletePostService = async (req: AuthenticatedRequestBody<IUser>, re
       return next(createHttpError(400, `Failed to delete post by given ID ${req.params.postId}`));
     }
 
-    const fullImage = post.postImage || '';
-    const imagePath = fullImage.split('/').pop() || '';
-    const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
+    // const fullImage = post.postImage || '';
+    // const imagePath = fullImage.split('/').pop() || '';
+    // const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
 
-    deleteFile(folderFullPath);
+    // deleteFile(folderFullPath);
+
+    // Delete image from cloudinary
+    if (post.cloudinary_id) {
+      await cloudinary.uploader.destroy(post.cloudinary_id);
+    }
 
     return res.status(200).json(
       customResponse({
@@ -313,11 +347,10 @@ export const deleteUserPostsService = async (
     }
 
     // Remove all the images
-    posts.forEach((post) => {
-      const fullImage = post.postImage || '';
-      const imagePath = fullImage.split('/').pop() || '';
-      const folderFullPath = `${process.env.PWD}/public/uploads/posts/${imagePath}`;
-      deleteFile(folderFullPath);
+    posts.forEach(async (post) => {
+      if (post?.cloudinary_id) {
+        await cloudinary.uploader.destroy(post?.cloudinary_id);
+      }
     });
 
     return res.status(200).json(

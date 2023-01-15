@@ -13,6 +13,10 @@ export interface ProductT extends Document {
   description: string;
   price: number;
   productImage: string;
+  productImages: {
+    url: string;
+    cloudinary_id: string;
+  }[];
   brand: string;
   category: string;
   stock?: string;

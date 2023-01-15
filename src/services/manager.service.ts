@@ -3,7 +3,6 @@ import { InternalServerError } from 'http-errors';
 
 import User from '@src/models/User.model';
 import Order from '@src/models/Order.model';
-
 import { AuthenticatedRequestBody, IUser, TPaginationResponse } from '@src/interfaces';
 import { customResponse } from '@src/utils';
 import { authorizationRoles } from '@src/constants';

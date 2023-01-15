@@ -75,13 +75,14 @@ export const createStripeCheckoutSessionService = async (
   res: Response,
   next: NextFunction
 ) => {
+  // stripe test card number 4242 4242 4242 4242
   const lineItems = req.body.orderItems.map((item) => {
     return {
       price_data: {
         currency: 'usd',
         product_data: {
           name: item?.product?.name,
-          images: [`${environmentConfig.API_URL}${item.product.productImage}`],
+          images: [`${item.product.productImage}`],
           description: item?.product?.description,
           metadata: {
             id: item?.product?._id,

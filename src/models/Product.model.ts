@@ -32,9 +32,22 @@ export const ProductSchema: Schema<ProductT> = new Schema(
     },
     productImage: {
       type: String,
-      required: [true, 'Please provide product image'],
+      required: [false, 'Please provide product image'],
       trim: true,
     },
+    productImages: [
+      {
+        url: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        cloudinary_id: {
+          type: String,
+          required: false,
+        },
+      },
+    ],
     category: {
       type: String,
       enum: {

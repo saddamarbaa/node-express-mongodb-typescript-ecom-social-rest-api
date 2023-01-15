@@ -52,7 +52,6 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       required: [true, 'Please provide password'],
       minlength: [6, 'Password must be more than 6 characters'],
       trim: true,
-      select: true,
     },
     confirmPassword: {
       type: String,
@@ -98,9 +97,12 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     gender: { type: String, trim: true, lowercase: true },
     profileImage: {
       type: String,
-      required: false,
-      default: '/static/uploads/users/temp.png',
-      lowercase: true,
+      required: true,
+      // default: '/static/uploads/users/temp.png',
+      // lowercase: true,
+    },
+    cloudinary_id: {
+      type: String,
     },
     role: {
       type: String,

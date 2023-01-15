@@ -91,7 +91,7 @@ export const usersPaginationMiddleware = () => {
       results.results = await userModel
         .find(filter)
         .select(
-          'name  surname email dateOfBirth gender   isVerified  profileImage  mobileNumber  status role  companyName   acceptTerms nationality  favoriteAnimal  address  profileImage bio jobTitle status cart'
+          'name  surname email dateOfBirth gender isVerified  profileImage  mobileNumber  status role  companyName   acceptTerms nationality  favoriteAnimal  address  profileImage bio jobTitle status cart '
         )
         .populate('cart.items.productId')
         .limit(limit)

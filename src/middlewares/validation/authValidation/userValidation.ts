@@ -4,12 +4,12 @@ import validator from '../validator';
 import { userSchema } from './userSchema';
 
 export const signupUserValidation: RequestHandler = (req, res, next) =>
-  validator(userSchema.signupUser, req.body, next);
+  validator(userSchema.signupUser, { ...req.file, ...req.body }, next);
 
 export const loginUserValidation: RequestHandler = (req, res, next) => validator(userSchema.loginUser, req.body, next);
 
 export const updateUserValidation: RequestHandler = (req, res, next) =>
-  validator(userSchema.updateUser, req.body, next);
+  validator(userSchema.updateUser, { ...req.file, ...req.body, ...req.params }, next);
 
 export const verifyUserMailValidation: RequestHandler = (req, res, next) => {
   console.log(mongoose.Types.ObjectId.isValid(req.params.userId));

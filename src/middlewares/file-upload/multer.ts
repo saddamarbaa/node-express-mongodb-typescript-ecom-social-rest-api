@@ -22,15 +22,38 @@ export const fileStorage = multer.diskStorage({
   },
 
   filename: (req: Request, file: Express.Multer.File, callback: FileNameCallback): void => {
-    callback(null, `${file.fieldname}-${uuidv4()}${getImageExtension(file.mimetype)}`);
+    console.log(file);
+    const imageExtension = getImageExtension(file.mimetype);
+    if (!imageExtension) {
+      // @ts-ignore
+      callback(new Error('Invalid request (File type is not supported)'), false);
+      return;
+    }
+    callback(null, `${file.fieldname}-${uuidv4()}${imageExtension}`);
   },
 });
 
 // Initialize upload variable
 export const uploadImage = multer({
+  // storage: multer.memoryStorage(),
   storage: fileStorage,
   limits: {
     fileSize: 1024 * 1024 * 10, // accept files up 10 mgb
+  },
+});
+
+export const customMulterConfig = multer({
+  storage: multer.diskStorage({}),
+  limits: {
+    fileSize: 1024 * 1024 * 10, // accept files up 10 mgb
+  },
+  fileFilter: (request: Request, file: Express.Multer.File, callback: multer.FileFilterCallback) => {
+    if (!getImageExtension(file.mimetype)) {
+      // @ts-ignore
+      callback(new Error('Invalid request (File type is not supported)'), false);
+      return;
+    }
+    callback(null, true);
   },
 });
 
