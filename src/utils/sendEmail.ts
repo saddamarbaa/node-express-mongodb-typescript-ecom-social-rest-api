@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import sendGridTransport from 'nodemailer-sendgrid-transport';
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
-const transporter = nodemailer.createTransport(
+export const transporter = nodemailer.createTransport(
   sendGridTransport({
     auth: {
       api_key: environmentConfig.SEND_GRID_API_KEY,
@@ -48,11 +48,13 @@ export const sendEmail = (userEmail: any) => {
     html: htmlContent,
   };
 
-  transporter.sendMail(emailContent, function (err, _info) {
-    if (err) {
-      // console.log('Sending Email error:', error);
-      console.log('Sending Email error:');
-    } else {
+  transporter.sendMail(emailContent, function (error, _info) {
+    if (error) {
+      if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+        console.log('Sending Email error:', error);
+        console.log('Sending Email error:');
+      }
+    } else if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
       console.log(`Successfully  send email to ${userEmail}...`);
     }
   });
@@ -196,11 +198,13 @@ export const sendResetPasswordEmail = (userEmail: string, userName: string, link
     html: htmlContent,
   };
 
-  transporter.sendMail(emailContent, function (err, _info) {
-    if (err) {
-      // console.log('Sending Email error:', error);
-      console.log('Sending Email error:');
-    } else {
+  transporter.sendMail(emailContent, function (error, _info) {
+    if (error) {
+      if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+        console.log('Sending Email error:', error);
+        console.log('Sending Email error:');
+      }
+    } else if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
       console.log(`Successfully  send email to ${userEmail}...`);
     }
   });
@@ -345,11 +349,12 @@ export const sendConfirmResetPasswordEmail = (userEmail: string, userName: strin
     html: htmlContent,
   };
 
-  transporter.sendMail(emailContent, function (err, _info) {
-    if (err) {
-      // console.log('Sending Email error:', error);
-      console.log('Sending Email error:');
-    } else {
+  transporter.sendMail(emailContent, function (error, _info) {
+    if (error) {
+      if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+        console.log('Sending Email error:', error);
+      }
+    } else if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
       console.log(`Successfully  send email to ${userEmail}...`);
     }
   });
@@ -493,12 +498,14 @@ export const sendEmailVerificationEmail = (userEmail: string, userName: string, 
     html: htmlContent,
   };
 
-  transporter.sendMail(emailContent, function (err, _info) {
-    if (err) {
-      // console.log('Sending Email error:', error);
-      console.log('Sending Email error:');
-    } else {
-      console.log(`Successfully send email to ${userEmail}...`);
+  transporter.sendMail(emailContent, function (error, _info) {
+    if (error) {
+      if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+        console.log('Sending Email error:', error);
+        console.log('Sending Email error:');
+      }
+    } else if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+      console.log(`Successfully  send email to ${userEmail}...`);
     }
   });
 };

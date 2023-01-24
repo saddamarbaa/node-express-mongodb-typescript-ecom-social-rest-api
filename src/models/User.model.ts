@@ -135,7 +135,7 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     },
     isVerified: {
       type: Boolean,
-      default: false,
+      default: true,
       required: false,
     },
     isDeleted: {
@@ -145,7 +145,7 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     status: {
       type: String,
       enum: ['pending', 'active'],
-      default: 'pending',
+      default: 'active',
       required: false,
       trim: true,
       lowercase: true,
@@ -194,7 +194,10 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 };
 
 UserSchema.pre('save', async function (next) {
-  console.log('Middleware called before saving the user is', this);
+  if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+    console.log('Middleware called before saving the user is', this);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const user = this;
   if (user.isModified('password')) {
@@ -206,7 +209,9 @@ UserSchema.pre('save', async function (next) {
 });
 
 UserSchema.post('save', function () {
-  console.log('Middleware called after saving the user is (User is been Save )', this);
+  if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+    console.log('Middleware called after saving the user is (User is been Save )', this);
+  }
 });
 
 UserSchema.methods.createJWT = function () {

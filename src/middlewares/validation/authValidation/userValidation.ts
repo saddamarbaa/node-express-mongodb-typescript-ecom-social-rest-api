@@ -1,5 +1,4 @@
 import { RequestHandler } from 'express';
-import mongoose from 'mongoose';
 import validator from '../validator';
 import { userSchema } from './userSchema';
 
@@ -12,7 +11,6 @@ export const updateUserValidation: RequestHandler = (req, res, next) =>
   validator(userSchema.updateUser, { ...req.file, ...req.body, ...req.params }, next);
 
 export const verifyUserMailValidation: RequestHandler = (req, res, next) => {
-  console.log(mongoose.Types.ObjectId.isValid(req.params.userId));
   return validator(userSchema.verifyUserMail, req.params, next);
 };
 

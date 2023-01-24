@@ -6,6 +6,9 @@ import Token from '@src/models/Token.model';
 import User from '@src/models/User.model';
 import Order from '@src/models/Order.model';
 import Post from '@src/models/Post.model';
+import Product from '@src/models/Product.model';
+import { authorizationRoles } from '@src/constants';
+import { cloudinary } from '@src/middlewares';
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 
 import {
@@ -18,9 +21,6 @@ import {
   TPaginationResponse,
 } from '@src/interfaces';
 import { customResponse, deleteFile, isValidMongooseObjectId, sendEmailVerificationEmail } from '@src/utils';
-import Product from '@src/models/Product.model';
-import { authorizationRoles } from '@src/constants';
-import { cloudinary } from '@src/middlewares';
 
 export const adminAddUserService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
   const {
@@ -460,7 +460,8 @@ export const adminAddProductService = async (
         await deleteFile(localFilePath);
       }
     }
-    return next(InternalServerError);
+    // return next(InternalServerError);
+    return next(error);
   }
 };
 

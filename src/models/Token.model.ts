@@ -75,7 +75,9 @@ TokenSchema.methods.generateToken = function (
 };
 
 TokenSchema.post('save', function () {
-  console.log('Token is been Save ', this);
+  if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+    console.log('Token is been Save ', this);
+  }
 });
 
 export default mongoose.models.Token || mongoose.model('Token', TokenSchema);

@@ -142,4 +142,10 @@ export const ProductSchema: Schema<ProductT> = new Schema(
   }
 );
 
+ProductSchema.post('save', function () {
+  if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+    console.log('Middleware called after saving the product is (product is been Save )', this);
+  }
+});
+
 export default mongoose.models.Product || mongoose.model<ProductT>('Product', ProductSchema);

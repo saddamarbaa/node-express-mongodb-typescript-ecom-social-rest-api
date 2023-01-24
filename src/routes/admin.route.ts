@@ -46,6 +46,7 @@ import {
 } from '@src/controllers';
 import { environmentConfig } from '@src/configs';
 import { adminClearAllPostsService, adminDeleteAllOrderForGivenUserService } from '@src/services';
+import { authorizationRoles } from '@src/constants';
 
 const router = express.Router();
 
@@ -55,7 +56,7 @@ router.get('/users/:userId', isAuth, adminGetUserController);
 router.post(
   '/users/add',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   uploadImage.single('profileImage'),
   signupUserValidation,
   adminAddUserController
@@ -64,7 +65,7 @@ router.post(
 router.put(
   '/users/update/:userId',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   uploadImage.single('profileImage'),
   updateUserValidation,
   adminUpdateAuthController
@@ -72,40 +73,47 @@ router.put(
 router.delete(
   '/users/remove/:userId',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   userIdValidation,
   adminRemoveUserController
 );
 
 router.post(
   '/products/add',
-  uploadImage.array('productImages'),
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+  uploadImage.array('productImages'),
   addProductValidation,
   adminAddProductController
 );
 
 router.put(
   '/products/update/:productId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   uploadImage.array('productImages'),
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   updateProductValidation,
   adminUpdateProductController
 );
 router.get(
   '/products',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   productsPaginationMiddleware(),
   adminGetProductsController
 );
-router.get('/products/:productId', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetProductController);
+router.get(
+  '/products/:productId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+  adminGetProductController
+);
 router.delete(
   '/products/delete/:productId',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   productIdValidation,
   adminDeleteProductController
 );
@@ -113,48 +121,62 @@ router.delete(
 router.delete(
   '/products/clear-all-products',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   adminClearAllProductsController
 );
 
-router.get('/orders', isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrdersController);
+router.get(
+  '/orders',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+  adminGetOrdersController
+);
 router.delete(
   '/orders/clear-all-orders',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   adminClearAllOrdersController
 );
 router.get(
   '/orders/get-user-order/:userId',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   adminGetAllOrdersForGivenUserController
 );
 router
   .route('/orders/:orderId')
-  .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminGetOrderController)
+  .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin), adminGetOrderController)
   .patch(
     isAuth,
-    customRoles(environmentConfig.ADMIN_EMAILS),
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
     updateOrderStatusValidation,
     adminUpdateOrderStatusController
   )
-  .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), adminDeleteSingleOrderController);
+  .delete(
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+    adminDeleteSingleOrderController
+  );
 
 router.delete(
   '/orders/clear-user-order/:userId',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   adminDeleteAllOrderForGivenUserService
 );
 
 router
   .route('/feed/posts')
-  .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postPaginationMiddleware(), adminGetPostsController)
+  .get(
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+    postPaginationMiddleware(),
+    adminGetPostsController
+  )
   .post(
     uploadImage.single('postImage'),
     isAuth,
-    customRoles(environmentConfig.ADMIN_EMAILS),
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
     addPostValidation,
     adminCreatePostController
   );
@@ -162,26 +184,36 @@ router
 router.delete(
   '/feed/posts/clear-all-posts',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   adminClearAllPostsService
 );
 
 router.delete(
   '/feed/posts/user/:userId',
   isAuth,
-  customRoles(environmentConfig.ADMIN_EMAILS),
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   userIdValidation,
   adminDeleteAllPostForGivenUserController
 );
 
 router
   .route('/feed/posts/:postId')
-  .get(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminGetPostController)
-  .delete(isAuth, customRoles(environmentConfig.ADMIN_EMAILS), postIdValidation, adminDeletePostController)
+  .get(
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+    postIdValidation,
+    adminGetPostController
+  )
+  .delete(
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+    postIdValidation,
+    adminDeletePostController
+  )
   .patch(
     uploadImage.single('postImage'),
     isAuth,
-    customRoles(environmentConfig.ADMIN_EMAILS),
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
     updatePostValidation,
     adminUpdatePostController
   );

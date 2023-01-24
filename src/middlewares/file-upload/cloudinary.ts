@@ -10,3 +10,5 @@ cloudinary.config({
   api_key: environmentConfig.CLOUDINARY_API_KEY,
   api_secret: environmentConfig.CLOUDINARY_API_SECRET,
 });
+
+export default cloudinary;

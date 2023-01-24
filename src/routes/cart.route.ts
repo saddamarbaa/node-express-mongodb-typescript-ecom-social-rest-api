@@ -1,4 +1,5 @@
 import express from 'express';
+
 import { isAuth, productIdValidation } from '@src/middlewares';
 import {
   addProductToCartController,

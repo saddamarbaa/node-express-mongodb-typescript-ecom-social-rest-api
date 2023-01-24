@@ -12,7 +12,10 @@ export const verifyRefreshToken = async function (refreshToken: any): Promise<st
           return reject(err);
         }
 
-        console.log(payload.aud);
+        if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+          console.log(payload.aud);
+        }
+
         const userId = payload.aud;
         resolve(userId);
       }
