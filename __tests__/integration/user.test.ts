@@ -1085,4 +1085,89 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing auth refresh token endpoint
+   */
+  describe('POST /api/v1/auth/refresh-token', () => {
+    describe('given the refresh token is invaild or missing', () => {
+      it('should return a 422 status with validation message', async () => {
+        // token is missing
+        await request(app)
+          .post(`/api/v1/auth/refresh-token`)
+          .send({})
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/is required/);
+          });
+
+        // token is invaild schema
+        await request(app)
+          .post(`/api/v1/auth/refresh-token`)
+          .send({ refreshToken: '12' })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/must be at least 3 characters long/);
+          });
+      });
+    });
+
+    describe('given the token is valid', () => {
+      it('should return a 200 status with refresh and access token', async () => {
+        await User.create({
+          ...userPayload,
+        });
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: userPayload.email,
+            password: userPayload.password,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/);
+
+        if (authResponse && authResponse?.body?.data?.refreshToken) {
+          await request(app)
+            .post(`/api/v1/auth/refresh-token`)
+            .send({ refreshToken: authResponse?.body?.data?.refreshToken })
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: expect.any(Object),
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 200,
+              });
+              expect(response.body?.data?.user).toHaveProperty('accessToken');
+              expect(response.body?.data?.user).toHaveProperty('refreshToken');
+              expect(response?.body?.message).toMatch(/logged in successful/);
+            });
+        }
+      });
+    });
+  });
 });
