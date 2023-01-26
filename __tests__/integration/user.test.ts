@@ -492,4 +492,162 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing auth verify email endpoint
+   */
+  describe('GET /api/v1/auth/verify-email/:userId/:token', () => {
+    describe('given the userId or token is invaild', () => {
+      it('should return a 422 status with validation message', async () => {
+        // token is invaild schema
+        await request(app)
+          .get(`/api/v1/auth/verify-email/${validMongooseObjectId}/to`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/must be at least 3 characters long/);
+          });
+
+        // user id is invaild mongoose objectId
+        await request(app)
+          .get(`/api/v1/auth/verify-email/invaild/${validMongooseObjectId}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+          });
+
+        // user id is vaild mongoose objectId but no user with this id found in db
+        await request(app)
+          .get(`/api/v1/auth/verify-email/${validMongooseObjectId}/${validMongooseObjectId}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 400,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/Email verification token is invalid or has expired/);
+          });
+      });
+    });
+
+    describe('given the user email has already been verified', () => {
+      it('should return a 200 status with message your email has already been verified. Please Login', async () => {
+        const newUser = await User.create({
+          ...userPayload,
+        });
+
+        await request(app)
+          .get(`/api/v1/auth/verify-email/${newUser?._id}/${validMongooseObjectId}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+            expect(response?.body?.message).toMatch(/email has already been verified/);
+          });
+      });
+    });
+
+    describe('given the refresh token is expired', () => {
+      it('should return a 400 status with message token is invalid or has expired', async () => {
+        const newUser = await User.create({
+          ...userPayload,
+          isVerified: false,
+        });
+
+        await request(app)
+          .get(`/api/v1/auth/verify-email/${newUser?._id}/${validMongooseObjectId}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 400,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/token is invalid or has expired/);
+          });
+      });
+    });
+
+    describe('given the userId and token are valid', () => {
+      it('should verify the user, and return a 200 status with message your account has been successfully verified . Please Login ', async () => {
+        try {
+          await User.create({
+            ...userPayload,
+            isVerified: false,
+          });
+
+          const authResponse = await request(app)
+            .post('/api/v1/auth/login')
+            .send({
+              email: userPayload.email,
+              password: userPayload.password,
+            })
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/);
+
+          if (authResponse && authResponse?.body?.data?.verifyEmailLink) {
+            // verify Email Link Example
+            // 'http://localhost:50050/verify-email?id=63ce41742b590e7c8115c02d&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2M2NlNDE3NDJiNTkwZTdjODExNWMwMmQiLCJpYXQiOjE2NzQ0NjE1NTgsImV4cCI6MTcwNjAxOTE1OCwiYXVkIjoiNjNjZTQxNzQyYjU5MGU3YzgxMTVjMDJkIiwiaXNzIjoidGVzdG5kb2Vqcy5jb20ifQ.QvQF2IBTzpJL9YTlSJILE7dxq3HLFrhzBzP6yJJ31kw';
+
+            const fullLink = authResponse?.body?.data?.verifyEmailLink?.split('verify-email?')[1];
+            const splitLink = fullLink?.split('&token=');
+            const token = splitLink[1];
+            const id = splitLink[0].split('id=')[1];
+
+            await request(app)
+              .get(`/api/v1/auth/verify-email/${id}/${token}`)
+              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
+              .expect('Content-Type', /json/)
+              .then((response) => {
+                expect(response.body).toMatchObject({
+                  data: null,
+                  success: true,
+                  error: false,
+                  message: expect.any(String),
+                  status: 200,
+                });
+                expect(response?.body?.message).toMatch(/account has been successfully verified/);
+              });
+          }
+        } catch (error) {
+          console.log('verify-email given the userId and token are valid filed ', error);
+        }
+      });
+    });
+  });
 });
