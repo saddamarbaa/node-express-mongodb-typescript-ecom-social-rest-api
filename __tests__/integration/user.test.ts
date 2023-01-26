@@ -650,4 +650,101 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing auth logout endpoint
+   */
+  describe('POST /api/v1/auth/logout', () => {
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .post('/api/v1/auth/logout')
+          .send({
+            refreshToken: 'token',
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(400)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: 'Bad Request',
+              status: 400,
+              stack: expect.any(String),
+            })
+          )
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+
+    describe('given the user is logged in and the refresh token is valid', () => {
+      it('should logged out the user, and return a 200 status with a json message - logged out success', async () => {
+        // create user
+        const newUser = new User({
+          ...userPayload,
+        });
+
+        await newUser.save();
+
+        // Login to get token and user id
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({ email: userPayload.email, password: userPayload.password });
+        const refreshToken = authResponse?.body?.data?.refreshToken || '';
+
+        await request(app)
+          .post('/api/v1/auth/logout')
+          .send({
+            refreshToken,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+
+            expect(response?.body?.message).toMatch(/logged out/);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+
+    describe('given the refresh token is invaild', () => {
+      it('should return a 422 status with validation message', async () => {
+        request(app)
+          .post('/api/v1/auth/logout')
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(422)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 422,
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/is required/);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+  });
 });
