@@ -816,4 +816,164 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing delete auth endpoint
+   */
+  describe('DELETE /api/v1/auth/remove/:userId', () => {
+    cloudinary.v2.uploader.destroy = jest.fn().mockResolvedValue({ success: true });
+    describe('given the user is logged in and authorized and the given userId to removed does exist in DB', () => {
+      it('should return a 200 status with a json message - success', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        const userId = (authResponse && authResponse?.body?.data?.user?._id) || '';
+
+        if (userId && token) {
+          await request(await app)
+            .delete(`/api/v1/auth/remove/${userId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              return expect(response.body).toMatchObject({
+                data: null,
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 200,
+              });
+            });
+        }
+      });
+    });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .delete('/api/v1/auth/remove/userId')
+          .expect(401)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+              stack: expect.any(String),
+            })
+          );
+      });
+    });
+
+    describe('given the user is logged in but the given userId to removed does not exist in DB', () => {
+      it('should return a 401 status with a json message - Bad Request', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(await app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(200);
+
+        // const cookies = authResponse && authResponse?.headers['set-cookie'];
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .delete(`/api/v1/auth/remove/${validMongooseObjectId}`)
+            // .set('Cookie', cookies)
+            .set('Authorization', `Bearer ${token}`)
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(400)
+            .then((response) =>
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 400,
+              })
+            );
+        }
+      });
+    });
+
+    describe('given the user is logged in and the given userId to removed does exist in DB but the user is Unauthorized to remove', () => {
+      it('should return a 403 status with a json message - Unauthorized', async () => {
+        await User.insertMany([
+          {
+            ...userPayload,
+            _id: validMongooseObjectId,
+          },
+          {
+            ...userPayload,
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            role: authorizationRoles.admin,
+          },
+        ]);
+
+        const newUser = new User({
+          ...userPayload,
+          email: 'test8@gmail.com',
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: 'test8@gmail.com',
+            password: userPayload.password,
+          })
+          .expect(200);
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .delete(`/api/v1/auth/remove/${validMongooseObjectId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 403,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+  });
 });
