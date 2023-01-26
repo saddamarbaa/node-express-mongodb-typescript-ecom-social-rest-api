@@ -1280,4 +1280,231 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing auth reset password endpoint
+   */
+  describe('GET /api/v1/auth/reset-password/:userId/:token', () => {
+    describe('given the userId or token is invaild', () => {
+      it('should return a 422 status with validation message', async () => {
+        // token is invaild schema
+        await request(app)
+          .post(`/api/v1/auth/reset-password/${validMongooseObjectId}/to`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/must be at least 3 characters long/);
+          });
+
+        // user id is invaild mongoose objectId
+        await request(app)
+          .get(`/api/v1/auth/verify-email/invaild/${validMongooseObjectId}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+          });
+
+        // user id is vaild mongoose objectId but no user with this id found in db
+        await request(app)
+          .get(`/api/v1/auth/verify-email/${validMongooseObjectId}/${validMongooseObjectId}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 400,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/Email verification token is invalid or has expired/);
+          });
+      });
+    });
+
+    describe('given password or confirmPassword is missing', () => {
+      it('should return a 422 status with validation message', async () => {
+        // password is missing
+        await request(app)
+          .post(`/api/v1/auth/reset-password/${validMongooseObjectId}/${validMongooseObjectId}`)
+          .send({ confirmPassword: 'password' })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/password/);
+          });
+
+        // confirmPassword is missing
+        await request(app)
+          .post(`/api/v1/auth/reset-password/${validMongooseObjectId}/${validMongooseObjectId}`)
+          .send({ password: '123456' })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/confirmPassword/);
+          });
+      });
+    });
+
+    describe('given the password is less than 6 characters', () => {
+      it('should return a 422 status with validation message', async () => {
+        await request(app)
+          .post(`/api/v1/auth/reset-password/${validMongooseObjectId}/${validMongooseObjectId}`)
+          .send({ password: '123' })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/length must be at least 6 characters long/);
+          });
+      });
+    });
+
+    describe('given the confirmPassword do not match', () => {
+      it('should return a 422 status with validation message', async () => {
+        await request(app)
+          .post(`/api/v1/auth/reset-password/${validMongooseObjectId}/${validMongooseObjectId}`)
+          .send({
+            password: 'password',
+            confirmPassword: 'confirmPassword',
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/confirmPassword/);
+          });
+      });
+    });
+
+    describe('given the user id or refresh token is invaild or expired', () => {
+      it('should return a 401 status with message token is invalid or has expired', async () => {
+        const newUser = await User.create({
+          ...userPayload,
+          isVerified: false,
+        });
+
+        await request(app)
+          .post(`/api/v1/auth/reset-password/${newUser?._id}/${validMongooseObjectId}`)
+          .send({
+            password: 'password',
+            confirmPassword: 'password',
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 401,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/token is invalid or has expired/);
+          });
+      });
+    });
+
+    describe('given the userId and token are valid', () => {
+      it('should verify the user, and return a 200 status with message your account has been successfully verified . Please Login ', async () => {
+        try {
+          await User.create({
+            ...userPayload,
+          });
+          const authResponse = await request(app)
+            .post(`/api/v1/auth/forget-password`)
+            .send({ email: userPayload.email })
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect('Content-Type', /json/);
+          if (authResponse && authResponse?.body?.data?.user?.resetPasswordToken) {
+            // Link example
+            // http://localhost:50050/reset-password?id=63ce6eccda4c8c9c390418a8&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2M2NlNmVjY2RhNGM4YzljMzkwNDE4YTgiLCJpYXQiOjE2NzQ0NzMxNjUsImV4cCI6MTY3NDQ3NDk2NSwiYXVkIjoiNjNjZTZlY2NkYTRjOGM5YzM5MDQxOGE4IiwiaXNzIjoidGVzdG5kb2Vqcy5jb20ifQ.2xdT4c8-bjEI3Do9VGuJ12w7jkxhZlMYbw4cW5r09jg
+
+            const fullLink = authResponse?.body?.data?.user?.resetPasswordToken?.split('reset-password?')[1];
+            const splitLink = fullLink?.split('&token=');
+            const token = splitLink[1];
+            const id = splitLink[0].split('id=')[1];
+
+            await request(app)
+              .post(`/api/v1/auth/reset-password/${id}/${token}`)
+              .send({
+                password: 'password',
+                confirmPassword: 'password',
+              })
+              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
+              .expect('Content-Type', /json/)
+              .then((response) => {
+                expect(response.body).toMatchObject({
+                  data: expect.any(Object),
+                  success: true,
+                  error: false,
+                  message: expect.any(String),
+                  status: 200,
+                });
+                expect(response?.body?.message).toMatch(/password has been Password Reset/);
+
+                // Check if confirmation email has been send
+                // @ts-ignore
+                expect(sendEmailModule?.sendConfirmResetPasswordEmail?.mock?.calls?.length).toBe(1);
+                expect(sendEmailModule?.sendConfirmResetPasswordEmail).toHaveBeenCalled();
+              });
+          }
+        } catch (error) {
+          console.log('rest password - given the userId and token are valid filed ', error);
+        }
+      });
+    });
+  });
 });
