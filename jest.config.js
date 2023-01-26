@@ -3,6 +3,11 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   coverageDirectory: 'coverage',
+  verbose: true,
+  forceExit: true,
+  // clearMocks: true,
+  // resetMocks: true,
+  // restoreMocks: true,
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   coverageThreshold: {
     global: {

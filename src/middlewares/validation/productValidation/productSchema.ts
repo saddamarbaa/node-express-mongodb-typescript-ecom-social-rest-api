@@ -8,12 +8,22 @@ const vaildObjectId = JoiObjectId(Joi);
 
 export const productSchema = {
   addProduct: Joi.object({
+    productImages: Joi.array()
+      .items(
+        Joi.object()
+          .keys({
+            filename: Joi.string().required().label('Invalid request (Please upload Image)'),
+          })
+          .required()
+          .label('Invalid request (Please upload Image)')
+      )
+      .required(),
     name: Joi.string().min(3).max(100).required(),
     description: Joi.string().min(15).required(),
     price: Joi.number().required(),
     brand: Joi.string().required(),
     category: Joi.string()
-      .required()
+      // .required()
       .valid(
         productCategory.all,
         productCategory.book,
@@ -30,16 +40,6 @@ export const productSchema = {
       ),
     stock: Joi.string(),
     count: Joi.number(),
-    productImages: Joi.array()
-      .items(
-        Joi.object()
-          .keys({
-            filename: Joi.string().required().label('Invalid request (Please upload Image)'),
-          })
-          .required()
-          .label('Invalid request (Please upload Image)')
-      )
-      .required(),
   }),
   updateProduct: Joi.object({
     productId: vaildObjectId().required(),

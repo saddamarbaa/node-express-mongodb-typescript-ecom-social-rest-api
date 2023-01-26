@@ -18,8 +18,6 @@ import { cloudinary, verifyRefreshToken } from '@src/middlewares';
 import { authorizationRoles } from '@src/constants';
 
 export const signupService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
-  // console.log(req.body, req.file);
-
   const {
     email,
     password,
@@ -38,18 +36,37 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
     companyName,
   } = req.body;
 
-  let role = authorizationRoles.moderator;
-  if (environmentConfig?.ADMIN_EMAILS?.includes(`${email}`)) {
+  let role = authorizationRoles.user;
+
+  if (
+    environmentConfig?.ADMIN_EMAILS &&
+    (JSON.parse(environmentConfig.ADMIN_EMAILS) as string[])?.includes(`${email}`)
+  ) {
     role = authorizationRoles.admin;
-  } else if (environmentConfig?.MANGER_EMAILS?.includes(`${email}`)) {
-    // role = authorizationRoles.manger;
-  } else if (environmentConfig?.MODERATOR_EMAILS?.includes(`${email}`)) {
+  } else if (
+    environmentConfig?.MANGER_EMAILS &&
+    (JSON.parse(environmentConfig?.MANGER_EMAILS) as string[])?.includes(`${email}`)
+  ) {
+    role = authorizationRoles.manger;
+  } else if (
+    environmentConfig?.MODERATOR_EMAILS &&
+    (JSON.parse(environmentConfig?.MODERATOR_EMAILS) as string[])?.includes(`${email}`)
+  ) {
     role = authorizationRoles.moderator;
-  } else if (environmentConfig?.SUPERVISOR_EMAILS?.includes(`${email}`)) {
+  } else if (
+    environmentConfig?.SUPERVISOR_EMAILS &&
+    (JSON.parse(environmentConfig?.SUPERVISOR_EMAILS) as string[])?.includes(`${email}`)
+  ) {
     role = authorizationRoles.supervisor;
-  } else if (environmentConfig?.GUIDE_EMAILS?.includes(`${email}`)) {
+  } else if (
+    environmentConfig?.GUIDE_EMAILS &&
+    (JSON.parse(environmentConfig?.GUIDE_EMAILS) as string[])?.includes(`${email}`)
+  ) {
     role = authorizationRoles.guide;
-  } else if (environmentConfig?.CLIENT_EMAILS?.includes(`${email}`)) {
+  } else if (
+    environmentConfig?.CLIENT_EMAILS &&
+    (JSON.parse(environmentConfig?.CLIENT_EMAILS) as string[])?.includes(`${email}`)
+  ) {
     role = authorizationRoles.client;
   }
 
@@ -60,7 +77,7 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
         const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file.filename}`;
         deleteFile(localFilePath);
       }
-      return next(createHttpError(422, `E-Mail address ${email} is already exists, please pick a different one.`));
+      return next(createHttpError(409, `E-Mail address ${email} is already exists, please pick a different one.`));
     }
 
     let cloudinaryResult;
@@ -97,7 +114,12 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
       role,
       profileImage: cloudinaryResult?.secure_url,
       cloudinary_id: cloudinaryResult?.public_id,
-      acceptTerms: acceptTerms || !!environmentConfig?.ADMIN_EMAILS?.includes(`${email}`),
+      acceptTerms:
+        acceptTerms ||
+        !!(
+          environmentConfig?.ADMIN_EMAILS &&
+          (JSON.parse(environmentConfig.ADMIN_EMAILS) as string[])?.includes(`${email}`)
+        ),
     });
 
     const user = await newUser.save();
@@ -133,7 +155,7 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
     const verifyEmailLink = `${environmentConfig.WEBSITE_URL}/verify-email?id=${user._id}&token=${token.refreshToken}`;
 
     // send mail for email verification
-    sendEmailVerificationEmail(email, name, verifyEmailLink);
+    await sendEmailVerificationEmail(email, name, verifyEmailLink);
 
     const data = {
       user: {
@@ -152,13 +174,13 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
         status: 201,
       })
     );
-  } catch (error) {
+  } catch (error: any) {
     // Remove file from local uploads folder
     if (req.file?.filename) {
       const localFilePath = `${process.env.PWD}/public/uploads/users/${req.file?.filename}`;
       deleteFile(localFilePath);
     }
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
@@ -264,11 +286,11 @@ export const loginService = async (req: Request, res: Response, next: NextFuncti
     // Set refreshToken' AND accessToken IN cookies
     return res.status(200).json(
       customResponse<typeof data>({
-        data,
         success: true,
         error: false,
         message: 'Auth logged in successful.',
         status: 200,
+        data,
       })
     );
   } catch (error) {
@@ -294,7 +316,7 @@ export const verifyEmailService = async (req: Request, res: Response, next: Next
           data: null,
           success: true,
           error: false,
-          message: `User has already been verified. Please Login..`,
+          message: `Your email has already been verified. Please Login..`,
           status: 200,
         })
       );

@@ -27,4 +27,5 @@ router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);
 router.use('/payment', paymentRoute);
 router.use('/feed', feedRoute);
+
 export default router;

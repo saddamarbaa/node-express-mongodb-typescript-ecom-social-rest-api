@@ -1,12 +1,19 @@
 import app from '@src/app';
-import { connectDB, environmentConfig } from './configs';
+import { connectDB, environmentConfig } from '@src/configs';
 
 import logger from '@src/logger';
 
+// env setup
+const env = process.env.NODE_ENV;
+
 // Connecting to MongoDB and Starting Server
-const start = async () => {
+export const startServer = async () => {
   try {
-    const conn: any = await connectDB(environmentConfig.MONGODB_CONNECTION_STRING);
+    const conn: any = await connectDB(
+      env === 'testing'
+        ? environmentConfig.TEST_ENV_MONGODB_CONNECTION_STRING
+        : environmentConfig.MONGODB_CONNECTION_STRING
+    );
 
     console.log(`MongoDB database connection established successfully to... ${conn?.connection?.host}`.cyan.underline);
 
@@ -23,4 +30,6 @@ const start = async () => {
 };
 
 // Establish http server connection
-start();
+startServer();
+
+export default app;

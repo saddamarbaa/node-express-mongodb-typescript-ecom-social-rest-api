@@ -11,8 +11,11 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const folderFullPath = path.resolve(process.cwd(), `${process.env.PWD}/public/pdf/${pdfName}`);
 
     fs.stat(folderFullPath, async function (err, stats) {
-      console.log(stats); // here we got all information of file in stats variable
-      if (err) {
+      if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+        console.log(stats); // here we got all information of file in stats variable
+      }
+
+      if (err && process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
         console.log('fail to find file path', err);
         return next(createHttpError(`Fail to find file path`));
       }

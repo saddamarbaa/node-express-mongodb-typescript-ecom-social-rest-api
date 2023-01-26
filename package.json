@@ -1,7 +1,7 @@
 {
-  "name": "express-api-starter-ts",
+  "name": "node-express-typescript-api",
   "version": "1.2.0",
-  "description": " A basic starter for an express.js API with Typescript",
+  "description": "An open-source RESTful API developed using NodeJS, Express, MongoDB and TypeScript that helps you to integrate User Authentication, E-commerce management and Social Media Post Management in your application with Filter, pagination, Sort and Search API",
   "main": "src/server.ts",
   "scripts": {
     "nodemon": "nodemon",
@@ -13,22 +13,21 @@
     "check-format": "prettier --check .",
     "check-lint": "eslint . --ext ts --ext tsx",
     "format": "prettier --write .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "export NODE_ENV=testing || SET \"NODE_ENV=testing\" && jest --detectOpenHandles",
+    "test:watch": "export NODE_ENV=testing || SET \"NODE_ENV=testing\" && jest --detectOpenHandles --forceExit  --watchAll",
+    "test:coverage": "export NODE_ENV=testing || SET \"NODE_ENV=testing\" && jest --coverage --detectOpenHandles",
     "test-all": "npm run check-format && npm run check-lint && npm run check-types && npm run test && npm  build",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register ./dist/src/server.js",
     "postinstall": "tsc",
     "start-test": "ts-node src/server.ts",
     "dev-test": "nodemon src/server.ts",
-    "build-test": "tsc",
-    "lint-test": "eslint --fix src test"
+    "build-test": "tsc"
   },
   "keywords": [],
-  "author": "CJ R. <cj@null.computer> (https://w3cj.now.sh)",
+  "author": "saddamarbaa (https://github.com/saddamarbaa)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/w3cj/express-api-starter.git"
+    "url": "https://github.com/saddamarbaa/node-express-typescript-ecommerce-rest-api"
   },
   "license": "MIT",
   "husky": {

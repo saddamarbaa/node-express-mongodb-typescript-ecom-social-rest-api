@@ -16,8 +16,7 @@ import '@src/middlewares/errors/unhandledRejection';
 import api from '@src/api';
 
 // Import Middleware
-import { errorHandlerMiddleware, notFoundMiddleware } from './middlewares';
-
+import { errorHandlerMiddleware, notFoundMiddleware } from '@src/middlewares';
 // Import Api Docs
 const swaggerDocument = YAML.load(`${process.cwd()}/swagger/swagger.yaml`);
 // const swaggerDocument = YAML.load('./docs/swagger.yaml');

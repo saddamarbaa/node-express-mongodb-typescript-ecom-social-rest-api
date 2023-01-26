@@ -1,7 +1,7 @@
-/* eslint-disable no-unused-vars */
 import { Request, Express } from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import createHttpError from 'http-errors';
 
 import { getImageExtension } from '@src/utils';
 
@@ -22,11 +22,13 @@ export const fileStorage = multer.diskStorage({
   },
 
   filename: (req: Request, file: Express.Multer.File, callback: FileNameCallback): void => {
-    console.log(file);
+    if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+      console.log(file);
+    }
     const imageExtension = getImageExtension(file.mimetype);
     if (!imageExtension) {
       // @ts-ignore
-      callback(new Error('Invalid request (File type is not supported)'), false);
+      callback(createHttpError(422, 'Invalid request (File type is not supported)'), false);
       return;
     }
     callback(null, `${file.fieldname}-${uuidv4()}${imageExtension}`);
@@ -50,7 +52,7 @@ export const customMulterConfig = multer({
   fileFilter: (request: Request, file: Express.Multer.File, callback: multer.FileFilterCallback) => {
     if (!getImageExtension(file.mimetype)) {
       // @ts-ignore
-      callback(new Error('Invalid request (File type is not supported)'), false);
+      callback(createHttpError(422, 'Invalid request (File type is not supported)'), false);
       return;
     }
     callback(null, true);

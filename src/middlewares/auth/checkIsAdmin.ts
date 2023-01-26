@@ -8,8 +8,8 @@ import { authorizationRoles } from '@src/constants';
 export const isAdmin = async (req: IAdminRequest, res: Response, next: NextFunction) => {
   const user = req?.user;
 
-  const adminUser =
-    user && user.role === authorizationRoles.admin && environmentConfig?.ADMIN_EMAILS?.includes(`${user?.email}`);
+  const adminEmails = environmentConfig?.ADMIN_EMAILS && (JSON.parse(environmentConfig.ADMIN_EMAILS) as string[]);
+  const adminUser = user && user.role === authorizationRoles.admin && adminEmails?.includes(`${user?.email}`);
 
   if (!adminUser) {
     return next(createHttpError(403, `Auth Failed (Unauthorized)`));

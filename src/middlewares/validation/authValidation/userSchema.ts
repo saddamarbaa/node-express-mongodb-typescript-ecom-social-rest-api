@@ -7,6 +7,7 @@ const vaildObjectId = JoiObjectId(Joi);
 
 export const userSchema = {
   signupUser: Joi.object({
+    filename: Joi.string().required().label('Invalid request (Please upload Image)'),
     name: Joi.string().min(3).max(15).required(),
     surname: Joi.string().min(3).max(15).required(),
     email: Joi.string().email().required(),
@@ -28,7 +29,6 @@ export const userSchema = {
     address: Joi.string(),
     acceptTerms: Joi.boolean(),
     confirmationCode: Joi.string(),
-    filename: Joi.string().required().label('Invalid request (Please upload Image)'),
   }),
   loginUser: Joi.object({
     email: Joi.string().email().required(),
