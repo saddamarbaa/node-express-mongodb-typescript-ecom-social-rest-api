@@ -106,4 +106,79 @@ describe('product', () => {
       });
     });
   });
+
+  /**
+   * Testing get single product endpoint
+   */
+  describe('GET /api/v1/products/:productId', () => {
+    describe('given the product does not exist', () => {
+      it('should return a 400 status', async () =>
+        request(app)
+          .get(`/api/v1/products/63a449d6f4cf592dedf5c60b`)
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(400)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: 'Bad Request',
+              status: 400,
+              stack: expect.any(String),
+            });
+          }));
+    });
+
+    describe('given invaild product id', () => {
+      it('should return a 422 status', async () => {
+        const productId = 'product-123';
+        return request(app)
+          .get(`/api/v1/products/${productId}`)
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(422)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 422,
+            })
+          );
+      });
+    });
+
+    describe('given the product does exist', () => {
+      it('should return a 200 status and the product', async () => {
+        // create user
+        const newUser = new User({
+          ...userPayload,
+        });
+
+        await newUser.save();
+
+        // Login to get token and user id
+        const logUser = await request(app)
+          .post('/api/v1/auth/login')
+          .send({ email: userPayload.email, password: userPayload.password });
+
+        // create product
+        const newProduct = new Product({ ...productPayload, user: logUser?.body?.data?.user?._id });
+        const response = await newProduct.save();
+
+        //  pass the created  product it to this test
+        const productId = response?._id;
+
+        const finalResult = await request(app)
+          .get(`/api/v1/products/${productId}`)
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(200);
+
+        expect(finalResult?.body?.data?.product).toMatchObject(productPayload);
+      });
+    });
+  });
 });
