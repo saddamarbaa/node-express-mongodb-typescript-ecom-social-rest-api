@@ -1170,4 +1170,114 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing auth forget password endpoint
+   */
+  describe('POST /api/v1/auth/forget-password', () => {
+    describe('given the email is invaild or missing', () => {
+      it('should return a 422 status with validation message', async () => {
+        // email is missing
+        await request(app)
+          .post(`/api/v1/auth/forget-password`)
+          .send({})
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/is required/);
+          });
+
+        // email is invaild schema
+        await request(app)
+          .post(`/api/v1/auth/forget-password`)
+          .send({ email: 'invaild' })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/must be a valid email/);
+          });
+      });
+    });
+
+    describe('given the email does not exist in DB ', () => {
+      it('should return a 401 status with validation message', async () => {
+        await request(app)
+          .post(`/api/v1/auth/forget-password`)
+          .send({ email: 'email@gmail.com' })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 401,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/not associated with any account/);
+          });
+      });
+    });
+
+    describe('given the email is valid', () => {
+      it('should send reset password link to user email and return a 200 status with reset password link', async () => {
+        await User.create({
+          ...userPayload,
+        });
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: userPayload.email,
+            password: userPayload.password,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/);
+
+        if (authResponse && authResponse?.body?.data?.refreshToken) {
+          await request(app)
+            .post(`/api/v1/auth/forget-password`)
+            .send({ email: userPayload.email })
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: expect.any(Object),
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 200,
+              });
+              expect(response.body?.data?.user).toHaveProperty('resetPasswordToken');
+
+              // Check if the email is really been called
+              // @ts-ignore
+              expect(sendEmailModule?.sendResetPasswordEmail?.mock?.calls?.length).toBe(1);
+
+              expect(sendEmailModule?.sendResetPasswordEmail).toHaveBeenCalled();
+            });
+        }
+      });
+    });
+  });
 });
