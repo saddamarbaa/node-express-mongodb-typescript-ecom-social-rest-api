@@ -747,4 +747,73 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing get user profile endpoint
+   */
+  describe('GET /api/v1/auth/me', () => {
+    describe('given the user is logged in', () => {
+      it('should return a 200 status with a json containing user profile', async () => {
+        const newUser = new User({
+          ...userPayload,
+        });
+        await newUser.save();
+
+        // Login to get token and cookies
+        const authResponse = await request(app).post('/api/v1/auth/login').send({
+          email: userPayload.email,
+          password: userPayload.password,
+        });
+
+        const cookies = authResponse && authResponse?.headers['set-cookie'];
+        const TOKEN = authResponse?.body?.data?.accessToken || '';
+
+        await request(app)
+          .get('/api/v1/auth/me')
+          .set('Cookie', cookies)
+          .set('Authorization', `Bearer ${TOKEN}`)
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+
+            expect(response?.body?.data?.user?.name).toMatch(userPayload.name);
+            expect(response?.body?.data?.user?.surname).toMatch(userPayload.surname);
+            expect(response?.body?.data?.user?.email).toMatch(userPayload.email);
+            expect(response?.body?.message).toMatch(/user profile/);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .get('/api/v1/auth/me')
+          .expect(401)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+              stack: expect.any(String),
+            })
+          )
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+  });
 });
