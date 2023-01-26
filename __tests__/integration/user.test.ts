@@ -976,4 +976,113 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing update auth endpoint
+   */
+  describe('PATCH  /api/v1/auth/update/:userId', () => {
+    cloudinary.v2.uploader.destroy = jest.fn().mockResolvedValue({ success: true });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .patch('/api/v1/auth/update/userId')
+          .expect(401)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+              stack: expect.any(String),
+            })
+          );
+      });
+    });
+
+    describe('given invaild user id', () => {
+      it('should return a 400 status with a json message - bad request', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .patch(`/api/v1/auth/update/${validMongooseObjectId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 400,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is logged in and authorized and the given userId to updated does exist in DB', () => {
+      it('should return a 200 status with the updated user', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        const userId = (authResponse && authResponse?.body?.data?.user?._id) || '';
+        const newName = 'testNew';
+        if (userId && token) {
+          await request(app)
+            .patch(`/api/v1/auth/update/${userId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .field({
+              name: newName,
+            })
+            .set('Content-Type', 'multipart/form-data')
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 200,
+              });
+              expect(response?.body.data?.user?.name).toMatch(newName.toLowerCase());
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+  });
 });
