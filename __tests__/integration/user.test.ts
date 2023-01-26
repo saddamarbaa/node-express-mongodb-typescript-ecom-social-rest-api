@@ -348,4 +348,148 @@ describe('User', () => {
       });
     });
   });
+
+  /**
+   * Testing auth login endpoint
+   */
+  describe('POST /api/v1/auth/login', () => {
+    describe('given the email or password is missing)', () => {
+      it('should return a 422 status with validation message', async () => {
+        // email is missing
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            password: userPayload.password,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/email/);
+          });
+
+        // password is missing
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: userPayload.email,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/password/);
+          });
+      });
+    });
+
+    describe('given the password is less than 6 characters', () => {
+      it('should return a 422 status with validation message', async () => {
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: userPayload.email,
+            password: '123',
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 422,
+            });
+            expect(response?.body?.message).toMatch(/password/);
+          });
+      });
+    });
+
+    describe('given the email is invaild', () => {
+      it('should return a 422 status with validation message', async () => {
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: 'invaild email',
+            password: '123hshdhsh',
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 422,
+            });
+            expect(response?.body?.message).toMatch(/must be a valid email/);
+          });
+      });
+    });
+
+    describe("given the email and password are valid schema but the user with the given email don't exists in DB", () => {
+      it('should return a 422 status with validation message', async () => {
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: userPayload.email,
+            password: userPayload.password,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+            });
+            expect(response?.body?.message).toMatch(/Auth Failed/);
+          });
+      });
+    });
+
+    describe('given the email and password are valid', () => {
+      it('should authorized the user, set cookies and return a 200 status with access and refresh token', async () => {
+        const newUser = new User({
+          ...userPayload,
+        });
+        await newUser.save();
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: userPayload.email,
+            password: userPayload.password,
+          })
+          .set('Accept', 'application/json')
+          .set('Content-Type', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+          });
+      });
+    });
+  });
 });
