@@ -1754,5 +1754,247 @@ describe('User', () => {
     });
   });
 
- 
+  /**
+   * Testing un follow user endpoint
+   */
+  describe('PUT  /api/v1/user/:userId/un-follow', () => {
+    cloudinary.v2.uploader.destroy = jest.fn().mockResolvedValue({ success: true });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .put('/api/v1/users/63d7d3ce0ba02465093d3d36/un-follow')
+          .expect(401)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+              stack: expect.any(String),
+            })
+          );
+      });
+    });
+
+    describe('given invaild user id', () => {
+      it('should return a 422 status with validation message', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .put(`/api/v1/users/invaildid/un-follow`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user does not exist', () => {
+      it('should return a 400 status with a json message - bad request', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .put(`/api/v1/users/${validMongooseObjectId}/follow`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 400,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is trying to un follow themselves', () => {
+      it('should return a 403 status with a json message - You cant un follow yourself', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        const userId = (authResponse && authResponse?.body?.data?.user?._id) || '';
+
+        if (userId && token) {
+          await request(app)
+            .put(`/api/v1/users/${userId}/un-follow`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 403,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch('cant un follow yourself');
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is not been followed', () => {
+      it("should return a 403 status with a json message - You haven't follow this user before", async () => {
+        const currentUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+
+        await currentUser.save();
+
+        const toBeUnFollowedUser = new User({
+          ...userPayload,
+        });
+        await toBeUnFollowedUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (toBeUnFollowedUser?._id && token) {
+          await request(app)
+            .put(`/api/v1/users/${toBeUnFollowedUser?._id}/un-follow`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 403,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch("haven't follow this user before");
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is logged in and authorized and the given userId to un follow does exist in DB and already been followed', () => {
+      it('should return a 200 status with user profile with out un followed user', async () => {
+        const currentUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+
+        await currentUser.save();
+
+        const toBeUnFollowedUser = new User({
+          ...userPayload,
+          followers: [
+            {
+              userId: currentUser?._id,
+              name: currentUser?.name,
+              surname: currentUser?.surname,
+              profileImage: currentUser?.profileImage,
+            },
+          ],
+        });
+        await toBeUnFollowedUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (toBeUnFollowedUser?._id && token) {
+          await request(app)
+            .put(`/api/v1/users/${toBeUnFollowedUser?._id}/un-follow`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 200,
+              });
+              expect(response?.body?.message).toMatch('has been un followed successfully');
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+  });
 });
