@@ -2374,7 +2374,7 @@ paths:
 
 
   # User
-  
+
   /users/{userId}/follow:
     put:
       security:
@@ -2412,6 +2412,64 @@ paths:
                   message:
                     type: string
                     example: User has been followed successfully
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        '$ref': '#/components/schemas/AuthResponse'
+                    
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /users/{userId}/un-follow:
+    put:
+      security:
+        - Authorization: []
+      summary: Un flow given user based on request id
+      tags:
+        - User
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 639593f33994948bfb0756d0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: User has been un followed successfully
                   data:
                     type: object
                     properties:
