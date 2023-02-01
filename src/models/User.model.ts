@@ -174,6 +174,22 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     },
     acceptTerms: { type: Boolean, required: false, default: false },
     confirmationCode: { type: String, require: false, index: true, unique: true, sparse: true },
+    followers: [
+      {
+        name: String,
+        surname: String,
+        profileImage: String,
+        userId: Schema.Types.ObjectId,
+      },
+    ],
+    followings: [
+      {
+        name: String,
+        surname: String,
+        profileImage: String,
+        userId: Schema.Types.ObjectId,
+      },
+    ],
     resetPasswordToken: {
       type: String,
       required: false,

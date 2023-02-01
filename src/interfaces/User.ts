@@ -1,6 +1,13 @@
 import { Request } from 'express';
 import { Document, Schema } from 'mongoose';
 
+export interface FollowT {
+  name: string;
+  surname: string;
+  profileImage?: string;
+  userId?: Schema.Types.ObjectId;
+}
+
 export interface IUser extends Document {
   name: string;
   surname: string;
@@ -40,6 +47,8 @@ export interface IUser extends Document {
     }[];
   };
   cloudinary_id?: string;
+  followers?: FollowT[];
+  followings?: FollowT[];
 }
 
 export interface IRequestUser extends Request {
