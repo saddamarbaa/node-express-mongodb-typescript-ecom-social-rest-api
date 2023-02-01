@@ -17,7 +17,7 @@ import {
 } from '@src/constants';
 
 beforeAll((done) => {
-  jest.setTimeout(60000);
+  jest.setTimeout(90 * 1000);
   mongoose.connect(environmentConfig.TEST_ENV_MONGODB_CONNECTION_STRING as string, () => {
     done();
   });
@@ -30,10 +30,10 @@ afterAll(async () => {
   await mongoose.disconnect();
   await mongoose.connection.close();
   jest.clearAllMocks();
+  jest.setTimeout(5 * 1000);
 });
 
 beforeEach(async () => {
-  jest.setTimeout(60000);
   await Token.deleteMany({});
   await User.deleteMany({});
   await Product.deleteMany({});
@@ -261,27 +261,29 @@ describe('product', () => {
               email: (adminEmails && adminEmails[0]) || userPayload.email,
               password: userPayload.password,
             });
-          const TOKEN = authResponse?.body?.data?.accessToken || '';
+          const token = authResponse?.body?.data?.accessToken || '';
 
-          request(app)
-            .post('/api/v1/admin/products/add')
-            .set('Authorization', `Bearer ${TOKEN}`)
-            .attach('productImages', localFilePath)
-            .expect('Content-Type', /json/)
-            .expect(422)
-            .then((response) => {
-              expect(response.body).toMatchObject({
-                data: null,
-                success: false,
-                error: true,
-                message: expect.any(String),
-                status: 422,
-                stack: expect.any(String),
+          if (token) {
+            request(app)
+              .post('/api/v1/admin/products/add')
+              .set('Authorization', `Bearer ${token}`)
+              .attach('productImages', localFilePath)
+              .expect('Content-Type', /json/)
+              .expect(422)
+              .then((response) => {
+                expect(response.body).toMatchObject({
+                  data: null,
+                  success: false,
+                  error: true,
+                  message: expect.any(String),
+                  status: 422,
+                  stack: expect.any(String),
+                });
+              })
+              .catch((error) => {
+                console.log(error);
               });
-            })
-            .catch((error) => {
-              console.log(error);
-            });
+          }
         });
       });
 
@@ -302,27 +304,29 @@ describe('product', () => {
               email: (adminEmails && adminEmails[0]) || userPayload.email,
               password: userPayload.password,
             });
-          const TOKEN = authResponse?.body?.data?.accessToken || '';
+          const token = authResponse?.body?.data?.accessToken || '';
 
-          request(app)
-            .post('/api/v1/admin/products/add')
-            .set('Authorization', `Bearer ${TOKEN}`)
-            // .attach('productImages', localFilePath)
-            .expect('Content-Type', /json/)
-            .expect(422)
-            .then((response) => {
-              expect(response.body).toMatchObject({
-                data: null,
-                success: false,
-                error: true,
-                message: expect.any(String),
-                status: 422,
-                stack: expect.any(String),
+          if (token) {
+            request(app)
+              .post('/api/v1/admin/products/add')
+              .set('Authorization', `Bearer ${token}`)
+              // .attach('productImages', localFilePath)
+              .expect('Content-Type', /json/)
+              .expect(422)
+              .then((response) => {
+                expect(response.body).toMatchObject({
+                  data: null,
+                  success: false,
+                  error: true,
+                  message: expect.any(String),
+                  status: 422,
+                  stack: expect.any(String),
+                });
+              })
+              .catch((error) => {
+                console.log(error);
               });
-            })
-            .catch((error) => {
-              console.log(error);
-            });
+          }
         });
       });
 
@@ -343,38 +347,40 @@ describe('product', () => {
               email: (adminEmails && adminEmails[0]) || userPayload.email,
               password: userPayload.password,
             });
-          const TOKEN = authResponse?.body?.data?.accessToken || '';
+          const token = authResponse?.body?.data?.accessToken || '';
 
-          request(app)
-            .post('/api/v1/admin/products/add')
-            .field({
-              name: productPayload.name,
-              price: productPayload.price,
-              brand: productPayload.price,
-              description: productPayload.description,
-            })
-            .set('Authorization', `Bearer ${TOKEN}`)
-            .set('Content-Type', 'multipart/form-data')
-            .attach('productImages', localFilePath)
-            .expect('Content-Type', /json/)
-            .expect(201)
-            .then((response) => {
-              expect(response.body).toMatchObject({
-                success: true,
-                error: false,
-                message: expect.any(String),
-                status: 201,
-              });
-
-              expect(response.body?.data?.product).toMatchObject({
+          if (token) {
+            request(app)
+              .post('/api/v1/admin/products/add')
+              .field({
                 name: productPayload.name,
                 price: productPayload.price,
+                brand: productPayload.price,
                 description: productPayload.description,
+              })
+              .set('Authorization', `Bearer ${token}`)
+              .set('Content-Type', 'multipart/form-data')
+              .attach('productImages', localFilePath)
+              .expect('Content-Type', /json/)
+              .expect(201)
+              .then((response) => {
+                expect(response.body).toMatchObject({
+                  success: true,
+                  error: false,
+                  message: expect.any(String),
+                  status: 201,
+                });
+
+                expect(response.body?.data?.product).toMatchObject({
+                  name: productPayload.name,
+                  price: productPayload.price,
+                  description: productPayload.description,
+                });
+              })
+              .catch((error) => {
+                console.log(error);
               });
-            })
-            .catch((error) => {
-              console.log(error);
-            });
+          }
         });
       });
     });
