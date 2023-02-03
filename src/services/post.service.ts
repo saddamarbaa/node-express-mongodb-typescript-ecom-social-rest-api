@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
 
 import { customResponse, deleteFile } from '@src/utils';
-import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser, LikeT, PostT, TPaginationResponse } from '@src/interfaces';
 import Post from '@src/models/Post.model';
 import { cloudinary } from '@src/middlewares';
 
@@ -121,7 +121,10 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
 
 export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const post = await Post.findById(req.params.postId).populate('author').exec();
+    const post = await Post.findById(req.params.postId)
+      .populate('author')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .exec();
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -165,7 +168,10 @@ export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, re
   const { title, content, category } = req.body;
 
   try {
-    const post = await Post.findById(req.params.postId).populate('author').exec();
+    const post = await Post.findById(req.params.postId)
+      .populate('author')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .exec();
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -284,6 +290,7 @@ export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, 
       author: req?.user?._id || '',
     })
       .populate('author')
+      .populate('likes.user', 'name  surname  profileImage bio')
       .exec();
 
     const data = {
@@ -364,5 +371,67 @@ export const deleteUserPostsService = async (
     );
   } catch (error) {
     return next(error);
+  }
+};
+
+export const likePostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyLiked = post.likes.some(function (like: LikeT) {
+      if (like?.user.toString() === req.user?._id.toString()) return true;
+      return false;
+    });
+
+    if (!isAlreadyLiked) {
+      await post.updateOne({
+        $push: {
+          likes: {
+            user: req.user?._id,
+          },
+        },
+      });
+    } else {
+      await post.updateOne({ $pull: { likes: { user: req.user?._id } } });
+    }
+
+    const updatedPost = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage  bio')
+      .exec();
+
+    const { author, ...otherPostInfo } = updatedPost._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    const message = isAlreadyLiked
+      ? `Successfully disliked post by ID: ${req.params.postId}`
+      : `Successfully liked post by ID: ${req.params.postId}`;
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
   }
 };

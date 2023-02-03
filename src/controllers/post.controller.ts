@@ -7,6 +7,7 @@ import {
   getPostService,
   getPostsService,
   getUserPostsService,
+  likePostService,
   updatePostService,
 } from '@src/services';
 
@@ -29,3 +30,6 @@ export const deleteUserPostsController = (req: AuthenticatedRequestBody<IUser>, 
 
 export const updatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
   updatePostService(req, res, next);
+
+export const likePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+  likePostService(req, res, next);

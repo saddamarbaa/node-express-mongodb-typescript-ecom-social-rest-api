@@ -5,6 +5,7 @@ export interface FollowT {
   name: string;
   surname: string;
   profileImage?: string;
+  bio?: string;
   userId?: Schema.Types.ObjectId;
 }
 

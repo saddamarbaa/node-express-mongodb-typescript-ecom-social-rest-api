@@ -7,6 +7,7 @@ import {
   getPostController,
   getPostsController,
   getUserPostsController,
+  likePostController,
   updatePostController,
 } from '@src/controllers';
 import {
@@ -27,5 +28,7 @@ router.get('/posts/:postId', postIdValidation, getPostController);
 router.delete('/posts/:postId', isAuth, postIdValidation, deletePostController);
 router.patch('/posts/:postId', uploadImage.single('postImage'), isAuth, updatePostValidation, updatePostController);
 router.post('/posts', uploadImage.single('postImage'), isAuth, addPostValidation, createPostController);
+
+router.put('/posts/:postId/like', isAuth, postIdValidation, likePostController);
 
 export = router;
