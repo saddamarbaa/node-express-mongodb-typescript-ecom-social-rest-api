@@ -582,3 +582,63 @@ export const updateCommentInPostService = async (
     return next(InternalServerError);
   }
 };
+
+export const getCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, commentId } = req.params;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isCommentExists = post.comments.find(
+      (item: { user: IUser; _id: string }) => item?._id.toString() === commentId.toString()
+    );
+
+    if (!isCommentExists) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    post.comments = post.comments.filter(
+      (item: { user: IUser; _id: string }) =>
+        item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()
+    );
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found comment by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
