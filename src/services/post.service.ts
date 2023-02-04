@@ -10,6 +10,7 @@ import {
   PostT,
   TPaginationResponse,
   UpdateCommentT,
+  CommentT,
 } from '@src/interfaces';
 import Post from '@src/models/Post.model';
 import { cloudinary } from '@src/middlewares';
@@ -614,18 +615,14 @@ export const getCommentInPostService = async (
         item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()
     );
 
-    const { author, ...otherPostInfo } = post._doc;
+    const { comments } = post._doc;
 
     const data = {
-      post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
-        request: {
-          type: 'Get',
-          description: 'Get all posts',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
-        },
+      comment: comments[0],
+      request: {
+        type: 'Get',
+        description: 'Get all posts',
+        url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
       },
     };
 
@@ -634,6 +631,51 @@ export const getCommentInPostService = async (
         success: true,
         error: false,
         message: `Successfully found comment by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const getAllCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post || !post.comments.length) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const comments = post.comments.map((commentDoc: { _doc: CommentT }) => {
+      return {
+        ...commentDoc._doc,
+        request: {
+          type: 'Get',
+          description: 'Get one comment with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/comment/${req.params.postId}/${commentDoc._doc._id}`,
+        },
+      };
+    });
+
+    const data = {
+      comments,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found all comments for post by ID : ${req.params.postId} `,
         status: 200,
         data,
       })
