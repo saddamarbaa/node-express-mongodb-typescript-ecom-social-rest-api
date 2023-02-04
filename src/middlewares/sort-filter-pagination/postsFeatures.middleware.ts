@@ -98,6 +98,7 @@ export const postPaginationMiddleware = () => {
       results.results = await query
         .populate('author', '-password -confirmPassword')
         .populate('likes.user', 'name  surname  profileImage bio')
+        .populate('comments.user', 'name  surname  profileImage bio')
         .exec();
 
       // Add paginated Results to the request

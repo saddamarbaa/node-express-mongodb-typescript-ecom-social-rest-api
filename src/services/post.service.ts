@@ -2,7 +2,15 @@ import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
 
 import { customResponse, deleteFile } from '@src/utils';
-import { AuthenticatedRequestBody, IUser, LikeT, PostT, TPaginationResponse } from '@src/interfaces';
+import {
+  AddCommentT,
+  AuthenticatedRequestBody,
+  IUser,
+  LikeT,
+  PostT,
+  TPaginationResponse,
+  UpdateCommentT,
+} from '@src/interfaces';
 import Post from '@src/models/Post.model';
 import { cloudinary } from '@src/middlewares';
 
@@ -124,6 +132,7 @@ export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: 
     const post = await Post.findById(req.params.postId)
       .populate('author')
       .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
     if (!post) {
@@ -171,6 +180,7 @@ export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, re
     const post = await Post.findById(req.params.postId)
       .populate('author')
       .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
     if (!post) {
@@ -291,6 +301,7 @@ export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, 
     })
       .populate('author')
       .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
     const data = {
@@ -401,7 +412,8 @@ export const likePostService = async (req: AuthenticatedRequestBody<PostT>, res:
 
     const updatedPost = await Post.findById(req.params.postId)
       .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
     const { author, ...otherPostInfo } = updatedPost._doc;
@@ -427,6 +439,71 @@ export const likePostService = async (req: AuthenticatedRequestBody<PostT>, res:
         success: true,
         error: false,
         message,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const addCommentInPostService = async (
+  req: AuthenticatedRequestBody<AddCommentT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, comment } = req.body;
+
+    const newComment = {
+      user: req.user?._id,
+      comment,
+    };
+
+    const post = await Post.findByIdAndUpdate(
+      postId,
+      {
+        $push: {
+          comments: {
+            $each: [newComment],
+            $position: 0,
+          },
+        },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully add comment to post by ID : ${postId} `,
         status: 200,
         data,
       })
