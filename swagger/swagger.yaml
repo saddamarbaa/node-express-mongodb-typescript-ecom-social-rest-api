@@ -1927,6 +1927,53 @@ paths:
                             type: object
                             '$ref': '#/components/schemas/PostCommentResponse'
 
+  /feed/posts/user-comment/{postId}:
+    get:
+      summary: Get all comments for the current login user in the given post
+      tags:
+        - Post
+      security:
+        - Authorization: []
+      description:
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6394b75d22f4732bfa7ca6ef
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found all your comment in post by ID ...
+                  data:
+                    type: object
+                    properties:
+                      comments:
+                        type: array
+                        items:
+                            type: object
+                            '$ref': '#/components/schemas/PostCommentResponse'
+
   /feed/posts/comment/{postId}/{commentId}:
     get:
       summary: Get one comment based on request id
