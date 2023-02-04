@@ -1878,7 +1878,62 @@ paths:
             application/json:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
-                
+
+
+  /feed/posts/comment/{postId}/{commentId}:
+    get:
+      summary: Get one comment based on request id
+      tags:
+        - Post
+      security:
+        - Authorization: []
+      description:
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6394b75d22f4732bfa7ca6ef
+        - in: path
+          name: commentId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 6394b75d22f4732bfa7ca6ef
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found comment by ID ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/PostResponse'
+
+   
   # Auth
 
   /auth/signup:

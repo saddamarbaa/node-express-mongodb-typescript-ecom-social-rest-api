@@ -512,3 +512,73 @@ export const addCommentInPostService = async (
     return next(InternalServerError);
   }
 };
+
+export const updateCommentInPostService = async (
+  req: AuthenticatedRequestBody<UpdateCommentT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, commentId, comment } = req.body;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyComment = post.comments.find(
+      (item: { user: IUser; _id: string }) =>
+        item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()
+    );
+
+    if (!isAlreadyComment) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments.forEach((item: { user: IUser; _id: string }, index: number) => {
+      if (item?._id.toString() === commentId) {
+        const newComment = {
+          user: item.user,
+          _id: item._id,
+          comment,
+        };
+
+        post.comments[index] = newComment;
+      }
+    });
+
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully update comment  by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
