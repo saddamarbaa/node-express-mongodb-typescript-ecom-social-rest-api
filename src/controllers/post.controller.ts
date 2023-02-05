@@ -11,12 +11,11 @@ import {
   addCommentInPostService,
   createPostService,
   deleteAllCommentInPostService,
-  deleteAllUserCommentInPostService,
   deleteCommentInPostService,
   deletePostService,
   deleteUserPostsService,
   getAllCommentInPostService,
-  getAllUserCommentInPostService,
+  getUserCommentInPostService,
   getCommentInPostService,
   getPostService,
   getPostsService,
@@ -24,6 +23,7 @@ import {
   likePostService,
   updateCommentInPostService,
   updatePostService,
+  deleteUserCommentInPostService,
 } from '@src/services';
 
 export const getPostsController = (req: Request, res: TPaginationResponse) => getPostsService(req, res);
@@ -70,11 +70,11 @@ export const getAllCommentInPostController = (
   next: NextFunction
 ) => getAllCommentInPostService(req, res, next);
 
-export const getAllUserCommentInPostController = (
+export const getUserCommentInPostController = (
   req: AuthenticatedRequestBody<IUser>,
   res: Response,
   next: NextFunction
-) => getAllUserCommentInPostService(req, res, next);
+) => getUserCommentInPostService(req, res, next);
 
 export const deleteCommentInPostController = (
   req: AuthenticatedRequestBody<UpdateCommentT>,
@@ -82,11 +82,11 @@ export const deleteCommentInPostController = (
   next: NextFunction
 ) => deleteCommentInPostService(req, res, next);
 
-export const deleteAllUserCommentInPostController = (
+export const deleteUserCommentInPostController = (
   req: AuthenticatedRequestBody<IUser>,
   res: Response,
   next: NextFunction
-) => deleteAllUserCommentInPostService(req, res, next);
+) => deleteUserCommentInPostService(req, res, next);
 
 export const deleteAllCommentInPostController = (
   req: AuthenticatedRequestBody<IUser>,

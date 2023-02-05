@@ -25,6 +25,7 @@ import {
   adminUpdatePostService,
   adminDeleteAllPostForGivenUserService,
   adminClearAllProductsService,
+  adminDeleteAllCommentInPostService,
 } from '@src/services';
 import {
   AuthenticatedRequestBody,
@@ -127,6 +128,12 @@ export const adminDeleteAllPostForGivenUserController = (
   res: Response,
   next: NextFunction
 ) => adminDeleteAllPostForGivenUserService(req, res, next);
+
+export const adminDeleteAllCommentInPostController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteAllCommentInPostService(req, res, next);
 
 export const adminClearAllPostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminClearAllPostsService(req, res, next);
