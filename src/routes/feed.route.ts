@@ -39,8 +39,8 @@ router.delete('/posts/user-posts', isAuth, deleteUserPostsController);
 router.put('/posts/comment', isAuth, addCommentValidation, addCommentInPostController);
 router.patch('/posts/comment', isAuth, updateCommentValidation, updateCommentInPostController);
 router.delete('/posts/comment', isAuth, deleteCommentValidation, deleteCommentInPostController);
-router.delete('/posts/comment/:postId', isAuth, postIdValidation, deleteAllCommentInPostController);
-router.delete('/posts/user-comment/:postId', isAuth, postIdValidation, deleteUserCommentInPostController);
+router.delete('/posts/comment/:postId', isAuth, updatePostValidation, deleteAllCommentInPostController);
+router.delete('/posts/user-comment/:postId', isAuth, updatePostValidation, deleteUserCommentInPostController);
 router.get(
   '/posts/comment/:postId/:commentId',
   isAuth,
