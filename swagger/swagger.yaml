@@ -2083,6 +2083,73 @@ paths:
                           type: object
                           '$ref': '#/components/schemas/PostCommentResponse'
 
+    delete:
+      security:
+        - Authorization: []
+      summary: Delete all comments for the current login user or the given user in the given post
+      tags:
+        - Post
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 63bae1dbc7c5b2f65f3cbd97
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: 63bae1dbc7c5b2f65f3cbd97
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully delete all user comments in post by ID ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/PostResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   /feed/posts/comment/{postId}/{commentId}:
     get:
       summary: Get one comment based on request id
@@ -4463,6 +4530,61 @@ paths:
                   message:
                     type: string
                     example: Successfully deleted all comments in post by ID ...
+                  data:
+                    type: object
+                    properties:
+                      post:
+                        type: object
+                        '$ref': '#/components/schemas/AdminPostResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/feed/posts/comment:
+    delete:
+      security:
+        - Authorization: []
+      summary: Admin delete one comment based on request id
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              '$ref': '#/components/schemas/DeletePostCommentRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully delete comment by ID ...
                   data:
                     type: object
                     properties:

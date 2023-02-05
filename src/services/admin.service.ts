@@ -1384,4 +1384,63 @@ export const adminDeleteAllCommentInPostService = async (
   }
 };
 
-export default adminGetUsersService;
+export const adminDeleteCommentInPostService = async (
+  req: AuthenticatedRequestBody<UpdateCommentT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, commentId } = req.body;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAuthorized = post.comments.find(
+      (item: { user: IUser; _id: string }) => item?._id.toString() === commentId.toString()
+    );
+
+    if (!isAuthorized) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments = post.comments.filter(
+      (item: { user: IUser; _id: string }) => item?._id.toString() !== commentId?.toString()
+    );
+
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully delete comment by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
