@@ -4,12 +4,12 @@ import {
   addCommentInPostController,
   createPostController,
   deleteAllCommentInPostController,
-  deleteAllUserCommentInPostController,
+  deleteUserCommentInPostController,
   deleteCommentInPostController,
   deletePostController,
   deleteUserPostsController,
   getAllCommentInPostController,
-  getAllUserCommentInPostController,
+  getUserCommentInPostController,
   getCommentInPostController,
   getPostController,
   getPostsController,
@@ -39,8 +39,8 @@ router.delete('/posts/user-posts', isAuth, deleteUserPostsController);
 router.put('/posts/comment', isAuth, addCommentValidation, addCommentInPostController);
 router.patch('/posts/comment', isAuth, updateCommentValidation, updateCommentInPostController);
 router.delete('/posts/comment', isAuth, deleteCommentValidation, deleteCommentInPostController);
-router.delete('/posts/comment/:postId', isAuth, updatePostValidation, deleteAllCommentInPostController);
-router.delete('/posts/user-comment/:postId', isAuth, updatePostValidation, deleteAllUserCommentInPostController);
+router.delete('/posts/comment/:postId', isAuth, postIdValidation, deleteAllCommentInPostController);
+router.delete('/posts/user-comment/:postId', isAuth, postIdValidation, deleteUserCommentInPostController);
 router.get(
   '/posts/comment/:postId/:commentId',
   isAuth,
@@ -49,7 +49,7 @@ router.get(
   getCommentInPostController
 );
 router.get('/posts/comment/:postId', isAuth, postIdValidation, getAllCommentInPostController);
-router.get('/posts/user-comment/:postId', isAuth, updatePostValidation, getAllUserCommentInPostController);
+router.get('/posts/user-comment/:postId', isAuth, updatePostValidation, getUserCommentInPostController);
 
 router.get('/posts/:postId', postIdValidation, getPostController);
 router.delete('/posts/:postId', isAuth, postIdValidation, deletePostController);
