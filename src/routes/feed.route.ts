@@ -29,6 +29,7 @@ import {
   updateCommentValidation,
   updatePostValidation,
   uploadImage,
+  userIdValidation,
 } from '@src/middlewares';
 
 const router = express.Router();
@@ -40,7 +41,7 @@ router.put('/posts/comment', isAuth, addCommentValidation, addCommentInPostContr
 router.patch('/posts/comment', isAuth, updateCommentValidation, updateCommentInPostController);
 router.delete('/posts/comment', isAuth, deleteCommentValidation, deleteCommentInPostController);
 router.delete('/posts/comment/:postId', isAuth, updatePostValidation, deleteAllCommentInPostController);
-router.delete('/posts/user-comment/:postId', isAuth, updatePostValidation, deleteUserCommentInPostController);
+router.delete('/posts/user-comment/:postId', isAuth, postIdValidation, deleteUserCommentInPostController);
 router.get(
   '/posts/comment/:postId/:commentId',
   isAuth,
@@ -50,7 +51,6 @@ router.get(
 );
 router.get('/posts/comment/:postId', isAuth, postIdValidation, getAllCommentInPostController);
 router.get('/posts/user-comment/:postId', isAuth, updatePostValidation, getUserCommentInPostController);
-
 router.get('/posts/:postId', postIdValidation, getPostController);
 router.delete('/posts/:postId', isAuth, postIdValidation, deletePostController);
 router.patch('/posts/:postId', uploadImage.single('postImage'), isAuth, updatePostValidation, updatePostController);

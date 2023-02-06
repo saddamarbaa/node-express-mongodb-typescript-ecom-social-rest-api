@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
 
+import User from '@src/models/User.model';
 import { customResponse, deleteFile } from '@src/utils';
 import {
   AddCommentT,
@@ -750,7 +751,7 @@ export const deleteAllCommentInPostService = async (
   try {
     const post = await Post.findById(req.params.postId);
 
-    if (!post || !post.comments.length) {
+    if (!post || !post?.comments?.length) {
       return next(new createHttpError.BadRequest());
     }
 
@@ -805,14 +806,14 @@ export const deleteCommentInPostService = async (
       .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
-    if (!post) {
+    if (!post || !post?.comments?.length) {
       return next(new createHttpError.BadRequest());
     }
 
     const isAuthorized = post.comments.find(
       (item: { user: IUser; _id: string }) =>
-        (item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()) ||
-        req.user?._id.equals(post.author._id)
+        (req.user?._id.equals(post.author._id) || item.user?._id.toString() === req.user?._id.toString()) &&
+        item?._id.toString() === commentId.toString()
     );
 
     if (!isAuthorized) {
@@ -820,7 +821,7 @@ export const deleteCommentInPostService = async (
     }
 
     post.comments = post.comments.filter(
-      (item: { user: IUser }) => item.user?._id.toString() !== req.user?._id.toString()
+      (item: { user: IUser; _id: string }) => item?._id.toString() !== commentId?.toString()
     );
 
     await post.save();
@@ -845,6 +846,74 @@ export const deleteCommentInPostService = async (
         success: true,
         error: false,
         message: `Successfully delete comment by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const deleteUserCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    if (req?.body?.userId) {
+      const user = await User.findById(req.body.userId);
+      if (!user) {
+        return next(createHttpError(403));
+      }
+    }
+
+    const isAlreadyComment = post.comments.find((item: { user: IUser }) =>
+      item.user?._id.toString() === req?.body?.userId ? req?.body?.userId?.toString() : req.user?._id.toString()
+    );
+
+    // Allow only user who created the post or admin or user who add comment to delete the comments
+    if (!isAlreadyComment && !req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments = post.comments.filter(
+      (item: { user: IUser }) =>
+        item.user?._id.toString() !== (req?.body?.userId ? req?.body?.userId?.toString() : req.user?._id.toString())
+    );
+
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all comments',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/comment/${req.params.postId}`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully deleted all user comments in post by ID : ${req.params.postId} `,
         status: 200,
         data,
       })
