@@ -4,6 +4,7 @@ import {
   addPostValidation,
   addProductValidation,
   customRoles,
+  deleteCommentValidation,
   isAdmin,
   isAuth,
   postIdValidation,
@@ -25,7 +26,9 @@ import {
   adminClearAllOrdersController,
   adminClearAllProductsController,
   adminCreatePostController,
+  adminDeleteAllCommentInPostController,
   adminDeleteAllPostForGivenUserController,
+  adminDeleteCommentInPostController,
   adminDeletePostController,
   adminDeleteProductController,
   adminDeleteSingleOrderController,
@@ -196,6 +199,23 @@ router.delete(
   adminDeleteAllPostForGivenUserController
 );
 
+router.delete(
+  '/feed/posts/comment',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+  deleteCommentValidation,
+  adminDeleteCommentInPostController
+);
+
+router
+  .route('/feed/posts/comment/:postId')
+  .delete(
+    isAuth,
+    customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+    postIdValidation,
+    adminDeleteAllCommentInPostController
+  );
+
 router
   .route('/feed/posts/:postId')
   .get(
@@ -217,4 +237,5 @@ router
     updatePostValidation,
     adminUpdatePostController
   );
+
 export = router;

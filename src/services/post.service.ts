@@ -1,8 +1,18 @@
 import { NextFunction, Request, Response } from 'express';
 import createHttpError, { InternalServerError } from 'http-errors';
 
+import User from '@src/models/User.model';
 import { customResponse, deleteFile } from '@src/utils';
-import { AuthenticatedRequestBody, IUser, PostT, TPaginationResponse } from '@src/interfaces';
+import {
+  AddCommentT,
+  AuthenticatedRequestBody,
+  IUser,
+  LikeT,
+  PostT,
+  TPaginationResponse,
+  UpdateCommentT,
+  CommentT,
+} from '@src/interfaces';
 import Post from '@src/models/Post.model';
 import { cloudinary } from '@src/middlewares';
 
@@ -121,7 +131,11 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
 
 export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const post = await Post.findById(req.params.postId).populate('author').exec();
+    const post = await Post.findById(req.params.postId)
+      .populate('author')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -165,7 +179,11 @@ export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, re
   const { title, content, category } = req.body;
 
   try {
-    const post = await Post.findById(req.params.postId).populate('author').exec();
+    const post = await Post.findById(req.params.postId)
+      .populate('author')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -284,6 +302,8 @@ export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, 
       author: req?.user?._id || '',
     })
       .populate('author')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
     const data = {
@@ -364,5 +384,541 @@ export const deleteUserPostsService = async (
     );
   } catch (error) {
     return next(error);
+  }
+};
+
+export const likePostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyLiked = post.likes.some(function (like: LikeT) {
+      if (like?.user.toString() === req.user?._id.toString()) return true;
+      return false;
+    });
+
+    if (!isAlreadyLiked) {
+      await post.updateOne({
+        $push: {
+          likes: {
+            user: req.user?._id,
+          },
+        },
+      });
+    } else {
+      await post.updateOne({ $pull: { likes: { user: req.user?._id } } });
+    }
+
+    const updatedPost = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    const { author, ...otherPostInfo } = updatedPost._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    const message = isAlreadyLiked
+      ? `Successfully disliked post by ID: ${req.params.postId}`
+      : `Successfully liked post by ID: ${req.params.postId}`;
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const addCommentInPostService = async (
+  req: AuthenticatedRequestBody<AddCommentT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, comment } = req.body;
+
+    const newComment = {
+      user: req.user?._id,
+      comment,
+    };
+
+    const post = await Post.findByIdAndUpdate(
+      postId,
+      {
+        $push: {
+          comments: {
+            $each: [newComment],
+            $position: 0,
+          },
+        },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully add comment to post by ID : ${postId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const updateCommentInPostService = async (
+  req: AuthenticatedRequestBody<UpdateCommentT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, commentId, comment } = req.body;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyComment = post.comments.find(
+      (item: { user: IUser; _id: string }) =>
+        item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()
+    );
+
+    if (!isAlreadyComment) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments.forEach((item: { user: IUser; _id: string }, index: number) => {
+      if (item?._id.toString() === commentId) {
+        const newComment = {
+          user: item.user,
+          _id: item._id,
+          comment,
+        };
+
+        post.comments[index] = newComment;
+      }
+    });
+
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully update comment  by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const getCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, commentId } = req.params;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isCommentExists = post.comments.find(
+      (item: { user: IUser; _id: string }) => item?._id.toString() === commentId.toString()
+    );
+
+    if (!isCommentExists) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    post.comments = post.comments.filter(
+      (item: { user: IUser; _id: string }) =>
+        item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()
+    );
+
+    const { comments } = post._doc;
+
+    const data = {
+      comment: comments[0],
+      request: {
+        type: 'Get',
+        description: 'Get all posts',
+        url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found comment by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const getAllCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post || !post.comments.length) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const comments = post.comments.map((commentDoc: { _doc: CommentT }) => {
+      return {
+        ...commentDoc._doc,
+        request: {
+          type: 'Get',
+          description: 'Get one comment with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/comment/${req.params.postId}/${commentDoc._doc._id}`,
+        },
+      };
+    });
+
+    const data = {
+      comments,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found all comments for post by ID : ${req.params.postId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const getUserCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post || !post.comments.length) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyComment = post.comments.find(
+      (com: { user: IUser }) => com.user?._id.toString() === req.user?._id.toString()
+    );
+
+    if (!isAlreadyComment) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments = post.comments.filter(
+      (com: { user: IUser }) => com.user?._id.toString() === req.user?._id.toString()
+    );
+
+    const comments = post.comments.map((commentDoc: { _doc: CommentT }) => {
+      return {
+        ...commentDoc._doc,
+        request: {
+          type: 'Get',
+          description: 'Get one comment with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/comment/${req.params.postId}/${commentDoc._doc._id}`,
+        },
+      };
+    });
+
+    const data = {
+      comments,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully found all your comment in post by ID : ${req.params.postId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const deleteAllCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+
+    if (!post || !post?.comments?.length) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    // Allow only user who created the post or admin to delete the comment
+    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments = [];
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully deleted all comments in post by ID : ${req.params.postId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const deleteCommentInPostService = async (
+  req: AuthenticatedRequestBody<UpdateCommentT>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postId, commentId } = req.body;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post || !post?.comments?.length) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAuthorized = post.comments.find(
+      (item: { user: IUser; _id: string }) =>
+        (req.user?._id.equals(post.author._id) || item.user?._id.toString() === req.user?._id.toString()) &&
+        item?._id.toString() === commentId.toString()
+    );
+
+    if (!isAuthorized) {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments = post.comments.filter(
+      (item: { user: IUser; _id: string }) => item?._id.toString() !== commentId?.toString()
+    );
+
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully delete comment by ID : ${commentId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const deleteUserCommentInPostService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('author', 'name  surname  profileImage  bio')
+      .populate('likes.user', 'name  surname  profileImage bio')
+      .populate('comments.user', 'name  surname  profileImage bio')
+      .exec();
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    if (req?.body?.userId) {
+      const user = await User.findById(req.body.userId);
+      if (!user) {
+        return next(createHttpError(403));
+      }
+    }
+
+    const isAlreadyComment = post.comments.find((item: { user: IUser }) =>
+      item.user?._id.toString() === req?.body?.userId ? req?.body?.userId?.toString() : req.user?._id.toString()
+    );
+
+    // Allow only user who created the post or admin or user who add comment to delete the comments
+    if (!isAlreadyComment && !req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    }
+
+    post.comments = post.comments.filter(
+      (item: { user: IUser }) =>
+        item.user?._id.toString() !== (req?.body?.userId ? req?.body?.userId?.toString() : req.user?._id.toString())
+    );
+
+    await post.save();
+
+    const { author, ...otherPostInfo } = post._doc;
+
+    const data = {
+      post: {
+        ...otherPostInfo,
+        author: undefined,
+        creator: author,
+        request: {
+          type: 'Get',
+          description: 'Get all comments',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/comment/${req.params.postId}`,
+        },
+      },
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: `Successfully deleted all user comments in post by ID : ${req.params.postId} `,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
   }
 };

@@ -75,12 +75,6 @@ export const PostSchema: Schema<PostT> = new Schema(
           ref: 'User', // add relationship
           required: [true, 'User is required'],
         },
-        name: {
-          type: String,
-          required: [true, ''],
-          trim: true,
-          lowercase: true,
-        },
         comment: {
           type: String,
           required: true,

@@ -32,6 +32,7 @@ export const followUserService = async (req: AuthenticatedRequestBody<IUser>, re
             name: currentUser?.name,
             surname: currentUser?.surname,
             profileImage: currentUser?.profileImage,
+            bio: currentUser?.bio,
           },
         },
         new: true,
@@ -44,6 +45,7 @@ export const followUserService = async (req: AuthenticatedRequestBody<IUser>, re
             name: toBeFollowedUser?.name,
             surname: toBeFollowedUser?.surname,
             profileImage: toBeFollowedUser?.profileImage,
+            bio: toBeFollowedUser?.bio,
           },
         },
       });

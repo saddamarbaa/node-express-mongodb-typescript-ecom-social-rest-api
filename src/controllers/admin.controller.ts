@@ -25,6 +25,8 @@ import {
   adminUpdatePostService,
   adminDeleteAllPostForGivenUserService,
   adminClearAllProductsService,
+  adminDeleteAllCommentInPostService,
+  adminDeleteCommentInPostService,
 } from '@src/services';
 import {
   AuthenticatedRequestBody,
@@ -33,6 +35,7 @@ import {
   ProcessingOrderT,
   ProductT,
   TPaginationResponse,
+  UpdateCommentT,
 } from '@src/interfaces';
 
 export const adminUpdateOrderStatusController = (
@@ -127,6 +130,18 @@ export const adminDeleteAllPostForGivenUserController = (
   res: Response,
   next: NextFunction
 ) => adminDeleteAllPostForGivenUserService(req, res, next);
+
+export const adminDeleteAllCommentInPostController = (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteAllCommentInPostService(req, res, next);
+
+export const adminDeleteCommentInPostController = (
+  req: AuthenticatedRequestBody<UpdateCommentT>,
+  res: Response,
+  next: NextFunction
+) => adminDeleteCommentInPostService(req, res, next);
 
 export const adminClearAllPostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminClearAllPostsService(req, res, next);

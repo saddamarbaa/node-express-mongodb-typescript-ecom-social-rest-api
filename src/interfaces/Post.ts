@@ -1,9 +1,16 @@
 import mongoose from 'mongoose';
 
-export interface CommentT {
-  name: string;
+export interface CommentT extends mongoose.Document {
   comment: string;
   user: mongoose.Schema.Types.ObjectId;
+}
+
+export interface AddCommentT extends CommentT {
+  postId: string;
+}
+
+export interface UpdateCommentT extends AddCommentT {
+  commentId: string;
 }
 
 export interface LikeT {

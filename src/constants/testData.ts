@@ -65,3 +65,9 @@ export const testPayload = {
   address: '12345test home batam indonesia',
   acceptTerms: true,
 };
+
+export const postPayload = {
+  title: 'title',
+  content: 'content',
+  postImage: 'https://res.cloudinary.com/decjnna6h/image/upload/v1674051312/users/vbbon1tejm74rq3bjspj.jpg',
+};
