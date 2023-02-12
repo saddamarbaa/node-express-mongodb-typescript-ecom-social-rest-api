@@ -31,7 +31,7 @@ import {
 import {
   AuthenticatedRequestBody,
   IUser,
-  PostT,
+  IPost,
   ProcessingOrderT,
   ProductT,
   TPaginationResponse,
@@ -116,10 +116,10 @@ export const adminGetPostsController = (req: Request, res: TPaginationResponse) 
 export const adminGetPostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminGetPostService(req, res, next);
 
-export const adminCreatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+export const adminCreatePostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
   adminCreatePostService(req, res, next);
 
-export const adminUpdatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+export const adminUpdatePostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
   adminUpdatePostService(req, res, next);
 
 export const adminDeletePostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>

@@ -1,14 +1,13 @@
 import { Request } from 'express';
-import { Document, Schema } from 'mongoose';
+import { Document } from 'mongoose';
 
 export interface FollowT {
   name: string;
   surname: string;
   profileImage?: string;
   bio?: string;
-  userId?: Schema.Types.ObjectId;
+  userId?: string;
 }
-
 export interface IUser extends Document {
   name: string;
   surname: string;
@@ -39,17 +38,18 @@ export interface IUser extends Document {
   confirmationCode?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: string;
-  userId?: Schema.Types.ObjectId;
+  userId?: string;
   timestamps?: boolean;
   cart?: {
     items: {
-      productId: Schema.Types.ObjectId;
+      productId: string;
       quantity: number;
     }[];
   };
   cloudinary_id?: string;
-  followers?: FollowT[];
-  followings?: FollowT[];
+  followers: string[];
+  following: string[];
+  friends: string[];
 }
 
 export interface IRequestUser extends Request {

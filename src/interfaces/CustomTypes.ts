@@ -40,3 +40,9 @@ export interface AuthenticatedRequestBody<T> extends Request {
   body: T;
   user?: IUser;
 }
+
+export interface IRequestObject {
+  type: string;
+  description: string;
+  url: string;
+}

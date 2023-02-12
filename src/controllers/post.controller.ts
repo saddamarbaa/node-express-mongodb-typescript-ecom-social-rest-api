@@ -3,7 +3,7 @@ import {
   AddCommentT,
   AuthenticatedRequestBody,
   IUser,
-  PostT,
+  IPost,
   TPaginationResponse,
   UpdateCommentT,
 } from '@src/interfaces';
@@ -13,17 +13,18 @@ import {
   deleteAllCommentInPostService,
   deleteCommentInPostService,
   deletePostService,
+  deleteUserCommentInPostService,
   deleteUserPostsService,
   getAllCommentInPostService,
-  getUserCommentInPostService,
   getCommentInPostService,
   getPostService,
   getPostsService,
+  getTimelinePostsService,
+  getUserCommentInPostService,
   getUserPostsService,
   likePostService,
   updateCommentInPostService,
   updatePostService,
-  deleteUserCommentInPostService,
 } from '@src/services';
 
 export const getPostsController = (req: Request, res: TPaginationResponse) => getPostsService(req, res);
@@ -34,7 +35,10 @@ export const getUserPostsController = (req: AuthenticatedRequestBody<IUser>, res
 export const getPostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   getPostService(req, res, next);
 
-export const createPostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+export const getTimelinePostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  getTimelinePostsService(req, res, next);
+
+export const createPostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
   createPostService(req, res, next);
 
 export const deletePostController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
@@ -43,10 +47,10 @@ export const deletePostController = (req: AuthenticatedRequestBody<IUser>, res: 
 export const deleteUserPostsController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   deleteUserPostsService(req, res, next);
 
-export const updatePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+export const updatePostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
   updatePostService(req, res, next);
 
-export const likePostController = (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) =>
+export const likePostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
   likePostService(req, res, next);
 
 export const addCommentInPostController = (

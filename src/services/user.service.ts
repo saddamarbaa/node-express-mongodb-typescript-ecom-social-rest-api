@@ -3,55 +3,46 @@ import createHttpError, { InternalServerError } from 'http-errors';
 
 import User from '@src/models/User.model';
 
-import { AuthenticatedRequestBody, FollowT, IUser } from '@src/interfaces';
+import { AuthenticatedRequestBody, IUser } from '@src/interfaces';
 import { customResponse } from '@src/utils';
 
 export const followUserService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
     if (req.user?._id.equals(req.params.userId)) {
-      return next(createHttpError(403, `You cant follow yourself`));
+      return next(createHttpError(403, `You cannot follow yourself`));
     }
 
-    const toBeFollowedUser = await User.findById(req.params.userId);
+    const toBeFollowedUser = await User.findById(req.params.userId).populate('followers');
+
     if (!toBeFollowedUser) {
-      return next(new createHttpError.BadRequest());
+      return next(createHttpError(400, `User not found`));
     }
 
-    const currentUser = await User.findById(req.user?._id);
+    const currentUser = await User.findById(req.user?._id).populate('following');
 
-    const isAlreadyFollowed = toBeFollowedUser.followers.some(function (user: FollowT) {
-      if (user.userId?.toString() === currentUser._id.toString()) return true;
+    const isAlreadyFollowed = toBeFollowedUser.followers.some(function (user: { _id: string }) {
+      if (user._id.toString() === currentUser._id.toString()) return true;
       return false;
     });
 
     if (!isAlreadyFollowed) {
       await toBeFollowedUser.updateOne({
         $push: {
-          followers: {
-            userId: currentUser?._id,
-            name: currentUser?.name,
-            surname: currentUser?.surname,
-            profileImage: currentUser?.profileImage,
-            bio: currentUser?.bio,
-          },
+          followers: currentUser?._id,
         },
         new: true,
       });
 
       await currentUser.updateOne({
         $push: {
-          followings: {
-            userId: req.params.userId,
-            name: toBeFollowedUser?.name,
-            surname: toBeFollowedUser?.surname,
-            profileImage: toBeFollowedUser?.profileImage,
-            bio: toBeFollowedUser?.bio,
-          },
+          following: req.params.userId,
         },
       });
 
       const updatedUser = await User.findById(req.user?._id)
         .select('-password -confirmPassword -cloudinary_id -status -isDeleted -acceptTerms -isVerified')
+        .populate('following', 'name  surname  profileImage bio')
+        .populate('followers', 'name  surname  profileImage bio')
         .populate('cart.items.productId')
         .exec();
 
@@ -66,7 +57,7 @@ export const followUserService = async (req: AuthenticatedRequestBody<IUser>, re
       );
     }
 
-    return next(createHttpError(403, `You already follow this user`));
+    return next(createHttpError(403, `You already followed this user`));
   } catch (error) {
     return next(InternalServerError);
   }
@@ -80,27 +71,34 @@ export const unFollowUserService = async (req: AuthenticatedRequestBody<IUser>, 
 
     const toBeFollowedUser = await User.findById(req.params.userId);
     if (!toBeFollowedUser) {
-      return next(new createHttpError.BadRequest());
+      return next(createHttpError(400, `User not found`));
     }
 
-    const currentUser = await User.findById(req.user?._id);
+    const currentUser = await User.findById(req.user?._id).populate('following');
 
-    const isAlreadyFollowed = toBeFollowedUser.followers.some(function (user: FollowT) {
-      if (user.userId?.toString() === currentUser._id.toString()) return true;
+    const isAlreadyFollowed = toBeFollowedUser.followers.some(function (user: { _id: string }) {
+      if (user._id.toString() === currentUser._id.toString()) return true;
       return false;
     });
 
     if (isAlreadyFollowed) {
       await toBeFollowedUser.updateOne(
-        { $pull: { followers: { userId: currentUser?._id } } },
+        { $pull: { followers: currentUser?._id } },
         {
           new: true,
         }
       );
-      await currentUser.updateOne({ $pull: { followings: { userId: req.params.userId } } });
+
+      await currentUser.updateOne({
+        $pull: {
+          following: req.params.userId,
+        },
+      });
 
       const updatedUser = await User.findById(req.user?._id)
         .select('-password -confirmPassword -cloudinary_id -status -isDeleted -acceptTerms -isVerified')
+        .populate('following', 'name  surname  profileImage bio')
+        .populate('followers', 'name  surname  profileImage bio')
         .populate('cart.items.productId')
         .exec();
 
