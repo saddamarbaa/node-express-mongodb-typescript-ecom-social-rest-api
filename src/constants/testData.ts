@@ -54,7 +54,6 @@ export const testPayload = {
   gender: 'male',
   profileImage: 'https://res.cloudinary.com/decjnna6h/image/upload/v1674051312/users/vbbon1tejm74rq3bjspj.jpg',
   cloudinary_id: 'users/vbbon1tejm74rq3bjspj',
-
   favoriteAnimal: 'cat',
   nationality: 'sudan',
   isVerified: true,

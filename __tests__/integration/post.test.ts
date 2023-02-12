@@ -14,6 +14,10 @@ beforeAll((done) => {
     if (err) return console.log('Failed to connect to DB', err);
     done();
   });
+
+  jest.mock('@src/utils/sendEmail', () => ({
+    sendEmailVerificationEmail: jest.fn().mockResolvedValue('Sending Email Success'),
+  }));
 });
 
 afterAll(async () => {
@@ -34,7 +38,7 @@ afterEach(async () => {
 
 describe('Post', () => {
   /**
-   * Testing get all post endpoint
+   * Testing get all posts endpoint
    */
   describe('GET /api/v1/feed/posts', () => {
     describe('given no post in db', () => {
@@ -88,7 +92,7 @@ describe('Post', () => {
   });
 
   /**
-   * Testing get timeline post endpoint
+   * Testing get timeline posts endpoint
    */
   describe('GET /api/v1/feed/posts/timeline', () => {
     describe('given the user is not logged in', () => {
@@ -206,6 +210,217 @@ describe('Post', () => {
           } catch (error) {
             console.log(error);
           }
+        }
+      });
+    });
+  });
+
+  /**
+   * Testing get user posts endpoint
+   */
+  describe('GET /api/v1/feed/posts/user-posts', () => {
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        const response = await request(app).get('/api/v1/feed/posts/user-posts');
+
+        expect(response.body).toMatchObject({
+          data: null,
+          success: false,
+          error: true,
+          message: expect.any(String),
+          status: 401,
+          stack: expect.any(String),
+        });
+      });
+    });
+
+    describe('given no post in db', () => {
+      it('should return a 200 status with a json contain empty array', async () => {
+        try {
+          const authUser = new User({
+            ...userPayload,
+          });
+
+          await authUser.save();
+
+          const authResponse = await request(app).post('/api/v1/auth/login').send({
+            email: userPayload.email,
+            password: userPayload.password,
+          });
+
+          const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+          if (token) {
+            const response = await request(app)
+              .get('/api/v1/feed/posts/user-posts')
+              .set('Authorization', `Bearer ${token}`)
+              .send({ postId: validMongooseObjectId, commentId: validMongooseObjectId });
+
+            expect(response?.body?.data?.posts?.length).toBe(0);
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+            expect(response?.body?.message).toMatch('No post found for user');
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the user is logged in and has 3 post in DB', () => {
+      it('should return a 200 status with a json contain array of 3 posts', async () => {
+        try {
+          const authUser = new User({
+            ...userPayload,
+          });
+
+          const testUser = new User({
+            ...userPayload,
+            email: 'test@gmail.com',
+          });
+
+          const authPost = { ...postPayload, author: authUser._id };
+          const testUserPost = { ...postPayload, author: testUser._id };
+
+          await Post.insertMany([authPost, authPost, testUserPost, authPost]);
+
+          await authUser.save();
+
+          const authResponse = await request(app).post('/api/v1/auth/login').send({
+            email: userPayload.email,
+            password: userPayload.password,
+          });
+
+          const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+          if (token) {
+            const response = await request(app)
+              .get('/api/v1/feed/posts/user-posts')
+              .set('Authorization', `Bearer ${token}`);
+
+            expect(response?.body?.data?.posts?.length).toBe(3);
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+            expect(response?.body?.message).toMatch('found all posts for user');
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given added 3 posts in db', () => {
+      it('should return a 200 status with a json contain array of 3 posts', async () => {
+        const user = new User(userPayload);
+        await user.save();
+        const post = { ...postPayload, author: user._id };
+        await Post.insertMany([post, post, post]);
+
+        await request(app)
+          .get('/api/v1/feed/posts')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: 'Successful Found posts',
+              status: 200,
+              data: {
+                posts: expect.any(Array),
+                totalDocs: expect.any(Number),
+              },
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+  });
+
+  /**
+   * Testing get single post endpoint
+   */
+  describe('GET /api/v1/feed/posts/:postId', () => {
+    describe('given post id is not valid ', () => {
+      it('should return a 422 status with validation message', async () => {
+        // postId not vaild
+        try {
+          const response = await request(app).get(`/api/v1/feed/posts/notvaild`);
+          expect(response.body).toMatchObject({
+            data: null,
+            error: true,
+            status: 422,
+            message: expect.any(String),
+            stack: expect.any(String),
+          });
+          expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the post does not exist', () => {
+      it('should return a 400 status', async () => {
+        try {
+          const response = await request(app)
+            .get(`/api/v1/feed/posts/${validMongooseObjectId}`)
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/);
+          expect(response.body).toMatchObject({
+            data: null,
+            success: false,
+            error: true,
+            message: 'Bad Request',
+            status: 400,
+            stack: expect.any(String),
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the post does exist', () => {
+      it('should return a 200 status and the product', async () => {
+        try {
+          const user = new User({
+            ...userPayload,
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            role: authorizationRoles.admin,
+          });
+
+          await user.save();
+
+          const post = new Post({
+            ...postPayload,
+            author: user._id,
+          });
+          await post.save();
+          const response = await request(app)
+            .get(`/api/v1/feed/posts/${post?._id}`)
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/);
+
+          expect(response?.body?.data?.post).toMatchObject(postPayload);
+
+          expect(response.body).toMatchObject({
+            success: true,
+            error: false,
+            message: expect.any(String),
+            status: 200,
+          });
+        } catch (error) {
+          console.log(error);
         }
       });
     });

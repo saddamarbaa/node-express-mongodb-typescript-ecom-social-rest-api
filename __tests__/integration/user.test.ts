@@ -1644,7 +1644,7 @@ describe('User', () => {
                 message: expect.any(String),
                 stack: expect.any(String),
               });
-              expect(response?.body?.message).toMatch('cant follow yourself');
+              expect(response?.body?.message).toMatch('cannot follow yourself');
             })
             .catch((error) => {
               console.log(error);
@@ -1665,14 +1665,7 @@ describe('User', () => {
 
         const toBeFollowedUser = new User({
           ...userPayload,
-          followers: [
-            {
-              userId: currentUser?._id,
-              name: currentUser?.name,
-              surname: currentUser?.surname,
-              profileImage: currentUser?.profileImage,
-            },
-          ],
+          followers: [currentUser?._id],
         });
         await toBeFollowedUser.save();
 
@@ -1698,7 +1691,7 @@ describe('User', () => {
                 message: expect.any(String),
                 stack: expect.any(String),
               });
-              expect(response?.body?.message).toMatch('already follow this user');
+              expect(response?.body?.message).toMatch('already followed this user');
             })
             .catch((error) => {
               console.log(error);
@@ -1956,14 +1949,7 @@ describe('User', () => {
 
         const toBeUnFollowedUser = new User({
           ...userPayload,
-          followers: [
-            {
-              userId: currentUser?._id,
-              name: currentUser?.name,
-              surname: currentUser?.surname,
-              profileImage: currentUser?.profileImage,
-            },
-          ],
+          followers: [currentUser?._id],
         });
         await toBeUnFollowedUser.save();
 
