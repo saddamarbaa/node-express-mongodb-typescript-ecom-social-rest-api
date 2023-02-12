@@ -88,6 +88,130 @@ describe('Post', () => {
   });
 
   /**
+   * Testing get timeline post endpoint
+   */
+  describe('GET /api/v1/feed/posts/timeline', () => {
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        const response = await request(app).get('/api/v1/feed/posts/timeline');
+
+        expect(response.body).toMatchObject({
+          data: null,
+          success: false,
+          error: true,
+          message: expect.any(String),
+          status: 401,
+          stack: expect.any(String),
+        });
+      });
+    });
+
+    describe('given the user is logged in and authorized but no post exist in DB ', () => {
+      it('should return a 200 status with a json contain empty array', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          try {
+            const response = await request(app)
+              .get('/api/v1/feed/posts/timeline')
+              .set('Authorization', `Bearer ${token}`)
+              .send({ postId: validMongooseObjectId, commentId: validMongooseObjectId });
+
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+            expect(response?.body?.message).toMatch('No post found');
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    });
+
+    describe('given the user is logged and we have 10 posts in DB (2 for him,3 for the user that he is already following and 5 for users that are not following or friends)', () => {
+      it('should return a 200 status with a json contain array of 5 posts', async () => {
+        const authUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        const followedUser = new User(userPayload);
+        const notFollowedUser = new User(userPayload);
+        await authUser.save();
+        await followedUser.save();
+
+        const authPost = { ...postPayload, author: authUser._id };
+        const followedUserPost = {
+          ...postPayload,
+          author: authUser._id,
+          likes: {
+            user: followedUser._id,
+          },
+        };
+        const notFollowedUserPost = { ...postPayload, author: notFollowedUser._id };
+        await Post.insertMany([
+          authPost,
+          authPost,
+          followedUserPost,
+          followedUserPost,
+          followedUserPost,
+          notFollowedUserPost,
+          notFollowedUserPost,
+          notFollowedUserPost,
+          notFollowedUserPost,
+          notFollowedUserPost,
+        ]);
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          try {
+            const response = await request(app)
+              .get('/api/v1/feed/posts/timeline')
+              .set('Authorization', `Bearer ${token}`)
+              .send({ postId: validMongooseObjectId, commentId: validMongooseObjectId });
+
+            expect(response?.body?.data?.posts?.length).toBe(5);
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+            expect(response?.body?.message).toMatch('Successful Found posts');
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    });
+  });
+
+  /**
    * Testing like/un-like post endpoint
    */
   describe('PUT  /api/v1/feed/posts/:postId/like', () => {
