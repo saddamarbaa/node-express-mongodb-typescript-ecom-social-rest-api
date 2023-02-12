@@ -1,4 +1,5 @@
 import request from 'supertest';
+import cloudinary from 'cloudinary';
 import mongoose from 'mongoose';
 
 import app from '@src/app';
@@ -421,6 +422,213 @@ describe('Post', () => {
           });
         } catch (error) {
           console.log(error);
+        }
+      });
+    });
+  });
+
+  /**
+   * Testing delete post endpoint
+   */
+  describe('DELETE /api/v1/feed/posts/:postId', () => {
+    cloudinary.v2.uploader.destroy = jest.fn().mockResolvedValue({ success: true });
+    describe('given the user is logged in and authorized and the given postId to removed does exist in DB', () => {
+      it('should return a 200 status with a json message - success', async () => {
+        try {
+          const user = new User({
+            ...userPayload,
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            role: authorizationRoles.admin,
+          });
+          await user.save();
+
+          const post = new Post({
+            ...postPayload,
+            author: user._id,
+          });
+          await post.save();
+
+          const authResponse = await request(app)
+            .post('/api/v1/auth/login')
+            .send({
+              email: (adminEmails && adminEmails[0]) || userPayload.email,
+              password: userPayload.password,
+            });
+
+          const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+          if (token) {
+            const response = await request(await app)
+              .delete(`/api/v1/feed/posts/${post?._id}`)
+              .set('Authorization', `Bearer ${token}`)
+              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
+              .expect('Content-Type', /json/);
+
+            return expect(response.body).toMatchObject({
+              data: null,
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        try {
+          const response = await request(app).delete('/api/v1/feed/posts/userId');
+
+          expect(response.body).toMatchObject({
+            data: null,
+            success: false,
+            error: true,
+            message: expect.any(String),
+            status: 401,
+            stack: expect.any(String),
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the user is logged in but the given postId to removed does not exist in DB', () => {
+      it('should return a 401 status with a json message - Bad Request', async () => {
+        try {
+          const newUser = new User({
+            ...userPayload,
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            role: authorizationRoles.admin,
+          });
+          await newUser.save();
+
+          const authResponse = await request(await app)
+            .post('/api/v1/auth/login')
+            .send({
+              email: (adminEmails && adminEmails[0]) || userPayload.email,
+              password: userPayload.password,
+            })
+            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
+            .expect('Content-Type', /json/);
+
+          const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+          if (token) {
+            const response = await request(app)
+              .delete(`/api/v1/feed/posts/${validMongooseObjectId}`)
+              .set('Authorization', `Bearer ${token}`)
+              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
+              .expect('Content-Type', /json/);
+
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 400,
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given post id is not valid ', () => {
+      it('should return a 422 status with validation message', async () => {
+        try {
+          const newUser = new User({
+            ...userPayload,
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            role: authorizationRoles.admin,
+          });
+          await newUser.save();
+
+          const authResponse = await request(app)
+            .post('/api/v1/auth/login')
+            .send({
+              email: (adminEmails && adminEmails[0]) || userPayload.email,
+              password: userPayload.password,
+            });
+
+          const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+          if (token) {
+            const response = await request(app)
+              .delete('/api/v1/feed/posts/postId')
+              .set('Authorization', `Bearer ${token}`);
+
+            expect(response.body).toMatchObject({
+              data: null,
+              error: true,
+              status: 422,
+              message: expect.any(String),
+              stack: expect.any(String),
+            });
+            expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the user is logged in and the given postId to removed does exist in DB but the user is Unauthorized to remove', () => {
+      it('should return a 403 status with a json message - Unauthorized', async () => {
+        const authUser = new User({
+          ...userPayload,
+        });
+
+        const testEmail = 'test@gmail.com';
+        const testUser = new User({
+          ...userPayload,
+          email: testEmail,
+        });
+
+        const post = new Post({
+          ...postPayload,
+          author: authUser._id,
+        });
+
+        await post.save();
+        await testUser.save();
+        await authUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: testEmail,
+            password: userPayload.password,
+          })
+          .expect(200);
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .delete(`/api/v1/feed/posts/${post._id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 403,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
         }
       });
     });
