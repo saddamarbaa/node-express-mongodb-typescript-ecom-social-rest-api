@@ -1,9 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
 
-import { PostT } from '@src/interfaces';
 import { postCategory } from '@src/constants';
+import { IPost } from '@src/interfaces';
 
-export const PostSchema: Schema<PostT> = new Schema(
+export const PostSchema: Schema<IPost> = new Schema(
   {
     title: {
       type: String,
@@ -70,14 +70,14 @@ export const PostSchema: Schema<PostT> = new Schema(
     ],
     comments: [
       {
+        comment: {
+          type: String,
+          required: true,
+        },
         user: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User', // add relationship
           required: [true, 'User is required'],
-        },
-        comment: {
-          type: String,
-          required: true,
         },
       },
     ],
@@ -88,4 +88,4 @@ export const PostSchema: Schema<PostT> = new Schema(
   }
 );
 
-export default mongoose.models.Post || mongoose.model<PostT>('Post', PostSchema);
+export default mongoose.models.Post || mongoose.model<IPost>('Post', PostSchema);

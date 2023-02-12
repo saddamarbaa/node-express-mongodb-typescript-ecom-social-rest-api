@@ -14,7 +14,7 @@ import { environmentConfig } from '@src/configs/custom-environment-variables.con
 import {
   AuthenticatedRequestBody,
   IUser,
-  PostT,
+  IPost,
   ProcessingOrderT,
   ProductT,
   ResponseT,
@@ -1058,7 +1058,11 @@ export const adminGetPostsService = async (_req: Request, res: TPaginationRespon
 
 export const adminGetPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const post = await Post.findById(req.params.postId).populate('author').exec();
+    const post = await Post.findById(req.params.postId)
+      .populate('author')
+      .populate('likes.user')
+      .populate('comments.user')
+      .exec();
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -1094,7 +1098,7 @@ export const adminGetPostService = async (req: AuthenticatedRequestBody<IUser>, 
 };
 
 export const adminCreatePostService = async (
-  req: AuthenticatedRequestBody<PostT>,
+  req: AuthenticatedRequestBody<IPost>,
   res: Response,
   next: NextFunction
 ) => {
@@ -1276,7 +1280,7 @@ export const adminClearAllPostsService = async (
 };
 
 export const adminUpdatePostService = async (
-  req: AuthenticatedRequestBody<PostT>,
+  req: AuthenticatedRequestBody<IPost>,
   res: Response,
   next: NextFunction
 ) => {

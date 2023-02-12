@@ -52,12 +52,14 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       required: [true, 'Please provide password'],
       minlength: [6, 'Password must be more than 6 characters'],
       trim: true,
+      select: false,
     },
     confirmPassword: {
       type: String,
       required: [true, 'Please provide confirmed Password'],
       minlength: [6, 'Password must be more than 6 characters'],
       trim: true,
+      select: false,
     },
     cart: {
       items: [
@@ -174,24 +176,25 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     },
     acceptTerms: { type: Boolean, required: false, default: false },
     confirmationCode: { type: String, require: false, index: true, unique: true, sparse: true },
+    friends: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    following: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     followers: [
       {
-        name: String,
-        surname: String,
-        profileImage: String,
-        bio: String,
-        userId: Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
+        ref: 'User',
       },
     ],
-    followings: [
-      {
-        name: String,
-        surname: String,
-        profileImage: String,
-        bio: String,
-        userId: Schema.Types.ObjectId,
-      },
-    ],
+
     resetPasswordToken: {
       type: String,
       required: false,

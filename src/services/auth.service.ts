@@ -188,7 +188,9 @@ export const loginService = async (req: Request, res: Response, next: NextFuncti
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
+    const user = await User.findOne({ email: new RegExp(`^${email}$`, 'i') })
+      .select('+password')
+      .exec();
 
     // 401 Unauthorized
     if (!user) {
@@ -357,7 +359,12 @@ export const getAuthProfileService = async (
   next: NextFunction
 ) => {
   try {
-    const user = await User.findById(req?.user?._id);
+    const user = await User.findById(req.user?._id)
+      .select('-password -confirmPassword -cloudinary_id -status -isDeleted -acceptTerms -isVerified')
+      .populate('following', 'name  surname  profileImage bio')
+      .populate('followers', 'name  surname  profileImage bio')
+      .populate('cart.items.productId')
+      .exec();
 
     if (!user) {
       return next(createHttpError(401, `Auth Failed `));

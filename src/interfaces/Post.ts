@@ -1,11 +1,19 @@
 import mongoose from 'mongoose';
 
-export interface CommentT extends mongoose.Document {
+export interface CommentI extends mongoose.Document {
   comment: string;
-  user: mongoose.Schema.Types.ObjectId;
+  user: mongoose.Types.ObjectId;
 }
 
-export interface AddCommentT extends CommentT {
+export interface IShare {
+  user: mongoose.Types.ObjectId;
+}
+
+export interface LikeT {
+  user: mongoose.Types.ObjectId;
+}
+
+export interface AddCommentT extends CommentI {
   postId: string;
 }
 
@@ -13,17 +21,12 @@ export interface UpdateCommentT extends AddCommentT {
   commentId: string;
 }
 
-export interface LikeT {
-  user: mongoose.Schema.Types.ObjectId;
-}
-
-export interface PostT extends mongoose.Document {
+export interface IPost extends mongoose.Document {
   title: string;
   content: string;
   postImage: string;
-  author: mongoose.Schema.Types.ObjectId;
-  numberOfLikes: number;
-  comments: CommentT[];
+  author: mongoose.Types.ObjectId;
+  comments: CommentI[];
   likes: LikeT[];
   _id: string;
   createdAt?: string;

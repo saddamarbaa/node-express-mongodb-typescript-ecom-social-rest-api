@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+
 import createHttpError, { InternalServerError } from 'http-errors';
 
 import User from '@src/models/User.model';
@@ -7,64 +8,16 @@ import {
   AddCommentT,
   AuthenticatedRequestBody,
   IUser,
-  LikeT,
-  PostT,
+  IPost,
   TPaginationResponse,
   UpdateCommentT,
-  CommentT,
+  CommentI,
+  LikeT,
 } from '@src/interfaces';
 import Post from '@src/models/Post.model';
 import { cloudinary } from '@src/middlewares';
 
-export const getPostsService = async (_req: Request, res: TPaginationResponse) => {
-  if (res?.paginatedResults) {
-    const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
-    const responseObject: any = {
-      totalDocs: totalDocs || 0,
-      totalPages: totalPages || 0,
-      lastPage: lastPage || 0,
-      count: results?.length || 0,
-      currentPage: currentPage || 0,
-    };
-
-    if (next) {
-      responseObject.nextPage = next;
-    }
-    if (previous) {
-      responseObject.prevPage = previous;
-    }
-
-    responseObject.posts = results?.map((postDoc: any) => {
-      const { author, ...otherPostInfo } = postDoc._doc;
-      return {
-        ...otherPostInfo,
-        creator: {
-          _id: author._id,
-          name: author.name,
-          surname: author.surname,
-          profileImage: author.profileImage,
-        },
-        request: {
-          type: 'Get',
-          description: 'Get one post with the id',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
-        },
-      };
-    });
-
-    return res.status(200).send(
-      customResponse<typeof responseObject>({
-        success: true,
-        error: false,
-        message: responseObject.posts.length ? 'Successful Found posts' : 'No post found',
-        status: 200,
-        data: responseObject,
-      })
-    );
-  }
-};
-
-export const createPostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
+export const createPostService = async (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) => {
   const { title, content, category } = req.body;
 
   // console.log(req.body, req.file);
@@ -95,8 +48,7 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
     const data = {
       post: {
         ...createdPost._doc,
-        author: undefined,
-        creator: {
+        author: {
           _id: req?.user?._id || '',
           name: req?.user?.name || '',
           surname: req?.user?.surname || '',
@@ -129,10 +81,51 @@ export const createPostService = async (req: AuthenticatedRequestBody<PostT>, re
   }
 };
 
+export const getPostsService = async (_req: Request, res: TPaginationResponse) => {
+  if (res?.paginatedResults) {
+    const { results, next, previous, currentPage, totalDocs, totalPages, lastPage } = res.paginatedResults;
+    const responseObject: any = {
+      totalDocs: totalDocs || 0,
+      totalPages: totalPages || 0,
+      lastPage: lastPage || 0,
+      count: results?.length || 0,
+      currentPage: currentPage || 0,
+    };
+
+    if (next) {
+      responseObject.nextPage = next;
+    }
+    if (previous) {
+      responseObject.prevPage = previous;
+    }
+
+    responseObject.posts = (results as Array<{ _doc: IPost }>).map((postDoc) => {
+      return {
+        ...postDoc._doc,
+        request: {
+          type: 'Get',
+          description: 'Get one post with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+        },
+      };
+    });
+
+    return res.status(200).send(
+      customResponse<typeof responseObject>({
+        success: true,
+        error: false,
+        message: responseObject.posts.length ? 'Successful Found posts' : 'No post found',
+        status: 200,
+        data: responseObject,
+      })
+    );
+  }
+};
+
 export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
     const post = await Post.findById(req.params.postId)
-      .populate('author')
+      .populate('author', 'name  surname  profileImage  bio')
       .populate('likes.user', 'name  surname  profileImage bio')
       .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
@@ -141,18 +134,9 @@ export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: 
       return next(new createHttpError.BadRequest());
     }
 
-    const { author, ...otherPostInfo } = post._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: {
-          _id: author._id,
-          name: author.name,
-          surname: author.surname,
-          profileImage: author.profileImage,
-        },
+        ...post._doc,
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -175,14 +159,68 @@ export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: 
   }
 };
 
-export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
+export const getTimelinePostsService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Get the user and his/her followers and friends
+    const userId = req.user?._id as string;
+    const user: IUser = await User.findById(userId).populate('friends following').exec();
+    const friendsIds: string[] = (user.friends as unknown as IUser[]).map((friend) => friend._id);
+    const followingIds: string[] = (user.following as unknown as IUser[]).map((following) => following._id);
+    const userIds = [...friendsIds, ...followingIds, userId];
+
+    // Get the posts by all the users
+    const posts = await Post.find({ author: { $in: userIds } })
+      .sort({ createdAt: -1 })
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes.user', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .exec();
+
+    const postsWithRequests = (posts as Array<{ _doc: IPost }>).map((postDoc) => {
+      return {
+        ...postDoc._doc,
+        request: {
+          type: 'Get',
+          description: 'Get one post with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+        },
+      };
+    });
+
+    if (!posts) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const data = {
+      posts: postsWithRequests,
+    };
+
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message: posts.length ? 'Successful Found posts' : 'No post found',
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updatePostService = async (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) => {
   const { title, content, category } = req.body;
 
   try {
     const post = await Post.findById(req.params.postId)
-      .populate('author')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes.user', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
       .exec();
 
     if (!post) {
@@ -221,8 +259,7 @@ export const updatePostService = async (req: AuthenticatedRequestBody<PostT>, re
     const data = {
       post: {
         ...updatedPost._doc,
-        author: undefined,
-        creator: {
+        author: {
           _id: req?.user?._id,
           name: req?.user?.name,
           surname: req?.user?.surname,
@@ -301,29 +338,24 @@ export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, 
     const posts = await Post.find({
       author: req?.user?._id || '',
     })
-      .populate('author')
+      .populate('author', 'name  surname  profileImage  bio')
       .populate('likes.user', 'name  surname  profileImage bio')
       .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
+    const postsWithRequests = (posts as Array<{ _doc: IPost }>).map((postDoc) => {
+      return {
+        ...postDoc._doc,
+        request: {
+          type: 'Get',
+          description: 'Get one post with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+        },
+      };
+    });
+
     const data = {
-      posts: posts?.map((postDoc: any) => {
-        const { author, ...otherPostInfo } = postDoc._doc;
-        return {
-          ...otherPostInfo,
-          creator: {
-            _id: author._id,
-            name: author.name,
-            surname: author.surname,
-            profileImage: author.profileImage,
-          },
-          request: {
-            type: 'Get',
-            description: 'Get one post with the id',
-            url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
-          },
-        };
-      }),
+      posts: postsWithRequests,
     };
 
     return res.status(200).send(
@@ -387,7 +419,7 @@ export const deleteUserPostsService = async (
   }
 };
 
-export const likePostService = async (req: AuthenticatedRequestBody<PostT>, res: Response, next: NextFunction) => {
+export const likePostService = async (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) => {
   try {
     const post = await Post.findById(req.params.postId);
 
@@ -418,13 +450,9 @@ export const likePostService = async (req: AuthenticatedRequestBody<PostT>, res:
       .populate('comments.user', 'name  surname  profileImage bio')
       .exec();
 
-    const { author, ...otherPostInfo } = updatedPost._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...updatedPost._doc,
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -459,8 +487,8 @@ export const addCommentInPostService = async (
     const { postId, comment } = req.body;
 
     const newComment = {
-      user: req.user?._id,
       comment,
+      user: req.user?._id,
     };
 
     const post = await Post.findByIdAndUpdate(
@@ -486,13 +514,9 @@ export const addCommentInPostService = async (
       return next(new createHttpError.BadRequest());
     }
 
-    const { author, ...otherPostInfo } = post._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...post._doc,
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -556,13 +580,9 @@ export const updateCommentInPostService = async (
 
     await post.save();
 
-    const { author, ...otherPostInfo } = post._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...post._doc,
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -657,7 +677,7 @@ export const getAllCommentInPostService = async (
       return next(new createHttpError.BadRequest());
     }
 
-    const comments = post.comments.map((commentDoc: { _doc: CommentT }) => {
+    const comments = post.comments.map((commentDoc: { _doc: CommentI }) => {
       return {
         ...commentDoc._doc,
         request: {
@@ -714,7 +734,7 @@ export const getUserCommentInPostService = async (
       (com: { user: IUser }) => com.user?._id.toString() === req.user?._id.toString()
     );
 
-    const comments = post.comments.map((commentDoc: { _doc: CommentT }) => {
+    const comments = post.comments.map((commentDoc: { _doc: CommentI }) => {
       return {
         ...commentDoc._doc,
         request: {
@@ -763,13 +783,9 @@ export const deleteAllCommentInPostService = async (
     post.comments = [];
     await post.save();
 
-    const { author, ...otherPostInfo } = post._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...post._doc,
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -826,13 +842,9 @@ export const deleteCommentInPostService = async (
 
     await post.save();
 
-    const { author, ...otherPostInfo } = post._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...post._doc,
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -894,13 +906,9 @@ export const deleteUserCommentInPostService = async (
 
     await post.save();
 
-    const { author, ...otherPostInfo } = post._doc;
-
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...post._doc,
         request: {
           type: 'Get',
           description: 'Get all comments',

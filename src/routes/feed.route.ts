@@ -17,6 +17,7 @@ import {
   likePostController,
   updateCommentInPostController,
   updatePostController,
+  getTimelinePostsController,
 } from '@src/controllers';
 import {
   addCommentValidation,
@@ -29,13 +30,13 @@ import {
   updateCommentValidation,
   updatePostValidation,
   uploadImage,
-  userIdValidation,
 } from '@src/middlewares';
 
 const router = express.Router();
 
 router.get('/posts', postPaginationMiddleware(), getPostsController);
 router.get('/posts/user-posts', isAuth, getUserPostsController);
+router.get('/posts/timeline', isAuth, getTimelinePostsController);
 router.delete('/posts/user-posts', isAuth, deleteUserPostsController);
 router.put('/posts/comment', isAuth, addCommentValidation, addCommentInPostController);
 router.patch('/posts/comment', isAuth, updateCommentValidation, updateCommentInPostController);
