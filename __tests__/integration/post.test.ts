@@ -34,6 +34,60 @@ afterEach(async () => {
 
 describe('Post', () => {
   /**
+   * Testing get all post endpoint
+   */
+  describe('GET /api/v1/feed/posts', () => {
+    describe('given no post in db', () => {
+      it('should return a 200 status with a json contain empty array', async () => {
+        request(app)
+          .get('/api/v1/feed/posts')
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body.data).toMatchObject({
+              totalDocs: 0,
+              totalPages: 0,
+              lastPage: 0,
+              count: 0,
+              currentPage: { page: 1, limit: 20 },
+              posts: [],
+            });
+
+            expect(response?.body?.message).toMatch('No post found');
+          });
+      });
+    });
+
+    describe('given added 3 posts in db', () => {
+      it('should return a 200 status with a json contain array of 3 posts', async () => {
+        const user = new User(userPayload);
+        await user.save();
+        const post = { ...postPayload, author: user._id };
+        await Post.insertMany([post, post, post]);
+
+        await request(app)
+          .get('/api/v1/feed/posts')
+          .expect('Content-Type', /json/)
+          .then((response) => {
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: 'Successful Found posts',
+              status: 200,
+              data: {
+                posts: expect.any(Array),
+                totalDocs: expect.any(Number),
+              },
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    });
+  });
+
+  /**
    * Testing like/un-like post endpoint
    */
   describe('PUT  /api/v1/feed/posts/:postId/like', () => {
