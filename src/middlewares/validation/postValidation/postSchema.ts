@@ -9,6 +9,7 @@ const vaildObjectId = JoiObjectId(Joi);
 
 export const postSchema = {
   addPost: Joi.object({
+    filename: Joi.string().required().label('Invalid request (Please upload Image)'),
     title: Joi.string().min(3).max(100).required(),
     content: Joi.string().min(5).required(),
     category: Joi.string().valid(
@@ -22,7 +23,6 @@ export const postSchema = {
       postCategory.typeScript,
       postCategory.social
     ),
-    filename: Joi.string().required().label('Invalid request (Please upload Image)'),
   }),
   updatePost: Joi.object({
     title: Joi.string().min(3).max(100),

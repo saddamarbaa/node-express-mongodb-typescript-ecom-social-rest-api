@@ -3009,4 +3009,247 @@ describe('Post', () => {
       });
     });
   });
+
+  /**
+   * Testing add post endpoint
+   */
+  describe('POST /api/v1/feed/posts/', () => {
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        try {
+          const response = await request(app).post('/api/v1/feed/posts').attach('postImage', localFilePath).expect(401);
+
+          expect(response.body).toEqual({
+            data: null,
+            success: false,
+            error: true,
+            message: expect.any(String),
+            status: 401,
+            stack: expect.any(String),
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the user is logged in and authorized', () => {
+      describe('given any of the flowing filed is missing (title,content,postImage)', () => {
+        it('should return a 422 status with validation message', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              // Image is missing
+              await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  ...postPayload,
+                })
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                  expect(response.body).toMatchObject({
+                    data: null,
+                    error: true,
+                    status: 422,
+                    message: expect.any(String),
+                    stack: expect.any(String),
+                  });
+                  expect(response?.body?.message).toMatch(/Please upload Image/);
+                });
+
+              // title is missing
+              await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  content: postPayload.content,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                  expect(response.body).toMatchObject({
+                    data: null,
+                    error: true,
+                    status: 422,
+                    message: expect.any(String),
+                    stack: expect.any(String),
+                  });
+                  expect(response?.body?.message).toMatch(/title/);
+                });
+
+              // content is missing
+              await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: postPayload.title,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                  expect(response.body).toMatchObject({
+                    data: null,
+                    error: true,
+                    status: 422,
+                    message: expect.any(String),
+                    stack: expect.any(String),
+                  });
+                  expect(response?.body?.message).toMatch(/content/);
+                });
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+
+      describe('given the title is less than 3 characters', () => {
+        it('should return a 422 status with validation message', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              const response = await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: 'tt',
+                  content: postPayload.content,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/);
+
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch(/length must be at least 3 characters long/);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+
+      describe('given the content is less than 5 characters', () => {
+        it('should return a 422 status with validation message', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              const response = await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: postPayload.title,
+                  content: 'cont',
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/);
+
+              // Check that the response body matches the expected format
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              // Check that the validation message is correct
+              expect(response.body.message).toMatch(/length must be at least 5 characters long/);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+
+      describe('given all the post information are valid', () => {
+        it('should create post and return a 201 status', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              const response = await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: postPayload.title,
+                  content: postPayload.content,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/);
+
+              // Check that the response body matches the expected format
+              expect(response.body).toMatchObject({
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 201,
+              });
+
+              expect(response?.body?.data?.post?.title).toMatch(postPayload.title);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+    });
+  });
 });
