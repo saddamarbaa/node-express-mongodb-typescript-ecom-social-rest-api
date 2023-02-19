@@ -7,7 +7,14 @@ import { environmentConfig } from '@src/configs';
 import User from '@src/models/User.model';
 import Post from '@src/models/Post.model';
 
-import { adminEmails, authorizationRoles, postPayload, userPayload, validMongooseObjectId } from '@src/constants';
+import {
+  adminEmails,
+  authorizationRoles,
+  postPayload,
+  userPayload,
+  validMongooseObjectId,
+  correctFilePath as localFilePath,
+} from '@src/constants';
 
 beforeAll((done) => {
   jest.setTimeout(90 * 1000);
@@ -2313,7 +2320,7 @@ describe('Post', () => {
   /**
    * Testing delete one comment in post endpoint
    */
-  describe('DELETE  /api/v1/feed/posts/comment', () => {
+  describe('DELETE /api/v1/feed/posts/comment/{postId}', () => {
     describe('given the user is not logged in', () => {
       it('should return a 401 status with a json message - Auth Failed', async () => {
         request(app)
@@ -2605,6 +2612,643 @@ describe('Post', () => {
               console.log(error);
             });
         }
+      });
+    });
+  });
+
+  /**
+   * Testing delete post endpoint
+   */
+  describe('DELETE /api/v1/feed/posts/{postId}', () => {
+    beforeEach(async () => {
+      cloudinary.v2.uploader.destroy = jest.fn().mockResolvedValue({ success: true });
+    });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .delete('/api/v1/feed/posts/63e87ee')
+          .expect(401)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+              stack: expect.any(String),
+            })
+          );
+      });
+    });
+
+    describe('given post id is not valid ', () => {
+      it('should return a 422 status with validation message', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          // postId not vaild
+          await request(app)
+            .delete('/api/v1/feed/posts/postId')
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the post does not exist', () => {
+      it('should return a 400 status with a json message - bad request', async () => {
+        const newUser = new User({
+          ...userPayload,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app).post('/api/v1/auth/login').send({
+          email: userPayload.email,
+          password: userPayload.password,
+        });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .delete(`/api/v1/feed/posts/${validMongooseObjectId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 400,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is logged in and the post does exist in DB but the user is not authorized to remove that post', () => {
+      it('should return a 403 status with a json message - unauthorized', async () => {
+        const authorizedUser = new User({
+          ...userPayload,
+        });
+
+        await authorizedUser.save();
+
+        const unAuthorizedUser = new User({
+          ...userPayload,
+          email: 'authorized@fmail.com',
+        });
+
+        await unAuthorizedUser.save();
+
+        const post = new Post({
+          ...postPayload,
+          author: authorizedUser._id,
+        });
+        await post.save();
+
+        const authResponse = await request(app).post('/api/v1/auth/login').send({
+          email: 'authorized@fmail.com',
+          password: userPayload.password,
+        });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .delete(`/api/v1/feed/posts/${post._id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 403,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is logged in and authorized and the post does exist', () => {
+      it('should delete the post and return a 200 status', async () => {
+        const authorizedUser = new User({
+          ...userPayload,
+        });
+
+        await authorizedUser.save();
+
+        const post = new Post({
+          ...postPayload,
+          author: authorizedUser._id,
+        });
+        await post.save();
+
+        const authResponse = await request(app).post('/api/v1/auth/login').send({
+          email: userPayload.email,
+          password: userPayload.password,
+        });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        expect.assertions(2);
+
+        if (token) {
+          try {
+            const response = await request(app)
+              .delete(`/api/v1/feed/posts/${post._id}`)
+              .set('Authorization', `Bearer ${token}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      });
+    });
+  });
+
+  /**
+   * Testing update post endpoint
+   */
+  describe('PATCH  /api/v1/feed/posts/{postId}', () => {
+    beforeEach(async () => {
+      cloudinary.v2.uploader.destroy = jest.fn().mockResolvedValue({ success: true });
+    });
+
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        request(app)
+          .patch('/api/v1/feed/posts/63e87ee')
+          .expect(401)
+          .then((response) =>
+            expect(response.body).toMatchObject({
+              data: null,
+              success: false,
+              error: true,
+              message: expect.any(String),
+              status: 401,
+              stack: expect.any(String),
+            })
+          );
+      });
+    });
+
+    describe('given post id is not valid ', () => {
+      it('should return a 422 status with validation message', async () => {
+        const newUser = new User({
+          ...userPayload,
+          email: (adminEmails && adminEmails[0]) || userPayload.email,
+          role: authorizationRoles.admin,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: (adminEmails && adminEmails[0]) || userPayload.email,
+            password: userPayload.password,
+          });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          // postId not vaild
+          await request(app)
+            .patch('/api/v1/feed/posts/postId')
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch(/fails to match the valid mongo id pattern/);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the post does not exist', () => {
+      it('should return a 400 status with a json message - bad request', async () => {
+        const newUser = new User({
+          ...userPayload,
+        });
+        await newUser.save();
+
+        const authResponse = await request(app).post('/api/v1/auth/login').send({
+          email: userPayload.email,
+          password: userPayload.password,
+        });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .patch(`/api/v1/feed/posts/${validMongooseObjectId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 400,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is logged in and the post does exist in DB but the user is not authorized to update that post', () => {
+      it('should return a 403 status with a json message - unauthorized', async () => {
+        const authorizedUser = new User({
+          ...userPayload,
+        });
+
+        await authorizedUser.save();
+
+        const unAuthorizedUser = new User({
+          ...userPayload,
+          email: 'authorized@fmail.com',
+        });
+
+        await unAuthorizedUser.save();
+
+        const post = new Post({
+          ...postPayload,
+          author: authorizedUser._id,
+        });
+        await post.save();
+
+        const authResponse = await request(app).post('/api/v1/auth/login').send({
+          email: 'authorized@fmail.com',
+          password: userPayload.password,
+        });
+
+        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+        if (token) {
+          await request(app)
+            .patch(`/api/v1/feed/posts/${post._id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .then((response) => {
+              expect(response.body).toMatchObject({
+                data: null,
+                success: false,
+                error: true,
+                message: expect.any(String),
+                status: 403,
+                stack: expect.any(String),
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    });
+
+    describe('given the user is logged in and authorized and the given postId to updated does exist in DB', () => {
+      it('should return a 200 status with the updated post', async () => {
+        try {
+          const authorizedUser = new User({
+            ...userPayload,
+          });
+
+          await authorizedUser.save();
+
+          const post = new Post({
+            ...postPayload,
+            author: authorizedUser._id,
+          });
+          await post.save();
+
+          const authResponse = await request(app).post('/api/v1/auth/login').send({
+            email: userPayload.email,
+            password: userPayload.password,
+          });
+
+          const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+          const newTitle = 'newTitle';
+          if (token) {
+            const response = await request(app)
+              .patch(`/api/v1/feed/posts/${post._id}`)
+              .set('Authorization', `Bearer ${token}`)
+              .field({
+                title: newTitle,
+              })
+              .set('Authorization', `Bearer ${token}`);
+
+            expect(response.status).toBe(200);
+
+            expect(response?.body?.data?.post?.title).toMatch(newTitle);
+
+            expect(response.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              status: 200,
+            });
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    });
+  });
+
+  /**
+   * Testing add post endpoint
+   */
+  describe('POST /api/v1/feed/posts/', () => {
+    describe('given the user is not logged in', () => {
+      it('should return a 401 status with a json message - Auth Failed', async () => {
+        try {
+          const response = await request(app).post('/api/v1/feed/posts').attach('postImage', localFilePath).expect(401);
+
+          expect(response.body).toEqual({
+            data: null,
+            success: false,
+            error: true,
+            message: expect.any(String),
+            status: 401,
+            stack: expect.any(String),
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    });
+
+    describe('given the user is logged in and authorized', () => {
+      describe('given any of the flowing filed is missing (title,content,postImage)', () => {
+        it('should return a 422 status with validation message', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              // Image is missing
+              await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  ...postPayload,
+                })
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                  expect(response.body).toMatchObject({
+                    data: null,
+                    error: true,
+                    status: 422,
+                    message: expect.any(String),
+                    stack: expect.any(String),
+                  });
+                  expect(response?.body?.message).toMatch(/Please upload Image/);
+                });
+
+              // title is missing
+              await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  content: postPayload.content,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                  expect(response.body).toMatchObject({
+                    data: null,
+                    error: true,
+                    status: 422,
+                    message: expect.any(String),
+                    stack: expect.any(String),
+                  });
+                  expect(response?.body?.message).toMatch(/title/);
+                });
+
+              // content is missing
+              await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: postPayload.title,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                  expect(response.body).toMatchObject({
+                    data: null,
+                    error: true,
+                    status: 422,
+                    message: expect.any(String),
+                    stack: expect.any(String),
+                  });
+                  expect(response?.body?.message).toMatch(/content/);
+                });
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+
+      describe('given the title is less than 3 characters', () => {
+        it('should return a 422 status with validation message', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              const response = await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: 'tt',
+                  content: postPayload.content,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/);
+
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              expect(response?.body?.message).toMatch(/length must be at least 3 characters long/);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+
+      describe('given the content is less than 5 characters', () => {
+        it('should return a 422 status with validation message', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              const response = await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: postPayload.title,
+                  content: 'cont',
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/);
+
+              // Check that the response body matches the expected format
+              expect(response.body).toMatchObject({
+                data: null,
+                error: true,
+                status: 422,
+                message: expect.any(String),
+                stack: expect.any(String),
+              });
+              // Check that the validation message is correct
+              expect(response.body.message).toMatch(/length must be at least 5 characters long/);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+
+      describe('given all the post information are valid', () => {
+        it('should create post and return a 201 status', async () => {
+          try {
+            const user = new User({
+              ...userPayload,
+            });
+
+            await user.save();
+
+            const authResponse = await request(app).post('/api/v1/auth/login').send({
+              email: userPayload.email,
+              password: userPayload.password,
+            });
+
+            const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+
+            if (token) {
+              const response = await request(app)
+                .post('/api/v1/feed/posts')
+                .field({
+                  title: postPayload.title,
+                  content: postPayload.content,
+                })
+                .attach('postImage', localFilePath)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .expect('Content-Type', /json/);
+
+              // Check that the response body matches the expected format
+              expect(response.body).toMatchObject({
+                success: true,
+                error: false,
+                message: expect.any(String),
+                status: 201,
+              });
+
+              expect(response?.body?.data?.post?.title).toMatch(postPayload.title);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        });
       });
     });
   });

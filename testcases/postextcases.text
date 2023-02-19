@@ -1,1 +1,24 @@
-1. Put like/un-like post - Pass
+
+1. Post     : add post - Pass
+2. Post     : admin api - add post - (TODO)
+3. Patch    : update post - Pass
+4. Patch    : admin api - update post - (TODO)
+5. Delete   : delete post - Pass
+6. Delete   : admin api - delete post - (TODO)
+7. Put      : like/un-like post - Pass
+8. Get      : get all posts - Pass
+9. Get      : get timeline posts - Pass
+10. Get     : get user posts - Pass
+11. Get     : get single post - Pass
+12. Put     : add comment - Pass
+13. Patch   : update comment - Pass
+14. Get     : get single comment - Pass
+15. Get     : get all comments - Pass
+16. Get     : get auth user comments - Pass
+17. Delete  : delete all comments - Pass
+18. Delete  : delete all auth user comments - Pass
+19. Delete  : delete one comment - Pass
+20. Delete  : delete one post - Pass
+21. Delete  : admin delete one post - Pass
+
+
