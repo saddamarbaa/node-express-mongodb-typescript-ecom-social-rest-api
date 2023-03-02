@@ -27,6 +27,8 @@ import {
   adminClearAllProductsService,
   adminDeleteAllCommentInPostService,
   adminDeleteCommentInPostService,
+  adminBlockUserService,
+  adminUnblockUserService,
 } from '@src/services';
 import {
   AuthenticatedRequestBody,
@@ -48,6 +50,12 @@ export const adminGetUsersController = (req: Request, res: TPaginationResponse) 
 
 export const adminGetUserController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
   adminGetUserService(req, res, next);
+
+export const adminBlockUserController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminBlockUserService(req, res, next);
+
+export const adminUnblockUserController = (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) =>
+  adminUnblockUserService(req, res, next);
 
 export const adminAddUserController = (req: Request, res: Response, next: NextFunction) =>
   adminAddUserService(req, res, next);

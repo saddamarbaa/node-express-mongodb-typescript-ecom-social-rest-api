@@ -23,6 +23,7 @@ import {
 import {
   adminAddProductController,
   adminAddUserController,
+  adminBlockUserController,
   adminClearAllOrdersController,
   adminClearAllProductsController,
   adminCreatePostController,
@@ -42,6 +43,7 @@ import {
   adminGetUserController,
   adminGetUsersController,
   adminRemoveUserController,
+  adminUnblockUserController,
   adminUpdateAuthController,
   adminUpdateOrderStatusController,
   adminUpdatePostController,
@@ -79,6 +81,21 @@ router.delete(
   customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
   userIdValidation,
   adminRemoveUserController
+);
+
+router.put(
+  '/users/block/:userId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+  userIdValidation,
+  adminBlockUserController
+);
+router.put(
+  '/users/un-block/:userId',
+  isAuth,
+  customRoles(environmentConfig.ADMIN_EMAILS, authorizationRoles.admin),
+  userIdValidation,
+  adminUnblockUserController
 );
 
 router.post(

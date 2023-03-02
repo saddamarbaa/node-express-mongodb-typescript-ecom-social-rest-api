@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 import { environmentConfig } from '@src/configs/custom-environment-variables.config';
 import { CartItemT, IUser } from '@src/interfaces';
-import { authorizationRoles } from '@src/constants';
+import { authorizationRoles, awards, plans } from '@src/constants';
 
 export interface IUserDocument extends Document, IUser {
   // document level operations
@@ -15,7 +15,7 @@ export interface IUserDocument extends Document, IUser {
   removeFromCart(prodId: string): Promise<void>;
 }
 
-const UserSchema: Schema<IUserDocument> = new Schema(
+export const UserSchema: Schema<IUserDocument> = new Schema(
   {
     name: {
       type: String,
@@ -103,6 +103,11 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       // default: '/static/uploads/users/temp.png',
       // lowercase: true,
     },
+    coverPicture: {
+      type: String,
+      required: false,
+      default: '',
+    },
     cloudinary_id: {
       type: String,
     },
@@ -144,6 +149,10 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       type: Boolean,
       default: false,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
       enum: ['pending', 'active'],
@@ -176,6 +185,18 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     },
     acceptTerms: { type: Boolean, required: false, default: false },
     confirmationCode: { type: String, require: false, index: true, unique: true, sparse: true },
+    viewers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    blocked: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     friends: [
       {
         type: Schema.Types.ObjectId,
@@ -194,7 +215,6 @@ const UserSchema: Schema<IUserDocument> = new Schema(
         ref: 'User',
       },
     ],
-
     resetPasswordToken: {
       type: String,
       required: false,
@@ -203,30 +223,48 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       type: Date,
       required: false,
     },
+    plan: {
+      type: String,
+      enum: [plans.free, plans.premium, plans.pro],
+      default: plans.free,
+    },
+    userAward: {
+      type: String,
+      enum: [awards.bronze, awards.silver, awards.gold],
+      default: awards.bronze,
+    },
   },
   {
     timestamps: true,
+    versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
+// Hooks
 UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   const isMatch = await bcrypt.compare(candidatePassword, this.password);
   return isMatch;
 };
 
-UserSchema.pre('save', async function (next) {
-  if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
-    console.log('Middleware called before saving the user is', this);
-  }
+UserSchema.pre('save', async function (next: (error?: Error) => void) {
+  try {
+    if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
+      console.log('Middleware called before saving the user is', this);
+    }
 
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const user = this;
-  if (user.isModified('password')) {
+    if (!this.isModified('password')) {
+      return next();
+    }
+
     const salt = await bcrypt.genSalt(12);
-    user.password = await bcrypt.hash(user.password, salt);
-    user.confirmPassword = await bcrypt.hash(user.password, salt);
+    this.password = await bcrypt.hash(this.password, salt);
+    this.confirmPassword = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err as Error);
   }
-  next();
 });
 
 UserSchema.post('save', function () {
@@ -299,5 +337,43 @@ UserSchema.methods.clearCart = async function (): Promise<boolean> {
   this.cart = { items: [] };
   return this.save({ validateBeforeSave: false });
 };
+
+// Get user's posts as virtual field
+UserSchema.virtual('posts', {
+  ref: 'Post',
+  localField: '_id',
+  foreignField: 'author',
+  justOne: false,
+});
+
+// Get fullname
+UserSchema.virtual('fullName').get(function (this: IUserDocument) {
+  return `${this.name} ${this.surname}`;
+});
+
+// get followers count
+UserSchema.virtual('followersCount').get(function (this: IUserDocument) {
+  return this?.followers?.length;
+});
+
+// get following count
+UserSchema.virtual('followingCount').get(function (this: IUserDocument) {
+  return this?.following?.length;
+});
+
+// get viewers count
+UserSchema.virtual('viewersCount').get(function (this: IUserDocument) {
+  return this?.viewers?.length;
+});
+
+// get blocked count
+UserSchema.virtual('blockedCount').get(function (this: IUserDocument) {
+  return this?.blocked?.length;
+});
+
+// get friends count
+UserSchema.virtual('friendsCount').get(function (this: IUserDocument) {
+  return this?.friends?.length;
+});
 
 export default models.User || model<IUserDocument>('User', UserSchema);

@@ -7,3 +7,15 @@ export const authorizationRoles = {
   client: 'client',
   guide: 'guide',
 };
+
+export const plans = {
+  free: 'Free',
+  premium: 'Premium',
+  pro: 'Pro',
+};
+
+export const awards = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+};

@@ -9,3 +9,9 @@ export const postCategory = {
   blockchain: 'blockchain',
   social: 'social',
 };
+
+export const userAward = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+};

@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { Document } from 'mongoose';
+import { IPost } from './Post';
 
 export interface FollowT {
   name: string;
@@ -22,10 +23,12 @@ export interface IUser extends Document {
   nationality?: string;
   companyName?: string;
   profileImage?: string;
+  coverPicture?: string;
   jobTitle?: string;
   status?: string;
   isVerified?: boolean;
   isDeleted?: boolean;
+  isBlocked?: boolean;
   address?: string;
   dateOfBirth?: string;
   createdAt?: string;
@@ -39,6 +42,8 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: string;
   userId?: string;
+  userAward?: string;
+  plan?: string;
   timestamps?: boolean;
   cart?: {
     items: {
@@ -50,6 +55,18 @@ export interface IUser extends Document {
   followers: string[];
   following: string[];
   friends: string[];
+  viewers: string[];
+  blocked: string[];
+  // Virtual fields
+  lastPostDate?: string;
+  isInactive?: boolean;
+  fullName?: string;
+  followersCount?: number;
+  followingCount?: number;
+  viewersCount?: number;
+  blockedCount?: number;
+  friendsCount?: number;
+  posts?: IPost[];
 }
 
 export interface IRequestUser extends Request {

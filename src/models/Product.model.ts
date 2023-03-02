@@ -139,6 +139,8 @@ export const ProductSchema: Schema<ProductT> = new Schema(
   {
     timestamps: true,
     versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 

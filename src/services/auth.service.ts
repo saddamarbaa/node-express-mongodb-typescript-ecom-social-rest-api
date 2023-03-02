@@ -13,9 +13,10 @@ import {
   sendEmailVerificationEmail,
   sendResetPasswordEmail,
 } from '@src/utils';
-import { AuthenticatedRequestBody, IUser, ResponseT } from '@src/interfaces';
+import { AuthenticatedRequestBody, IPost, IUser, ResponseT } from '@src/interfaces';
 import { cloudinary, verifyRefreshToken } from '@src/middlewares';
 import { authorizationRoles } from '@src/constants';
+import Post from '@src/models/Post.model';
 
 export const signupService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
   const {
@@ -185,25 +186,38 @@ export const signupService = async (req: Request, res: Response<ResponseT<null>>
 };
 
 export const loginService = async (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
+    // Find user by email
     const user = await User.findOne({ email: new RegExp(`^${email}$`, 'i') })
+      // Select password to compare
       .select('+password')
+      // Populate user's data
+      .populate('following', 'name surname profileImage bio')
+      .populate('followers', 'name surname profileImage bio')
+      .populate('viewers', 'name surname profileImage bio')
+      .populate('blocked', 'name surname profileImage bio')
+      .populate('cart.items.productId')
       .exec();
 
-    // 401 Unauthorized
+    // If user doesn't exist, return 401 Unauthorized error
     if (!user) {
       return next(createHttpError(401, 'Auth Failed (Invalid Credentials)'));
     }
 
-    // Compare password
+    // Check if the user is blocked, return 403 Forbidden error if true
+    if (user?.isBlocked) {
+      return next(createHttpError(403, 'Access denied, account blocked'));
+    }
+
+    // Compare password, return 401 Unauthorized error if not matched
     const isPasswordCorrect = await user.comparePassword(password);
 
     if (!isPasswordCorrect) {
       return next(createHttpError(401, 'Auth Failed (Invalid Credentials)'));
     }
 
+    // Find or create token for the user
     let token = await Token.findOne({ userId: user._id });
 
     if (!token) {
@@ -211,6 +225,7 @@ export const loginService = async (req: Request, res: Response, next: NextFuncti
       token = await token.save();
     }
 
+    // Generate access token and refresh token for the user
     const generatedAccessToken = await token.generateToken(
       {
         userId: user._id,
@@ -239,11 +254,10 @@ export const loginService = async (req: Request, res: Response, next: NextFuncti
     token.accessToken = generatedAccessToken;
     token = await token.save();
 
-    // check user is verified or not
+    // If user is not verified, send verification email and return error
     if (!user.isVerified || user.status !== 'active') {
       const verifyEmailLink = `${environmentConfig.WEBSITE_URL}/verify-email?id=${user._id}&token=${token.refreshToken}`;
 
-      // Again send verification email
       sendEmailVerificationEmail(email, user.name, verifyEmailLink);
 
       const responseData = {
@@ -263,16 +277,13 @@ export const loginService = async (req: Request, res: Response, next: NextFuncti
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: pass, confirmPassword, isVerified, isDeleted, status, acceptTerms, ...otherUserInfo } = user._doc;
-
     const data = {
       accessToken: token.accessToken,
       refreshToken: token.refreshToken,
-      user: otherUserInfo,
+      user: { ...user.toObject(), password: undefined },
     };
 
-    // Set cookies
+    // Set cookies and return success
     res.cookie('accessToken', token.accessToken, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // one days
@@ -296,7 +307,7 @@ export const loginService = async (req: Request, res: Response, next: NextFuncti
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
@@ -359,10 +370,11 @@ export const getAuthProfileService = async (
   next: NextFunction
 ) => {
   try {
-    const user = await User.findById(req.user?._id)
-      .select('-password -confirmPassword -cloudinary_id -status -isDeleted -acceptTerms -isVerified')
+    const user: IUser | null = await User.findById(req.user?._id)
       .populate('following', 'name  surname  profileImage bio')
       .populate('followers', 'name  surname  profileImage bio')
+      .populate('viewers', 'name  surname  profileImage bio')
+      .populate('blocked', 'name surname profileImage bio')
       .populate('cart.items.productId')
       .exec();
 
@@ -370,25 +382,46 @@ export const getAuthProfileService = async (
       return next(createHttpError(401, `Auth Failed `));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const {
-      password: pass,
-      confirmPassword,
-      isVerified,
-      isDeleted,
-      status,
-      acceptTerms,
-      role,
-      ...otherUserInfo
-    } = user._doc;
+    // await User.populate(user, 'posts');
+
+    const posts = (await Post.find({ author: req.user?._id || '' })
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec()) as IPost[];
+
+    const postDetails = posts.map((post) => {
+      return {
+        ...post.toObject(),
+        likesCount: post.likesCount ?? 0,
+        dislikesCount: post.disLikesCount ?? 0,
+        viewsCount: post.viewsCount ?? 0,
+        commentsCount: post?.commentsCount ?? 0,
+        daysAgo: post.daysAgo || '',
+        request: {
+          type: 'Get',
+          description: 'Get one post with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${post._id}`,
+        },
+      };
+    });
+
+    const data: { user: { [key: string]: unknown; posts: typeof postDetails } } = {
+      user: {
+        ...user.toObject(),
+        posts: postDetails,
+      },
+    };
 
     return res.status(200).send(
-      customResponse<{ user: IUser }>({
+      customResponse<typeof data>({
         success: true,
         error: false,
         message: 'Successfully found user profile 🍀',
         status: 200,
-        data: { user: otherUserInfo },
+        data,
       })
     );
   } catch (error) {
@@ -552,28 +585,45 @@ export const updateAuthService = async (req: AuthenticatedRequestBody<IUser>, re
 
 export const removeAuthService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById(req.params.userId);
+    const { userId } = req.params;
+
+    const user: IUser | null = await User.findById(userId);
 
     if (!user) {
-      return next(new createHttpError.BadRequest());
+      return next(createHttpError.BadRequest(`No user found with ID: ${userId}`));
     }
 
-    if (!req.user?._id.equals(user._id) && req?.user?.role !== 'admin') {
-      return next(createHttpError(403, `Auth Failed (Unauthorized)`));
+    const authenticatedUser = req.user;
+
+    //  Check if authenticated user is authorized to delete the user
+    if (!authenticatedUser?._id.equals(user._id) && authenticatedUser?.role !== authorizationRoles.admin) {
+      return next(createHttpError.Forbidden(`Authentication failed: unauthorized`));
     }
 
-    // Delete image from cloudinary
+    //  Delete image from cloudinary if user has one
     if (user.cloudinary_id) {
       await cloudinary.uploader.destroy(user.cloudinary_id);
     }
 
     // Delete user from db
-    const deletedUser = await User.findByIdAndRemove({
-      _id: req.params.userId,
-    });
+    const deletedUser: IUser | null = await User.findByIdAndRemove(userId);
 
     if (!deletedUser) {
-      return next(createHttpError(422, `Failed to delete user by given ID ${req.params.userId}`));
+      throw new createHttpError.UnprocessableEntity(`Failed to delete user with ID: ${userId}`);
+    }
+
+    // Find all posts by the user and delete them
+    const posts = await Post.find({ author: userId });
+
+    if (posts.length) {
+      await Post.deleteMany({ author: userId });
+
+      // Delete images from cloudinary for each post by the user
+      posts.forEach(async (post) => {
+        if (post?.cloudinary_id) {
+          await cloudinary.uploader.destroy(post?.cloudinary_id);
+        }
+      });
     }
 
     return res.status(200).json(
@@ -581,7 +631,7 @@ export const removeAuthService = async (req: AuthenticatedRequestBody<IUser>, re
         data: null,
         success: true,
         error: false,
-        message: `Successfully deleted user by ID ${req.params.userId}`,
+        message: `Successfully deleted user with ID: ${userId}`,
         status: 200,
       })
     );

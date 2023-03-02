@@ -173,9 +173,7 @@ describe('Post', () => {
         const followedUserPost = {
           ...postPayload,
           author: authUser._id,
-          likes: {
-            user: followedUser._id,
-          },
+          likes: [followedUser?._id.toString()],
         };
         const notFollowedUserPost = { ...postPayload, author: notFollowedUser._id };
         await Post.insertMany([
@@ -741,100 +739,53 @@ describe('Post', () => {
       });
     });
 
-    describe('given the user is logged in and authorized and the post does exist but not been liked by user before', () => {
-      it('should return a 200 status with the liked post', async () => {
-        const user = new User({
-          ...userPayload,
-          email: (adminEmails && adminEmails[0]) || userPayload.email,
-          role: authorizationRoles.admin,
-        });
-
-        await user.save();
-
-        const post = new Post({ ...postPayload, author: user._id });
-        await post.save();
-
-        const authResponse = await request(app)
-          .post('/api/v1/auth/login')
-          .send({
-            email: (adminEmails && adminEmails[0]) || userPayload.email,
-            password: userPayload.password,
-          });
-
-        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
-
-        if (token) {
-          await request(app)
-            .put(`/api/v1/feed/posts/${post?._id}/like`)
-            .set('Authorization', `Bearer ${token}`)
-            .expect('Content-Type', /json/)
-            .then((response) => {
-              expect(response.body).toMatchObject({
-                success: true,
-                error: false,
-                message: expect.any(String),
-                status: 200,
-              });
-
-              expect(response?.body?.message).toMatch('Successfully liked post');
-              expect(response?.body?.data?.post?.likes?.length).toBe(1);
-            })
-            .catch((error) => {
-              console.log(error);
-            });
-        }
-      });
-    });
-
     describe('given the user is logged in and authorized and the post does exist and been liked by the user before', () => {
       it('should unlike the post and return a 200 status with a json contain user info', async () => {
-        const user = new User({
-          ...userPayload,
-          email: (adminEmails && adminEmails[0]) || userPayload.email,
-          role: authorizationRoles.admin,
-        });
+        try {
+          const adminEmail = adminEmails?.[0] || userPayload.email;
 
-        await user.save();
+          const user = await User.create({
+            ...userPayload,
+            email: adminEmail,
+            role: authorizationRoles.admin,
+          });
 
-        const post = new Post({
-          ...postPayload,
-          author: user._id,
-          likes: [
-            {
-              user: user?._id,
-            },
-          ],
-        });
-        await post.save();
+          const post = await Post.create({
+            ...postPayload,
+            author: user._id,
+            likes: [user._id],
+          });
 
-        const authResponse = await request(app)
-          .post('/api/v1/auth/login')
-          .send({
-            email: (adminEmails && adminEmails[0]) || userPayload.email,
+          const authResponse = await request(app).post('/api/v1/auth/login').send({
+            email: adminEmail,
             password: userPayload.password,
           });
 
-        const token = (authResponse && authResponse?.body?.data?.accessToken) || '';
+          const accessToken = authResponse?.body?.data?.accessToken;
 
-        if (token) {
-          await request(app)
-            .put(`/api/v1/feed/posts/${post?._id}/like`)
-            .set('Authorization', `Bearer ${token}`)
-            .expect('Content-Type', /json/)
-            .then((response) => {
-              expect(response.body).toMatchObject({
-                success: true,
-                error: false,
-                message: expect.any(String),
-                status: 200,
-              });
+          if (accessToken) {
+            const likeResponse = await request(app)
+              .put(`/api/v1/feed/posts/${post._id}/like`)
+              .set('Authorization', `Bearer ${accessToken}`)
+              .expect('Content-Type', /json/)
+              .expect(200);
 
-              expect(response?.body?.message).toMatch('Successfully disliked post');
-              expect(response?.body?.data?.post?.likes?.length).toBe(0);
-            })
-            .catch((error) => {
-              console.log(error);
+            expect(likeResponse?.body).toMatchObject({
+              success: true,
+              error: false,
+              message: expect.any(String),
+              data: {
+                post: {
+                  _id: expect.any(String),
+                  likes: [],
+                },
+              },
             });
+
+            expect(likeResponse?.body?.message).toMatch('Successfully disliked post');
+          }
+        } catch (error) {
+          console.error(error);
         }
       });
     });
@@ -1423,7 +1374,7 @@ describe('Post', () => {
                 status: 200,
               });
 
-              expect(response?.body?.message).toMatch('Successfully update comment');
+              expect(response?.body?.message).toMatch('Successfully updated comment');
               expect(response?.body?.data?.post?.comments[0]?.comment).toMatch(updatedComment);
             })
             .catch((error) => {

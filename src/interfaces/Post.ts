@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
+import { IUser } from './User';
 
 export interface CommentI extends mongoose.Document {
   comment: string;
-  user: mongoose.Types.ObjectId;
+  user: IUser['_id'];
 }
 
 export interface IShare {
@@ -25,12 +26,23 @@ export interface IPost extends mongoose.Document {
   title: string;
   content: string;
   postImage: string;
-  author: mongoose.Types.ObjectId;
-  comments: CommentI[];
-  likes: LikeT[];
+  author: IUser['_id'];
+  user: IUser['_id'];
   _id: string;
   createdAt?: string;
   updatedAt?: string;
   category?: string;
   cloudinary_id?: string;
+  likes: IUser['_id'][];
+  disLikes: IUser['_id'][];
+  views: IUser['_id'][];
+  comments: CommentI[];
+  // Virtual fields
+  likesCount?: number;
+  disLikesCount?: number;
+  viewsCount?: number;
+  commentsCount?: number;
+  daysAgo?: string | null;
+  likesPercentage?: string;
+  disLikesPercentage?: string;
 }

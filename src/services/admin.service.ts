@@ -23,6 +23,90 @@ import {
 } from '@src/interfaces';
 import { customResponse, deleteFile, isValidMongooseObjectId, sendEmailVerificationEmail } from '@src/utils';
 
+export const adminBlockUserService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+    const userToBeBlocked = await User.findById(userId);
+
+    if (!userToBeBlocked) {
+      return next(createHttpError(404, `User not Found`));
+    }
+
+    if (req.user?._id.equals(userId)) {
+      return next(createHttpError(403, `You cannot block yourself`));
+    }
+
+    if (userToBeBlocked.isBlocked) {
+      return next(createHttpError(403, `You already blocked this user`));
+    }
+
+    userToBeBlocked.isBlocked = true;
+    await userToBeBlocked.save();
+
+    const updatedUser = await User.findById(userId)
+      .populate('following', 'name  surname  profileImage bio')
+      .populate('followers', 'name  surname  profileImage bio')
+      .populate('cart.items.productId')
+      .exec();
+
+    return res.status(200).send(
+      customResponse<{ user: IUser }>({
+        success: true,
+        error: false,
+        message: `User has been blocked successfully`,
+        status: 200,
+        data: { user: updatedUser },
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const adminUnblockUserService = async (
+  req: AuthenticatedRequestBody<IUser>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+    const userToBeUnblocked = await User.findById(userId);
+
+    if (!userToBeUnblocked) {
+      return next(createHttpError(404, `User not Found`));
+    }
+
+    if (!userToBeUnblocked.isBlocked) {
+      return next(createHttpError(403, `This user is not blocked`));
+    }
+
+    userToBeUnblocked.isBlocked = false;
+    await userToBeUnblocked.save();
+
+    const updatedUser = await User.findById(userId)
+      .populate('following', 'name  surname  profileImage bio')
+      .populate('followers', 'name  surname  profileImage bio')
+      .populate('cart.items.productId')
+      .exec();
+
+    return res.status(200).send(
+      customResponse<{ user: IUser }>({
+        success: true,
+        error: false,
+        message: `User has been unblocked successfully`,
+        status: 200,
+        data: { user: updatedUser },
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
 export const adminAddUserService = async (req: Request, res: Response<ResponseT<null>>, next: NextFunction) => {
   const {
     email,
@@ -321,23 +405,20 @@ export const adminGetUserService = async (req: AuthenticatedRequestBody<IUser>, 
   }
 
   try {
-    const user = await User.findById(req.params.userId);
-
-    if (!user) {
-      return next(new createHttpError.BadRequest());
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, confirmPassword, ...otherUserInfo } = user._doc;
+    const user = await User.findById(req.params.userId)
+      .select('-password -confirmPassword -cloudinary_id -status -isDeleted -acceptTerms -isVerified')
+      .populate('following', 'name  surname  profileImage bio')
+      .populate('followers', 'name  surname  profileImage bio')
+      .populate('viewers', 'name  surname  profileImage bio')
+      .populate('cart.items.productId')
+      .exec();
 
     const data = {
-      user: {
-        ...otherUserInfo,
-        request: {
-          type: 'Get',
-          description: 'Get all the user',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/users`,
-        },
+      user,
+      request: {
+        type: 'Get',
+        description: 'Get all the user',
+        url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/users`,
       },
     };
 
@@ -1031,15 +1112,13 @@ export const adminGetPostsService = async (_req: Request, res: TPaginationRespon
       responseObject.prevPage = previous;
     }
 
-    responseObject.posts = results?.map((postDoc: any) => {
-      const { author, ...otherPostInfo } = postDoc._doc;
+    responseObject.posts = (results as IPost[]).map((post) => {
       return {
-        ...otherPostInfo,
-        creator: author,
+        ...post.toObject(),
         request: {
           type: 'Get',
           description: 'Get one post with the id',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/feed/posts/${postDoc._doc._id}`,
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/feed/posts/${post?._id}`,
         },
       };
     });
@@ -1058,27 +1137,25 @@ export const adminGetPostsService = async (_req: Request, res: TPaginationRespon
 
 export const adminGetPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const post = await Post.findById(req.params.postId)
+    const post: IPost | null = await Post.findById(req.params.postId)
       .populate('author')
-      .populate('likes.user')
+      .populate('likes')
+      .populate('disLikes')
       .populate('comments.user')
+      .populate('views')
       .exec();
 
     if (!post) {
-      return next(new createHttpError.BadRequest());
+      return next(createHttpError.BadRequest());
     }
-
-    const { author, ...otherPostInfo } = post._doc;
 
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...post.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/feed/posts`,
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
         },
       },
     };
@@ -1108,8 +1185,12 @@ export const adminCreatePostService = async (
 
   try {
     let cloudinaryResult;
+
+    // Upload image to Cloudinary if it exists
     if (req.file?.filename) {
       const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+
+      // Upload file to Cloudinary
       cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
         folder: 'posts',
       });
@@ -1118,6 +1199,7 @@ export const adminCreatePostService = async (
       deleteFile(localFilePath);
     }
 
+    // Create new post document
     const postData = new Post({
       title,
       content,
@@ -1127,8 +1209,10 @@ export const adminCreatePostService = async (
       author: req?.user?._id || '',
     });
 
-    const createdPost = await Post.create(postData);
+    // Save post to database
+    const createdPost = await postData.save();
 
+    // Build server response with post data and request information
     const data = {
       post: {
         ...createdPost._doc,
@@ -1142,6 +1226,7 @@ export const adminCreatePostService = async (
       },
     };
 
+    // Send server response with created post data
     return res.status(201).send(
       customResponse<typeof data>({
         success: true,
@@ -1152,11 +1237,13 @@ export const adminCreatePostService = async (
       })
     );
   } catch (error) {
-    // Remove file from local uploads folder
+    // Remove file from local uploads folder if upload or save fails
     if (req.file?.filename) {
       const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
       deleteFile(localFilePath);
     }
+
+    // Handle errors
     return next(InternalServerError);
   }
 };
@@ -1309,27 +1396,34 @@ export const adminUpdatePostService = async (
       deleteFile(localFilePath);
     }
 
-    post.title = title || post.title;
-    post.content = content || post.content;
-    post.category = category || post.category;
-    post.cloudinary_id = req.file?.filename ? cloudinaryResult?.public_id : post.cloudinary_id;
-    post.postImage = req.file?.filename ? cloudinaryResult?.secure_url : post.postImage;
+    const updateFiled = {
+      title: title || post.title,
+      content: content || post.content,
+      category: category || post.category,
+      cloudinary_id: req.file?.filename ? cloudinaryResult?.public_id : post.cloudinary_id,
+      postImage: req.file?.filename ? cloudinaryResult?.secure_url : post.postImage,
+    };
 
-    const updatedPost = await post.save({ new: true });
+    const options = { new: true }; // return the updated post
+
+    const updatedPost: IPost | null = await Post.findByIdAndUpdate(req.params.postId, { ...updateFiled }, options)
+      .populate('author')
+      .populate('likes')
+      .populate('disLikes')
+      .populate('comments.user')
+      .populate('views')
+      .exec();
 
     const data = {
       post: {
-        ...updatedPost._doc,
-        author: undefined,
-        creator: updatedPost._doc.author,
+        ...updatedPost?.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/admin/feed/posts`,
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
         },
       },
     };
-
     return res.status(200).json(
       customResponse<typeof data>({
         success: true,
@@ -1396,11 +1490,7 @@ export const adminDeleteCommentInPostService = async (
   try {
     const { postId, commentId } = req.body;
 
-    const post = await Post.findById(postId)
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
-      .exec();
+    const post = await Post.findById(postId);
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -1420,13 +1510,17 @@ export const adminDeleteCommentInPostService = async (
 
     await post.save();
 
-    const { author, ...otherPostInfo } = post._doc;
+    const updatedPost: IPost | null = await Post.findById(postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
 
     const data = {
       post: {
-        ...otherPostInfo,
-        author: undefined,
-        creator: author,
+        ...updatedPost?.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
