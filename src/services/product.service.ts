@@ -14,6 +14,7 @@ import {
 import { customResponse, isValidMongooseObjectId } from '@src/utils';
 import Product from '@src/models/Product.model';
 import User from '@src/models/User.model';
+import { socketIo } from '@src/socket';
 
 export const getProductsService = async (_req: Request, res: TPaginationResponse) => {
   if (res?.paginatedResults) {
@@ -234,6 +235,12 @@ export const addReviewService = async (
       product: updatedProduct,
     };
 
+    // Emit a 'new-review' event to all connected sockets
+    socketIo.emit('product', {
+      action: 'add-review',
+      product: updatedProduct,
+    });
+
     return res.status(200).send(
       customResponse<typeof data>({
         success: true,
@@ -292,6 +299,18 @@ export const deleteReviewService = async (
     const data = {
       product: updatedProduct,
     };
+
+    socketIo.emit('product', {
+      action: 'delete-review',
+      product: updatedProduct,
+    });
+
+    //  Broadcast the new post to all connected clients except for the sender
+    // @ts-ignore
+    socketIo.broadcast.emit('product', {
+      action: 'delete-review',
+      product: updatedProduct,
+    });
 
     return res.status(200).send(
       customResponse<typeof data>({
