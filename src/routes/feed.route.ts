@@ -18,6 +18,8 @@ import {
   updateCommentInPostController,
   updatePostController,
   getTimelinePostsController,
+  disLikePostController,
+  viewPostController,
 } from '@src/controllers';
 import {
   addCommentValidation,
@@ -57,5 +59,7 @@ router.delete('/posts/:postId', isAuth, postIdValidation, deletePostController);
 router.patch('/posts/:postId', uploadImage.single('postImage'), isAuth, updatePostValidation, updatePostController);
 router.post('/posts', uploadImage.single('postImage'), isAuth, addPostValidation, createPostController);
 router.put('/posts/:postId/like', isAuth, postIdValidation, likePostController);
+router.put('/posts/:postId/dislike', isAuth, postIdValidation, disLikePostController);
+router.put('/posts/:postId/view', isAuth, postIdValidation, viewPostController);
 
 export = router;

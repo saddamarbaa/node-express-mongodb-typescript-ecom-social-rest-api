@@ -12,20 +12,34 @@ import {
   TPaginationResponse,
   UpdateCommentT,
   CommentI,
-  LikeT,
 } from '@src/interfaces';
 import Post from '@src/models/Post.model';
 import { cloudinary } from '@src/middlewares';
+import { authorizationRoles } from '@src/constants';
 
 export const createPostService = async (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) => {
   const { title, content, category } = req.body;
 
-  // console.log(req.body, req.file);
+  // Check if the user is blocked
+  const { user } = req;
+
+  if (user && user?.isBlocked) {
+    return res.status(403).send({
+      success: false,
+      error: true,
+      message: 'Access denied. Your account has been blocked. Please contact the administrator for assistance.',
+      status: 403,
+    });
+  }
 
   try {
     let cloudinaryResult;
+
+    // Upload image to Cloudinary if it exists
     if (req.file?.filename) {
       const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
+
+      // Upload file to Cloudinary
       cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
         folder: 'posts',
       });
@@ -34,6 +48,7 @@ export const createPostService = async (req: AuthenticatedRequestBody<IPost>, re
       deleteFile(localFilePath);
     }
 
+    // Create new post document
     const postData = new Post({
       title,
       content,
@@ -43,8 +58,10 @@ export const createPostService = async (req: AuthenticatedRequestBody<IPost>, re
       author: req?.user?._id || '',
     });
 
-    const createdPost = await Post.create(postData);
+    // Save post to database
+    const createdPost = await postData.save();
 
+    // Build server response with post data and request information
     const data = {
       post: {
         ...createdPost._doc,
@@ -55,13 +72,9 @@ export const createPostService = async (req: AuthenticatedRequestBody<IPost>, re
           profileImage: req?.user?.profileImage || '',
         },
       },
-      request: {
-        type: 'Get',
-        description: 'Get all posts',
-        url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
-      },
     };
 
+    // Send server response with created post data
     return res.status(201).send(
       customResponse<typeof data>({
         success: true,
@@ -72,11 +85,13 @@ export const createPostService = async (req: AuthenticatedRequestBody<IPost>, re
       })
     );
   } catch (error) {
-    // Remove file from local uploads folder
+    // Remove file from local uploads folder if upload or save fails
     if (req.file?.filename) {
       const localFilePath = `${process.env.PWD}/public/uploads/posts/${req.file?.filename}`;
       deleteFile(localFilePath);
     }
+
+    // Handle errors
     return next(InternalServerError);
   }
 };
@@ -99,13 +114,13 @@ export const getPostsService = async (_req: Request, res: TPaginationResponse) =
       responseObject.prevPage = previous;
     }
 
-    responseObject.posts = (results as Array<{ _doc: IPost }>).map((postDoc) => {
+    responseObject.posts = (results as IPost[]).map((post) => {
       return {
-        ...postDoc._doc,
+        ...post.toObject(),
         request: {
           type: 'Get',
           description: 'Get one post with the id',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${post?._id}`,
         },
       };
     });
@@ -124,19 +139,20 @@ export const getPostsService = async (_req: Request, res: TPaginationResponse) =
 
 export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const post = await Post.findById(req.params.postId)
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
+    const post: IPost | null = await Post.findById(req.params.postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
       .exec();
-
     if (!post) {
-      return next(new createHttpError.BadRequest());
+      return next(createHttpError.BadRequest());
     }
 
     const data = {
       post: {
-        ...post._doc,
+        ...post.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -155,7 +171,7 @@ export const getPostService = async (req: AuthenticatedRequestBody<IUser>, res: 
       })
     );
   } catch (error) {
-    return next(InternalServerError);
+    return next(error);
   }
 };
 
@@ -170,30 +186,39 @@ export const getTimelinePostsService = async (
     const user: IUser = await User.findById(userId).populate('friends following').exec();
     const friendsIds: string[] = (user.friends as unknown as IUser[]).map((friend) => friend._id);
     const followingIds: string[] = (user.following as unknown as IUser[]).map((following) => following._id);
-    const userIds = [...friendsIds, ...followingIds, userId];
 
-    // Get the posts by all the users
-    const posts = await Post.find({ author: { $in: userIds } })
+    // Get the IDs of any users that the authenticated user has blocked (an array of user IDs)
+    const blockedUsersIds = user.blocked;
+
+    // Get the posts by all the users except for blocked users
+    const posts = (await Post.find({
+      author: {
+        $in: [...friendsIds, ...followingIds, userId], // include posts by friends, following, and the user themselves
+        $nin: blockedUsersIds, // exclude posts by blocked users
+      },
+    })
       .sort({ createdAt: -1 })
       .populate('author', 'name surname profileImage bio')
-      .populate('likes.user', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
       .populate('comments.user', 'name surname profileImage bio')
-      .exec();
-
-    const postsWithRequests = (posts as Array<{ _doc: IPost }>).map((postDoc) => {
-      return {
-        ...postDoc._doc,
-        request: {
-          type: 'Get',
-          description: 'Get one post with the id',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
-        },
-      };
-    });
+      .populate('views', 'name surname profileImage bio')
+      .exec()) as IPost[];
 
     if (!posts) {
       return next(new createHttpError.BadRequest());
     }
+
+    const postsWithRequests = posts.map((post) => {
+      return {
+        ...post.toObject(),
+        request: {
+          type: 'Get',
+          description: 'Get one post with the id',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${post._id}`,
+        },
+      };
+    });
 
     const data = {
       posts: postsWithRequests,
@@ -217,18 +242,14 @@ export const updatePostService = async (req: AuthenticatedRequestBody<IPost>, re
   const { title, content, category } = req.body;
 
   try {
-    const post = await Post.findById(req.params.postId)
-      .populate('author', 'name surname profileImage bio')
-      .populate('likes.user', 'name surname profileImage bio')
-      .populate('comments.user', 'name surname profileImage bio')
-      .exec();
+    const post = await Post.findById(req.params.postId);
 
     if (!post) {
       return next(new createHttpError.BadRequest());
     }
 
     // Allow user to update only post which is created by them
-    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== authorizationRoles.admin) {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
@@ -248,23 +269,27 @@ export const updatePostService = async (req: AuthenticatedRequestBody<IPost>, re
       deleteFile(localFilePath);
     }
 
-    post.title = title || post.title;
-    post.content = content || post.content;
-    post.category = category || post.category;
-    post.cloudinary_id = req.file?.filename ? cloudinaryResult?.public_id : post.cloudinary_id;
-    post.postImage = req.file?.filename ? cloudinaryResult?.secure_url : post.postImage;
+    const updateFiled = {
+      title: title || post.title,
+      content: content || post.content,
+      category: category || post.category,
+      cloudinary_id: req.file?.filename ? cloudinaryResult?.public_id : post.cloudinary_id,
+      postImage: req.file?.filename ? cloudinaryResult?.secure_url : post.postImage,
+    };
 
-    const updatedPost = await post.save({ new: true });
+    const options = { new: true }; // return the updated post
+
+    const updatedPost: IPost | null = await Post.findByIdAndUpdate(req.params.postId, { ...updateFiled }, options)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
 
     const data = {
       post: {
-        ...updatedPost._doc,
-        author: {
-          _id: req?.user?._id,
-          name: req?.user?.name,
-          surname: req?.user?.surname,
-          profileImage: req?.user?.profileImage,
-        },
+        ...updatedPost?.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -296,7 +321,7 @@ export const deletePostService = async (req: AuthenticatedRequestBody<IUser>, re
     }
 
     // Allow user to delete only post which is created by them
-    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== authorizationRoles.admin) {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
@@ -335,21 +360,23 @@ export const deletePostService = async (req: AuthenticatedRequestBody<IUser>, re
 
 export const getUserPostsService = async (req: AuthenticatedRequestBody<IUser>, res: Response, next: NextFunction) => {
   try {
-    const posts = await Post.find({
+    const posts = (await Post.find({
       author: req?.user?._id || '',
     })
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
-      .exec();
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec()) as IPost[];
 
-    const postsWithRequests = (posts as Array<{ _doc: IPost }>).map((postDoc) => {
+    const postsWithRequests = posts.map((post) => {
       return {
-        ...postDoc._doc,
+        ...post.toObject(),
         request: {
           type: 'Get',
           description: 'Get one post with the id',
-          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${postDoc._doc._id}`,
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts/${post._id}`,
         },
       };
     });
@@ -415,44 +442,57 @@ export const deleteUserPostsService = async (
       })
     );
   } catch (error) {
-    return next(error);
+    return next(InternalServerError);
   }
 };
 
-export const likePostService = async (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) => {
+export const toggleLikePostService = async (
+  req: AuthenticatedRequestBody<IPost>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const post = await Post.findById(req.params.postId);
+    const post: IPost | null = await Post.findById(req.params.postId);
 
     if (!post) {
       return next(new createHttpError.BadRequest());
     }
 
-    const isAlreadyLiked = post.likes.some(function (like: LikeT) {
-      if (like?.user.toString() === req.user?._id.toString()) return true;
+    const isAlreadyDisliked = post?.disLikes?.some(function (dislike) {
+      if (dislike?.toString() === req.user?._id.toString()) return true;
+      return false;
+    });
+
+    if (isAlreadyDisliked) {
+      await post.updateOne({ $pull: { disLikes: req.user?._id } });
+    }
+
+    const isAlreadyLiked = post?.likes?.some(function (like) {
+      if (like?.toString() === req.user?._id.toString()) return true;
       return false;
     });
 
     if (!isAlreadyLiked) {
       await post.updateOne({
         $push: {
-          likes: {
-            user: req.user?._id,
-          },
+          likes: req.user?._id,
         },
       });
     } else {
-      await post.updateOne({ $pull: { likes: { user: req.user?._id } } });
+      await post.updateOne({ $pull: { likes: req.user?._id } });
     }
 
-    const updatedPost = await Post.findById(req.params.postId)
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
+    const updatedPost: IPost | null = await Post.findById(req.params.postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
       .exec();
 
     const data = {
       post: {
-        ...updatedPost._doc,
+        ...updatedPost?.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -464,6 +504,135 @@ export const likePostService = async (req: AuthenticatedRequestBody<IPost>, res:
     const message = isAlreadyLiked
       ? `Successfully disliked post by ID: ${req.params.postId}`
       : `Successfully liked post by ID: ${req.params.postId}`;
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(InternalServerError);
+  }
+};
+
+export const toggleDislikePostService = async (
+  req: AuthenticatedRequestBody<IPost>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const post: IPost | null = await Post.findById(req.params.postId);
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyLiked = post?.likes?.some(function (like) {
+      if (like?.toString() === req.user?._id.toString()) return true;
+      return false;
+    });
+
+    if (isAlreadyLiked) {
+      await post.updateOne({ $pull: { likes: req.user?._id } });
+    }
+
+    const isAlreadyDisliked = post?.disLikes?.some(function (dislike) {
+      if (dislike?.toString() === req.user?._id.toString()) return true;
+      return false;
+    });
+
+    if (!isAlreadyDisliked) {
+      await post.updateOne({
+        $push: {
+          disLikes: req.user?._id,
+        },
+      });
+    } else {
+      await post.updateOne({ $pull: { dislikes: req.user?._id } });
+    }
+
+    const updatedPost: IPost | null = await Post.findById(req.params.postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
+
+    const data = {
+      post: {
+        ...updatedPost?.toObject(),
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    const message = isAlreadyDisliked
+      ? `Successfully removed dislike on post by ID: ${req.params.postId}`
+      : `Successfully disliked post by ID: ${req.params.postId}`;
+    return res.status(200).send(
+      customResponse<typeof data>({
+        success: true,
+        error: false,
+        message,
+        status: 200,
+        data,
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const viewPostService = async (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) => {
+  try {
+    const post: IPost | null = await Post.findById(req.params.postId);
+
+    if (!post) {
+      return next(new createHttpError.BadRequest());
+    }
+
+    const isAlreadyViewed = post?.views?.some(function (view) {
+      if (view?.toString() === req.user?._id.toString()) return true;
+      return false;
+    });
+
+    if (!isAlreadyViewed) {
+      await post.updateOne({
+        $push: {
+          views: req.user?._id,
+        },
+      });
+    }
+
+    const updatedPost: IPost | null = await Post.findById(req.params.postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
+
+    const data = {
+      post: {
+        ...updatedPost?.toObject(),
+        request: {
+          type: 'Get',
+          description: 'Get all posts',
+          url: `${process.env.API_URL}/api/${process.env.API_VERSION}/feed/posts`,
+        },
+      },
+    };
+
+    const message = isAlreadyViewed
+      ? `You have already viewed post by ID: ${req.params.postId}`
+      : `Successfully viewed post by ID: ${req.params.postId}`;
     return res.status(200).send(
       customResponse<typeof data>({
         success: true,
@@ -491,7 +660,7 @@ export const addCommentInPostService = async (
       user: req.user?._id,
     };
 
-    const post = await Post.findByIdAndUpdate(
+    const post: IPost | null = await Post.findByIdAndUpdate(
       postId,
       {
         $push: {
@@ -505,9 +674,11 @@ export const addCommentInPostService = async (
         new: true,
       }
     )
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
       .exec();
 
     if (!post) {
@@ -516,7 +687,7 @@ export const addCommentInPostService = async (
 
     const data = {
       post: {
-        ...post._doc,
+        ...post.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -547,42 +718,46 @@ export const updateCommentInPostService = async (
   try {
     const { postId, commentId, comment } = req.body;
 
-    const post = await Post.findById(postId)
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
+    const post: IPost | null = await Post.findById(postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
       .exec();
 
     if (!post) {
-      return next(new createHttpError.BadRequest());
+      return next(createHttpError.BadRequest());
     }
 
     const isAlreadyComment = post.comments.find(
-      (item: { user: IUser; _id: string }) =>
-        item.user?._id.toString() === req.user?._id.toString() && item?._id.toString() === commentId.toString()
+      (item) =>
+        item.user?._id?.toString() === req.user?._id?.toString() && item._id?.toString() === commentId.toString()
     );
 
     if (!isAlreadyComment) {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
-    post.comments.forEach((item: { user: IUser; _id: string }, index: number) => {
-      if (item?._id.toString() === commentId) {
-        const newComment = {
-          user: item.user,
-          _id: item._id,
-          comment,
-        };
+    const newComments = post.comments.map((item: CommentI) =>
+      item._id?.toString() === commentId ? { ...item.toObject(), comment } : item.toObject()
+    ) as CommentI[];
 
-        post.comments[index] = newComment;
-      }
-    });
-
-    await post.save();
+    const updatedPost = await Post.findOneAndUpdate(
+      { _id: postId, 'comments._id': commentId },
+      { $set: { 'comments.$': newComments[0] } },
+      { new: true }
+    )
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
 
     const data = {
       post: {
-        ...post._doc,
+        ...updatedPost.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -595,7 +770,7 @@ export const updateCommentInPostService = async (
       customResponse<typeof data>({
         success: true,
         error: false,
-        message: `Successfully update comment  by ID : ${commentId} `,
+        message: `Successfully updated comment by ID: ${commentId}`,
         status: 200,
         data,
       })
@@ -776,7 +951,7 @@ export const deleteAllCommentInPostService = async (
     }
 
     // Allow only user who created the post or admin to delete the comment
-    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+    if (!req.user?._id.equals(post.author._id) && req?.user?.role !== authorizationRoles.admin) {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
@@ -816,20 +991,14 @@ export const deleteCommentInPostService = async (
   try {
     const { postId, commentId } = req.body;
 
-    const post = await Post.findById(postId)
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
-      .exec();
+    const post = await Post.findById(postId);
 
-    if (!post || !post?.comments?.length) {
+    if (!post) {
       return next(new createHttpError.BadRequest());
     }
 
     const isAuthorized = post.comments.find(
-      (item: { user: IUser; _id: string }) =>
-        (req.user?._id.equals(post.author._id) || item.user?._id.toString() === req.user?._id.toString()) &&
-        item?._id.toString() === commentId.toString()
+      (item: { user: IUser; _id: string }) => item?._id.toString() === commentId.toString()
     );
 
     if (!isAuthorized) {
@@ -842,9 +1011,17 @@ export const deleteCommentInPostService = async (
 
     await post.save();
 
+    const updatedPost: IPost | null = await Post.findById(postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
+
     const data = {
       post: {
-        ...post._doc,
+        ...updatedPost?.toObject(),
         request: {
           type: 'Get',
           description: 'Get all posts',
@@ -873,11 +1050,7 @@ export const deleteUserCommentInPostService = async (
   next: NextFunction
 ) => {
   try {
-    const post = await Post.findById(req.params.postId)
-      .populate('author', 'name  surname  profileImage  bio')
-      .populate('likes.user', 'name  surname  profileImage bio')
-      .populate('comments.user', 'name  surname  profileImage bio')
-      .exec();
+    const post = await Post.findById(req.params.postId);
 
     if (!post) {
       return next(new createHttpError.BadRequest());
@@ -895,7 +1068,7 @@ export const deleteUserCommentInPostService = async (
     );
 
     // Allow only user who created the post or admin or user who add comment to delete the comments
-    if (!isAlreadyComment && !req.user?._id.equals(post.author._id) && req?.user?.role !== 'admin') {
+    if (!isAlreadyComment && !req.user?._id.equals(post.author._id) && req?.user?.role !== authorizationRoles.admin) {
       return next(createHttpError(403, `Auth Failed (Unauthorized)`));
     }
 
@@ -906,9 +1079,17 @@ export const deleteUserCommentInPostService = async (
 
     await post.save();
 
+    const updatedPost: IPost | null = await Post.findById(req.params.postId)
+      .populate('author', 'name surname profileImage bio')
+      .populate('likes', 'name surname profileImage bio')
+      .populate('disLikes', 'name surname profileImage bio')
+      .populate('comments.user', 'name surname profileImage bio')
+      .populate('views', 'name surname profileImage bio')
+      .exec();
+
     const data = {
       post: {
-        ...post._doc,
+        ...updatedPost?.toObject(),
         request: {
           type: 'Get',
           description: 'Get all comments',

@@ -22,9 +22,11 @@ import {
   getTimelinePostsService,
   getUserCommentInPostService,
   getUserPostsService,
-  likePostService,
+  toggleDislikePostService,
+  toggleLikePostService,
   updateCommentInPostService,
   updatePostService,
+  viewPostService,
 } from '@src/services';
 
 export const getPostsController = (req: Request, res: TPaginationResponse) => getPostsService(req, res);
@@ -51,7 +53,13 @@ export const updatePostController = (req: AuthenticatedRequestBody<IPost>, res: 
   updatePostService(req, res, next);
 
 export const likePostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
-  likePostService(req, res, next);
+  toggleLikePostService(req, res, next);
+
+export const disLikePostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
+  toggleDislikePostService(req, res, next);
+
+export const viewPostController = (req: AuthenticatedRequestBody<IPost>, res: Response, next: NextFunction) =>
+  viewPostService(req, res, next);
 
 export const addCommentInPostController = (
   req: AuthenticatedRequestBody<AddCommentT>,
