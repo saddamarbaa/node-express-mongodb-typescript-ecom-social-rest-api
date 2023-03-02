@@ -3311,7 +3311,7 @@ paths:
     get:
       security:
         - Authorization: []
-      summary: Get user info based on request id
+      summary: Admin get user info based on request id
       tags:
         - Admin
       parameters:
@@ -3366,7 +3366,7 @@ paths:
     put:
       security:
         - Authorization: []
-      summary: Edit user based on request id
+      summary: Admin edit user based on request id
       tags:
         - Admin
       parameters:
@@ -3428,7 +3428,7 @@ paths:
     delete:
       security:
         - Authorization: []
-      summary: Delete user based on request id
+      summary: Admin delete user based on request id
       tags:
         - Admin
       parameters:
@@ -3465,6 +3465,64 @@ paths:
                     type: object
                     nullable: true
                     example: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
+  /admin/users/block/{userId}:
+    put:
+      security:
+        - Authorization: []
+      summary: Admin block user based on request id
+      tags:
+        - Admin
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 639593f33994948bfb0756d0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: You have successfully blocked this user
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        '$ref': '#/components/schemas/AuthResponse'
+
         '400':
           description: Bad request
           content:
