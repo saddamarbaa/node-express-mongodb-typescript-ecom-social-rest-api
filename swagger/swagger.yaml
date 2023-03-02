@@ -2991,6 +2991,64 @@ paths:
               schema:
                 '$ref': '#/components/schemas/ServerErrorResponse'
 
+  /users/{userId}/block:
+    put:
+      security:
+        - Authorization: []
+      summary: Block given user based on request id
+      tags:
+        - User
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: Unique id
+          schema:
+            type: string
+            minimum: 1
+            example: 639593f33994948bfb0756d0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description:
+                  error:
+                    type: boolean
+                    example: false
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: You have successfully blocked this user
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        '$ref': '#/components/schemas/AuthResponse'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/BadRequestResponse'
+
+        '500':
+          description: 500 Internal Server Error
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/ServerErrorResponse'
+
   # Admin
 
   /admin/users/add:
@@ -5244,6 +5302,8 @@ components:
           required: true
         surname:
           type: string
+        fullName:
+          type: string
         email:
           type: string
           required: true
@@ -5271,6 +5331,12 @@ components:
           type: string
         jobTitle:
           type: string
+        userAward:
+          type: string
+        plan:
+          type: string
+        isBlocked:
+          type: string
         followings:
           type: array
           items:
@@ -5281,6 +5347,33 @@ components:
           items:
             type: object
             '$ref': '#/components/schemas/FollowUserScheme'
+        friends:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/FollowUserScheme'
+        viewers:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/FollowUserScheme'
+        blocked:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/FollowUserScheme'
+        followersCount:
+          type: number
+        followingCount:
+          type: number
+        viewersCount:
+          type: number
+        blockedCount:
+          type: number
+        friendsCount:
+          type: number
+        lastPostDate:
+          type: string
         cart:
           type: object
           properties:
@@ -5436,6 +5529,8 @@ components:
           required: true
         surname:
           type: string
+        fullName:
+          type: string
         email:
           type: string
           required: true
@@ -5471,6 +5566,12 @@ components:
           type: string
         jobTitle:
           type: string
+        userAward:
+          type: string
+        plan:
+          type: string
+        isBlocked:
+          type: string
         followings:
           type: array
           items:
@@ -5481,6 +5582,33 @@ components:
           items:
             type: object
             '$ref': '#/components/schemas/FollowUserScheme'
+        friends:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/FollowUserScheme'
+        viewers:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/FollowUserScheme'
+        blocked:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/FollowUserScheme'
+        followersCount:
+          type: number
+        followingCount:
+          type: number
+        viewersCount:
+          type: number
+        blockedCount:
+          type: number
+        friendsCount:
+          type: number
+        lastPostDate:
+          type: string
         cart:
           type: object
           properties:
@@ -5921,7 +6049,26 @@ components:
           type: string
         updatedAt:
           type: string
+        likesCount:
+          type: number
+        likesPercentage:
+          type: string
+        disLikesCount:
+          type: number
+        disLikesPercentage:
+          type: string
+        viewsCount:
+          type: number
+        commentsCount:
+          type: number
+        daysAgo:
+          type: string
         likes:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostLikeResponse'
+        views:
           type: array
           items:
             type: object
@@ -5953,7 +6100,26 @@ components:
           type: string
         updatedAt:
           type: string
+        likesCount:
+          type: number
+        likesPercentage:
+          type: string
+        disLikesCount:
+          type: number
+        disLikesPercentage:
+          type: string
+        viewsCount:
+          type: number
+        commentsCount:
+          type: number
+        daysAgo:
+          type: string
         likes:
+          type: array
+          items:
+            type: object
+            '$ref': '#/components/schemas/PostLikeResponse'
+        views:
           type: array
           items:
             type: object
